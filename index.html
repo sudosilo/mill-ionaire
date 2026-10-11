@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mill-ionaire</title>
+<style>
+:root{
+  --putty:#DDD8CB;--putty-dark:#C9C3B2;--face:#F0EDE4;
+  --steel:#9A9C97;--steel-dark:#65675F;
+  --iron-green:#57694B;--iron-green-dark:#3E4C37;
+  --charcoal:#2B2924;--rust:#A84A2A;--amber:#B5760D;
+  --blue:#2E4A63;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--putty);
+  background-image:linear-gradient(var(--putty-dark) 1px,transparent 1px),linear-gradient(90deg,var(--putty-dark) 1px,transparent 1px);
+  background-size:30px 30px;color:var(--charcoal);
+  font-family:"Trebuchet MS","Segoe UI",sans-serif;padding:16px;
+}
+.stage{max-width:1180px;margin:0 auto;}
+header{display:flex;align-items:baseline;justify-content:space-between;border-bottom:3px solid var(--charcoal);padding-bottom:8px;margin-bottom:16px;flex-wrap:wrap;gap:6px;}
+header h1{font-size:24px;margin:0;}
+header span{font-size:13px;color:var(--steel-dark);}
+.workspace{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;}
+@media (max-width:880px){.workspace{grid-template-columns:1fr;}}
+.panel{background:var(--face);border:1px solid var(--steel);padding:16px 14px 14px;position:relative;margin-bottom:16px;}
+.panel-label{position:absolute;top:-10px;left:12px;background:var(--charcoal);color:var(--face);font-size:11px;letter-spacing:.12em;padding:2px 8px;}
+canvas{display:block;width:100%;height:auto;touch-action:none;}
+#machine{border:1px solid var(--steel);background:var(--face);}
+#top{border:1px solid var(--charcoal);background:#9E9987;}
+#print{border:1px solid var(--charcoal);background:#E7EDF2;}
+.dro{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;}
+.dro-cell{background:var(--putty-dark);border:2px solid var(--charcoal);padding:6px 4px;text-align:center;}
+.dro-tag{font-size:11px;letter-spacing:.1em;color:var(--steel-dark);margin-bottom:3px;}
+.dro-cell input{width:100%;border:none;background:transparent;text-align:center;font-family:"Courier New",monospace;font-size:19px;font-weight:bold;color:var(--amber);padding:0;}
+.dro-cell input:focus{outline:2px solid var(--iron-green);background:#fff;}
+.status{margin-top:10px;padding:8px 10px;border:1px solid var(--charcoal);background:var(--putty-dark);font-size:14px;font-weight:bold;}
+.status.cutting{background:var(--iron-green);color:var(--face);}
+.status.warn{background:var(--rust);color:var(--face);}
+.status.good{background:var(--blue);color:var(--face);}
+.health{margin-top:8px;display:flex;align-items:center;gap:10px;}
+.health span{font-size:13px;color:var(--steel-dark);width:112px;}
+.bar{flex:1;height:18px;background:var(--putty-dark);border:1px solid var(--charcoal);position:relative;}
+.bar i{display:block;height:100%;background:var(--iron-green);}
+.bar b{position:absolute;right:6px;top:0;font-size:12px;line-height:16px;color:var(--charcoal);}
+.jog{margin-top:14px;}
+.jog-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.jog-name{width:112px;font-size:13px;color:var(--steel-dark);}
+.jog-row input[type=range]{flex:1;height:34px;accent-color:var(--iron-green);}
+.jog-row.dead .jog-name{color:var(--rust);}
+button{font-family:inherit;font-weight:bold;font-size:17px;background:var(--charcoal);color:var(--face);border:none;min-width:52px;min-height:46px;cursor:pointer;touch-action:manipulation;}
+button:hover{background:var(--iron-green-dark);}
+button:active{background:var(--rust);}
+.pick{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.pick span{font-size:13px;color:var(--steel-dark);width:112px;}
+.pick button{font-size:13px;min-width:74px;min-height:40px;background:var(--steel-dark);flex:1;}
+.pick button.on{background:var(--iron-green);}
+.feed{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.feed span{font-size:13px;color:var(--steel-dark);width:112px;}
+.switch{min-width:120px;min-height:44px;background:var(--steel-dark);}
+.switch.on{background:var(--rust);}
+.jobs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.jobs button{font-size:13px;min-width:44px;min-height:40px;background:var(--steel-dark);}
+.jobs button.on{background:var(--blue);}
+.jobs button.done{background:var(--iron-green);}
+.spec{font-size:13px;line-height:1.5;color:var(--charcoal);margin:8px 0 0;}
+.grp{border:1px solid var(--steel);margin-top:10px;background:var(--face);}
+.grp summary{cursor:pointer;padding:12px 12px;font-size:14px;font-weight:bold;color:var(--charcoal);background:var(--putty-dark);list-style:none;}
+.grp summary::-webkit-details-marker{display:none;}
+.grp summary::before{content:"+ ";color:var(--iron-green);}
+.grp[open] summary::before{content:"- ";}
+.grpbody{padding:12px 10px 4px;}
+.icon{min-width:46px;min-height:46px;font-size:20px;background:var(--charcoal);color:var(--face);border-radius:0;}
+.sheet{display:none;position:fixed;inset:0;background:rgba(43,41,36,0.45);z-index:20;padding:20px;overflow:auto;}
+.sheet.open{display:block;}
+.sheetbox{max-width:560px;margin:40px auto;background:var(--face);border:2px solid var(--charcoal);padding:18px;}
+.sheetbox h3{margin:0 0 10px;font-size:18px;}
+.sheetbox p{font-size:14px;line-height:1.6;margin:0 0 12px;}
+.tray{display:flex;flex-wrap:wrap;gap:8px;min-height:64px;padding:8px;background:var(--putty-dark);border:1px dashed var(--steel-dark);}
+.chip{width:56px;height:46px;background:var(--face);border:2px solid var(--charcoal);position:relative;cursor:grab;touch-action:none;}
+.chip canvas{width:100%;height:100%;}
+.chip b{position:absolute;right:2px;bottom:0;font-size:11px;color:var(--steel-dark);}
+.chip.flying{position:fixed;z-index:30;pointer-events:none;opacity:.9;}
+.bins{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px;}
+.bin{border:2px solid var(--steel-dark);background:var(--putty-dark);text-align:center;padding:6px 2px;font-size:13px;}
+.bin em{display:block;font-style:normal;font-weight:bold;font-size:16px;}
+.bin i{display:block;font-style:normal;font-size:11px;color:var(--steel-dark);}
+.bin.hot{border-color:var(--iron-green);background:#CFDAC4;}
+.bin.bad{border-color:var(--rust);background:#E3C6BC;}
+.bin.has{border-color:var(--iron-green);}
+.wide{width:100%;margin-top:8px;min-height:46px;}
+.hint{font-size:13px;line-height:1.55;color:var(--steel-dark);margin:12px 0 0;}
+</style>
+</head>
+<body>
+<div class="stage">
+
+<header>
+  <button id="burger" class="icon">&#9776;</button>
+  <h1>Mill-ionaire</h1>
+  <span>vertical knee mill, simulated</span>
+  <button id="infoBtn" class="icon">i</button>
+</header>
+
+<div class="sheet" id="menuSheet">
+  <div class="sheetbox">
+    <h3>machine menu</h3>
+    <button class="wide" id="facBtn">open the factory floor</button>
+    <button class="wide" id="demoBtn">run demo mode, cut the alphabet</button>
+    <button class="wide" id="fixBtn">call the millwright and repair the machine</button>
+    <button class="wide" id="stowBtn">stow every loose part into the bins</button>
+    <button class="wide" id="emptyBtn">empty the inventory bins</button>
+    <button class="wide" id="menuClose">close</button>
+  </div>
+</div>
+
+<div class="sheet" id="infoSheet">
+  <div class="sheetbox">
+    <h3>what this is</h3>
+    <p>This is a simulated vertical knee mill, the kind of manual machine a Bridgeport is. The tall green casting is the column, the arm across the top is the ram, and the head hanging off it holds the spinning cutter. The work sits on the table, and on a machine like this the cutter stays put while the table carries the work to it.</p>
+    <p>X traverses the table left and right, Y moves the saddle in and out, Z raises and lowers the whole knee so the work comes up to the cutter. A tilts the head over for angled work. The big view is a cutaway taken straight through the part at whatever Y the saddle is sitting at, so you see the real section of what you have cut. The panel on the right is the same part seen from above.</p>
+    <p>The part is solid material, not a surface, so you can machine one face, unclamp it, turn it ninety degrees and machine another. Cut past the bottom of the work and you start eating the table, which does permanent damage, and if you cut right through you part the leadscrew and that axis is finished until the millwright rebuilds it.</p>
+    <p>The print panel gives you jobs to make. Demo mode in the menu runs the machine on its own, cutting the alphabet one letter at a time, and finished letters go into the inventory bins.</p>
+    <button class="wide" id="infoClose">close</button>
+  </div>
+</div>
+
+<div class="panel" id="facPanel" style="display:none">
+  <div class="panel-label">factory floor</div>
+  <div class="pick" id="facCount">
+    <span>machines</span>
+    <button data-n="2">2</button>
+    <button class="on" data-n="4">4</button>
+    <button data-n="12">12</button>
+  </div>
+  <div class="feed">
+    <span>shift</span>
+    <button class="switch" id="facRun">start the shift</button>
+    <button class="switch" id="facClose" style="min-width:90px">back to the mill</button>
+  </div>
+  <div class="status" id="facOrder">no order on the board</div>
+  <canvas id="factory" width="700" height="560"></canvas>
+  <p class="hint">Every machine runs its own part. Tap a machine to change what letter it is cutting while it is between parts. When a light goes amber the machine has stopped and needs a hand, so tap it to send the next free operator over. You have fewer operators than machines, so the job is deciding who gets helped first. Finished parts go straight into the inventory bins and count against the order on the board.</p>
+</div>
+
+<div class="workspace">
+
+  <div>
+    <div class="panel">
+      <div class="panel-label">machine, cutaway at the saddle plane</div>
+      <canvas id="machine" width="680" height="580"></canvas>
+
+      <div class="dro">
+        <div class="dro-cell"><div class="dro-tag">X</div><input id="inX" type="text" inputmode="decimal" value="0.0"></div>
+        <div class="dro-cell"><div class="dro-tag">Y</div><input id="inY" type="text" inputmode="decimal" value="0.0"></div>
+        <div class="dro-cell"><div class="dro-tag">Z</div><input id="inZ" type="text" inputmode="decimal" value="0.0"></div>
+        <div class="dro-cell"><div class="dro-tag">A</div><input id="inA" type="text" inputmode="decimal" value="0.0"></div>
+      </div>
+
+      <div class="status" id="status">pick a job from the print, then drag a blank onto the table</div>
+
+      <div class="health">
+        <span>machine condition</span>
+        <div class="bar"><i id="hpBar" style="width:100%"></i><b id="hpTxt">100</b></div>
+      </div>
+
+      <details class="grp" open>
+        <summary>axis controls</summary>
+        <div class="grpbody">
+          <div class="pick" id="stepPick">
+            <span>jog step</span>
+            <button data-step="0.1">0.1</button>
+            <button class="on" data-step="1">1.0</button>
+            <button data-step="5">5.0</button>
+            <button data-step="10">10.0</button>
+          </div>
+          <div class="jog-row" id="rowX">
+            <div class="jog-name">X, table</div>
+            <button data-axis="x" data-dir="-1">&#8592;</button>
+            <input type="range" id="rngX" min="-120" max="120" step="0.1" value="0">
+            <button data-axis="x" data-dir="1">&#8594;</button>
+          </div>
+          <div class="jog-row" id="rowY">
+            <div class="jog-name">Y, saddle</div>
+            <button data-axis="y" data-dir="-1">&#8592;</button>
+            <input type="range" id="rngY" min="-80" max="80" step="0.1" value="0">
+            <button data-axis="y" data-dir="1">&#8594;</button>
+          </div>
+          <div class="jog-row" id="rowZ">
+            <div class="jog-name">Z, knee</div>
+            <button data-axis="z" data-dir="-1">&#8595;</button>
+            <input type="range" id="rngZ" min="-15" max="70" step="0.1" value="0">
+            <button data-axis="z" data-dir="1">&#8593;</button>
+          </div>
+          <div class="jog-row">
+            <div class="jog-name">spindle rpm</div>
+            <input type="range" id="rngRpm" min="0" max="3000" step="50" value="0">
+            <span class="jog-name" id="rpmOut" style="width:64px;text-align:right;">0</span>
+          </div>
+        </div>
+      </details>
+
+      <details class="grp">
+        <summary>cutter in the spindle</summary>
+        <div class="grpbody">
+          <div class="pick" id="toolPick">
+            <span>cutter</span>
+            <button class="on" data-tool="end">end mill</button>
+            <button data-tool="ball">ball nose</button>
+            <button data-tool="drill">drill</button>
+            <button data-tool="face">face mill</button>
+            <button data-tool="fine">slot drill</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="grp">
+        <summary>power feed</summary>
+        <div class="grpbody">
+          <div class="feed">
+            <span>power feed</span>
+            <button class="switch" id="feedSw">feed off</button>
+            <button class="switch" id="feedDir" style="min-width:90px">to the right</button>
+            <input type="range" id="feedRate" min="2" max="40" step="1" value="12" style="flex:1;height:34px;accent-color:#57694B;">
+            <span id="feedOut" style="width:60px;text-align:right;">12</span>
+          </div>
+        </div>
+      </details>
+
+      <details class="grp">
+        <summary>head tilt and re-fixturing</summary>
+        <div class="grpbody">
+          <div class="jog-row" id="rowA">
+            <div class="jog-name">A, head tilt</div>
+            <button data-axis="a" data-dir="-1">&#8630;</button>
+            <input type="range" id="rngA" min="-45" max="45" step="1" value="0">
+            <button data-axis="a" data-dir="1">&#8631;</button>
+          </div>
+          <div class="pick" id="fixPick">
+            <span>re-fixture</span>
+            <button data-rot="x">tip end over end</button>
+            <button data-rot="y">roll on its side</button>
+            <button data-rot="z">spin flat</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="grp">
+        <summary>the part</summary>
+        <div class="grpbody">
+          <button class="wide" id="bagBtn">take the part off and bag it</button>
+          <button class="wide" id="scrapBtn">scrap the part and refill the bin</button>
+        </div>
+      </details>
+
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-label">print and job list</div>
+      <div class="jobs" id="jobList"></div>
+      <canvas id="print" width="440" height="300"></canvas>
+      <p class="spec" id="spec"></p>
+      <button class="wide" id="checkBtn">inspect the part against the print</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">finished parts and inventory</div>
+      <div class="tray" id="tray"></div>
+      <div class="bins" id="bins"></div>
+      <p class="hint">Loose parts pile up in the tray at the top. Drag one down onto its matching letter bin to stow it. Each bin holds a hundred, and a part will not go into the wrong letter.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">stock, top view</div>
+      <canvas id="top" width="440" height="380"></canvas>
+      <p class="hint">Power feed drives the table on its own at the set rate, the way the longitudinal feed box does on a real Bridgeport. Flip the switch on, pick a direction, and the table traverses until you shut it off or it runs out of travel, which is how you get an even finish across a face instead of the wobble you get cranking by hand. It respects the same crash rules, so with the spindle stopped it stops dead against the part instead of driving through it.</p>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+(function(){
+  var lim={x:[-120,120],y:[-80,80],z:[-15,70],a:[-45,45]};
+  var s={x:0,y:0,z:0,a:0,rpm:0};
+  var step=1;
+
+  var XS=1.45, ZS=3.0;
+  var PIVOT={x:300,y:110};
+  var TOOL_TIP=236;
+  var TABLE_LEFT=60, TABLE_RIGHT=430, TABLE_TOP=250, TT=22;
+  var TLEN=TABLE_RIGHT-TABLE_LEFT;
+  var BIN={x:20,y:470,w:640,h:96};
+
+  var TOOLS={
+    fine: {r:3, flute:16, label:'slot drill', shape:'flat'},
+    end:  {r:9, flute:20, label:'end mill',  shape:'flat'},
+    ball: {r:9, flute:18, label:'ball nose', shape:'ball'},
+    drill:{r:5, flute:30, label:'drill',     shape:'point'},
+    face: {r:22,flute:8,  label:'face mill', shape:'flat'}
+  };
+  var tool='end';
+
+  var B={nx:132,ny:84,nz:44};
+  var blanks=[
+    {kind:'square',cx:170,cy:518,w:132,h:44,label:'square bar'},
+    {kind:'round', cx:470,cy:518,w:132,h:44,label:'round bar'}
+  ];
+
+  var part={placed:false,kind:'square',nx:0,ny:0,nz:0,vox:null,hmap:null,offset:60,ghost:null};
+  var target={vox:null,nx:0,ny:0,nz:0};
+  var table={dmg:new Float32Array(TLEN)};
+  var machine={hp:100,xDead:false,yDead:false};
+  var chips=[],sparks=[];
+  var crashT=0,shakeT=0,shakeMag=0,deadMsg='',topDirty=true,printDirty=true;
+  var feed={on:false,dir:1,rate:12};
+  var holdMsg=0,lastT=0;
+
+  var JOBS=[
+    { name:'face the top flat',
+      spec:'Take the top of the square bar down eight units over the whole face. Nothing else is touched. The face mill is the sensible choice here.',
+      kind:'square',
+      f:function(x,y,z,n){ return z < n.nz-8; } },
+    { name:'slot across the top',
+      spec:'Cut a slot twenty wide down the middle of the length, fourteen deep, running the full travel of the part. An end mill is the right cutter.',
+      kind:'square',
+      f:function(x,y,z,n){ return !(Math.abs(y-(n.ny-1)/2)<=10 && z>=n.nz-14); } },
+    { name:'through hole in the centre',
+      spec:'One hole through the middle of the part, ten across, right through top to bottom. Use the drill and plunge Z.',
+      kind:'square',
+      f:function(x,y,z,n){
+        var dx=x-(n.nx-1)/2, dy=y-(n.ny-1)/2;
+        return !(Math.sqrt(dx*dx+dy*dy)<=5.5); } },
+    { name:'step on one end',
+      spec:'Drop one end of the part down eighteen for a length of forty, leaving a clean square shoulder. End mill.',
+      kind:'square',
+      f:function(x,y,z,n){ return !(x>n.nx-40 && z>=n.nz-18); } },
+    { name:'two sided channel',
+      spec:'A channel sixteen wide and twelve deep down the top, then the same again on the opposite face. You will have to unclamp and tip the part over to reach the second side.',
+      kind:'square',
+      f:function(x,y,z,n){
+        var m=Math.abs(y-(n.ny-1)/2)<=8;
+        return !((m&&z>=n.nz-12)||(m&&z<12)); } },
+    { name:'flat on the round bar',
+      spec:'Take a flat across the top of the round bar, down to the height of the bar centre, so it will sit still in a vice. Face mill or end mill.',
+      kind:'round',
+      f:function(x,y,z,n){ return z < n.nz/2; } }
+  ];
+  var job=0, done=[];
+
+  var cv=document.getElementById('machine'), ctx=cv.getContext('2d');
+  var tv=document.getElementById('top'), tctx=tv.getContext('2d');
+  var pv=document.getElementById('print'), pctx=pv.getContext('2d');
+  var sliceC=document.createElement('canvas'), sliceX=sliceC.getContext('2d');
+  var topC=document.createElement('canvas'), topX=topC.getContext('2d');
+  var statusEl=document.getElementById('status');
+  var hpBar=document.getElementById('hpBar'), hpTxt=document.getElementById('hpTxt');
+
+  var inputs={x:document.getElementById('inX'),y:document.getElementById('inY'),z:document.getElementById('inZ'),a:document.getElementById('inA')};
+  var ranges={x:document.getElementById('rngX'),y:document.getElementById('rngY'),z:document.getElementById('rngZ'),a:document.getElementById('rngA')};
+
+  var wheel={x:0,y:0,z:0}, spin=0;
+
+  var ALPHA='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var demo={on:false,phase:'idle',letter:0,mask:null,i:0,j:0,dir:1,shelf:[],eject:0,pass:1,stage:'rough'};
+
+  function demoMask(ch){
+    var c=document.createElement('canvas'); c.width=B.nx; c.height=B.ny;
+    var x=c.getContext('2d');
+    x.fillStyle='#000'; x.fillRect(0,0,B.nx,B.ny);
+    x.fillStyle='#fff'; x.textAlign='center'; x.textBaseline='middle';
+    x.font='bold '+(B.ny-6)+'px Arial';
+    x.lineJoin='round'; x.lineCap='round';
+    x.lineWidth=14; x.strokeStyle='#fff';
+    x.strokeText(ch,B.nx/2,B.ny/2+2);
+    x.fillText(ch,B.nx/2,B.ny/2+2);
+    var d=x.getImageData(0,0,B.nx,B.ny).data, m=new Uint8Array(B.nx*B.ny);
+    for(var k=0;k<m.length;k++) m[k]=d[k*4]>128?1:0;
+    return m;
+  }
+
+  function demoSetDepth(){
+    // floor level for this pass, never more than the flutes can handle
+    var L=Math.max(0,B.nz-demo.pass*12);
+    s.z=clamp((133.5-L)/ZS,lim.z[0],lim.z[1]);
+    wheel.z=s.z*40; inputs.z.value=s.z.toFixed(1); ranges.z.value=s.z;
+    return L;
+  }
+
+  function demoLoad(){
+    makePart('square');
+    part.placed=true; part.offset=119; part.fall=0;
+    demo.mask=demoMask(ALPHA[demo.letter%26]);
+    demo.i=-16; demo.j=1; demo.dir=1; demo.eject=0; demo.pass=1; demo.stage='rough';
+    s.rpm=0;
+    s.x=clamp((300-TABLE_LEFT-part.offset-demo.i)/XS,lim.x[0],lim.x[1]);
+    s.y=clamp(demo.j-part.ny/2,lim.y[0],lim.y[1]);
+    demoSetDepth();
+    wheel.x=s.x*20; wheel.y=s.y*20;
+    ['x','y','z'].forEach(function(a){ inputs[a].value=s[a].toFixed(1); ranges[a].value=s[a]; });
+    demoSetTool('end',900);
+    demo.phase='cut';
+  }
+
+  function demoSafe(i,j,r){
+    for(var b=Math.floor(j-r-1);b<=j+r+1;b++){
+      if(b<0||b>=part.ny) continue;
+      for(var a=Math.floor(i-r-1);a<=i+r+1;a++){
+        if(a<0||a>=part.nx) continue;
+        if(demo.mask[b*part.nx+a]) return false;
+      }
+    }
+    return true;
+  }
+
+  function materialUnder(i,j,r){
+    for(var b=Math.floor(j-r);b<=j+r;b++){
+      if(b<0||b>=part.ny) continue;
+      for(var a=Math.floor(i-r);a<=i+r;a++){
+        if(a<0||a>=part.nx) continue;
+        if(part.hmap[b*part.nx+a]>=0) return true;
+      }
+    }
+    return false;
+  }
+
+  function demoSetTool(name,rpm){
+    tool=name;
+    document.querySelectorAll('#toolPick button').forEach(function(o){
+      o.classList.toggle('on',o.dataset.tool===name);
+    });
+    s.rpm=rpm;
+    document.getElementById('rngRpm').value=rpm;
+    document.getElementById('rpmOut').textContent=rpm;
+  }
+
+  function demoStartStage(stage){
+    demo.stage=stage;
+    demo.i=-16; demo.j=1; demo.dir=1;
+    s.rpm=0;
+    demoSetDepth();
+    if(stage==='rough') demoSetTool('end',900);
+    else demoSetTool('fine',2200);
+  }
+
+  function demoStep(dt){
+    if(demo.phase==='load'){ demoLoad(); return; }
+    if(demo.phase==='cut'){
+      var T=TOOLS[tool];
+      var stepover=(demo.stage==='rough')?12:4;
+      var margin=T.r+2;
+      var budget=dt;
+      while(budget>0){
+        var cutting=materialUnder(demo.i,demo.j,T.r+1);
+        var rate=cutting?((demo.stage==='rough')?26:38):260;
+        var seg=Math.min(1.2,rate*budget);
+        budget-=seg/rate;
+        demo.i+=seg*demo.dir;
+        s.x=clamp((300-TABLE_LEFT-part.offset-demo.i)/XS,lim.x[0],lim.x[1]);
+        s.y=clamp(demo.j-part.ny/2,lim.y[0],lim.y[1]);
+        if(demoSafe(demo.i,demo.j,margin)) cutPart(toolTip());
+        if(demo.i>part.nx+T.r+4||demo.i<-(T.r+4)){
+          demo.dir=-demo.dir; demo.j+=stepover;
+          demo.i=clamp(demo.i,-(T.r+4),part.nx+T.r+4);
+          if(demo.j>part.ny+2){
+            if(demo.stage==='rough'){ demoStartStage('finish'); }
+            else if(B.nz-demo.pass*12>0){ demo.pass++; demoStartStage('rough'); }
+            else demo.phase='eject';
+            break;
+          }
+        }
+      }
+      inputs.x.value=s.x.toFixed(1); ranges.x.value=s.x;
+      inputs.y.value=s.y.toFixed(1); ranges.y.value=s.y;
+      wheel.x=s.x*20; wheel.y=s.y*20;
+      return;
+    }
+    if(demo.phase==='eject'){
+      if(demo.eject===0){ shelveLetter(); s.rpm=0;
+        document.getElementById('rngRpm').value=0;
+        document.getElementById('rpmOut').textContent=0;
+        s.z=clamp(s.z-14,lim.z[0],lim.z[1]);
+        wheel.z=s.z*40; inputs.z.value=s.z.toFixed(1); ranges.z.value=s.z; }
+      demo.eject++;
+      part.offset+=2.5;
+      if(part.offset>TLEN-30) part.fall+=4;
+      if(part.fall>120){ part.placed=false; demo.letter++; demo.phase='load'; }
+      return;
+    }
+  }
+
+  function shelveLetter(){
+    var c=document.createElement('canvas'); c.width=part.nx; c.height=part.ny;
+    var x=c.getContext('2d'), im=x.createImageData(part.nx,part.ny), d=im.data;
+    for(var k=0;k<part.nx*part.ny;k++){
+      var h=part.hmap[k], o=k*4;
+      if(h<0){ d[o+3]=0; }
+      else { d[o]=169;d[o+1]=163;d[o+2]=146;d[o+3]=255; }
+    }
+    x.putImageData(im,0,0);
+    demo.shelf.push({c:c,ch:ALPHA[demo.letter%26]});
+    if(demo.shelf.length>9) demo.shelf.shift();
+    addToTray(ALPHA[demo.letter%26],c);
+  }
+
+  function drawShelf(){
+    if(!demo.shelf.length) return;
+    var w=54, h=36, x0=BIN.x+14, y0=BIN.y+38;
+    ctx.fillStyle='#65675F'; ctx.font='12px Trebuchet MS';
+    ctx.fillText('finished parts',BIN.x+14,BIN.y+32);
+    for(var i=0;i<demo.shelf.length;i++){
+      var sx=x0+i*(w+10);
+      ctx.fillStyle='#C9C3B2'; ctx.fillRect(sx-3,y0+h+2,w+6,4);
+      ctx.drawImage(demo.shelf[i].c,sx,y0,w,h);
+    }
+  }
+
+  // inventory, twenty six bins holding up to a hundred each
+  var CAP=100;
+  var inv={}, tray=[];
+  for(var ai=0;ai<26;ai++) inv[ALPHA[ai]]=0;
+
+  function buildBins(){
+    var el=document.getElementById('bins');
+    el.innerHTML='';
+    for(var i=0;i<26;i++){
+      var ch=ALPHA[i];
+      var d=document.createElement('div');
+      d.className='bin'+(inv[ch]>0?' has':'');
+      d.dataset.ch=ch;
+      d.innerHTML='<em>'+ch+'</em><i>'+inv[ch]+' of '+CAP+'</i>';
+      el.appendChild(d);
+    }
+  }
+
+  function partThumb(){
+    var c=document.createElement('canvas'); c.width=part.nx; c.height=part.ny;
+    var x=c.getContext('2d'), im=x.createImageData(part.nx,part.ny), d=im.data;
+    for(var k=0;k<part.nx*part.ny;k++){
+      var h=part.hmap[k], o=k*4;
+      if(h<0){ d[o+3]=0; }
+      else { d[o]=169;d[o+1]=163;d[o+2]=146;d[o+3]=255; }
+    }
+    x.putImageData(im,0,0);
+    return c;
+  }
+
+  // compare the finished part against every letter to work out what it is
+  function identify(){
+    var best='', bestScore=0;
+    for(var i=0;i<26;i++){
+      var m=demoMask(ALPHA[i]), hit=0, miss=0, tot=0;
+      for(var y=0;y<part.ny;y++) for(var x=0;x<part.nx;x++){
+        var solid=part.hmap[y*part.nx+x]>=0?1:0, want=m[y*B.nx+x];
+        if(want){ tot++; if(solid) hit++; }
+        else if(solid) miss++;
+      }
+      var sc=tot?(hit/tot)-(miss/(part.nx*part.ny)):0;
+      if(sc>bestScore){ bestScore=sc; best=ALPHA[i]; }
+    }
+    return bestScore>0.55?best:'';
+  }
+
+  function addToTray(ch,canvas){
+    tray.push({ch:ch,c:canvas});
+    if(tray.length>24) tray.shift();
+    renderTray();
+  }
+
+  function renderTray(){
+    var el=document.getElementById('tray');
+    el.innerHTML='';
+    if(!tray.length){
+      el.innerHTML='<span style="font-size:13px;color:#65675F;padding:6px">no loose parts, finish something and it lands here</span>';
+      return;
+    }
+    tray.forEach(function(t,i){
+      var d=document.createElement('div');
+      d.className='chip'; d.dataset.i=i;
+      var c=document.createElement('canvas'); c.width=t.c.width; c.height=t.c.height;
+      c.getContext('2d').drawImage(t.c,0,0);
+      d.appendChild(c);
+      var b=document.createElement('b'); b.textContent=t.ch||'?';
+      d.appendChild(b);
+      el.appendChild(d);
+    });
+  }
+
+  function stow(i,ch){
+    var t=tray[i];
+    if(!t) return false;
+    if(!t.ch||t.ch!==ch) return false;
+    if(inv[ch]>=CAP) return false;
+    inv[ch]++; tray.splice(i,1);
+    renderTray(); buildBins();
+    return true;
+  }
+
+  var drag=null;
+  document.getElementById('tray').addEventListener('pointerdown',function(e){
+    var chip=e.target.closest('.chip');
+    if(!chip) return;
+    var r=chip.getBoundingClientRect();
+    var fly=chip.cloneNode(true);
+    fly.classList.add('flying');
+    fly.style.left=r.left+'px'; fly.style.top=r.top+'px';
+    fly.style.width=r.width+'px'; fly.style.height=r.height+'px';
+    document.body.appendChild(fly);
+    drag={i:Number(chip.dataset.i),fly:fly,dx:e.clientX-r.left,dy:e.clientY-r.top};
+    e.preventDefault();
+  });
+  window.addEventListener('pointermove',function(e){
+    if(!drag) return;
+    drag.fly.style.left=(e.clientX-drag.dx)+'px';
+    drag.fly.style.top=(e.clientY-drag.dy)+'px';
+    document.querySelectorAll('.bin').forEach(function(b){ b.classList.remove('hot','bad'); });
+    var el=document.elementFromPoint(e.clientX,e.clientY);
+    var bin=el&&el.closest?el.closest('.bin'):null;
+    if(bin){
+      var t=tray[drag.i];
+      var ok=t&&t.ch===bin.dataset.ch&&inv[bin.dataset.ch]<CAP;
+      bin.classList.add(ok?'hot':'bad');
+    }
+  });
+  window.addEventListener('pointerup',function(e){
+    if(!drag) return;
+    var el=document.elementFromPoint(e.clientX,e.clientY);
+    var bin=el&&el.closest?el.closest('.bin'):null;
+    if(bin) stow(drag.i,bin.dataset.ch);
+    document.querySelectorAll('.bin').forEach(function(b){ b.classList.remove('hot','bad'); });
+    drag.fly.remove(); drag=null;
+  });
+
+  // a cutter can only eat so much metal per second, so feed is rationed
+  var allow=0, feedClamped=0;
+  function feedLimit(){ return 2+s.rpm*0.018; }   // units of travel per second
+  function tickAllow(dt){
+    allow=Math.min(allow+feedLimit()*dt, feedLimit()*0.25);
+    if(feedClamped>0) feedClamped--;
+  }
+  function engagedNow(){ return part.placed && interference(s)>0; }
+
+  var QUILL_R=16, QUILL_DROP=32;   // the quill nose sits this far above the tool tip
+
+  // highest voxel level the flutes can reach, above this is shank, not cutter
+  function zCeil(st,tipy){
+    var tTop=TABLE_TOP+120-st.z*ZS;
+    return Math.floor(tTop-(tipy-TOOLS[tool].flute)-0.5);
+  }
+
+  // material touching the plain shank or the quill nose, which cuts nothing
+  function shankHit(st){
+    if(!part.placed) return 0;
+    var T=TOOLS[tool];
+    var tip={x:PIVOT.x-(TOOL_TIP-PIVOT.y)*Math.sin(st.a*Math.PI/180),
+             y:PIVOT.y+(TOOL_TIP-PIVOT.y)*Math.cos(st.a*Math.PI/180)};
+    var left=TABLE_LEFT+st.x*XS+part.offset;
+    var lx=tip.x-left, ly=part.ny/2+st.y;
+    var zc=zCeil(st,tip.y);
+    var tTop=TABLE_TOP+120-st.z*ZS;
+    var zq=Math.floor(tTop-(tip.y-QUILL_DROP)-0.5);
+    var worst=0, rs=T.r+1, R=Math.ceil(Math.max(rs,QUILL_R));
+    for(var j=Math.floor(ly-R);j<=ly+R;j++){
+      if(j<0||j>=part.ny) continue;
+      for(var i=Math.floor(lx-R);i<=lx+R;i++){
+        if(i<0||i>=part.nx) continue;
+        var dx=i+0.5-lx, dy=j+0.5-ly, rad=Math.sqrt(dx*dx+dy*dy);
+        var top=part.hmap[j*part.nx+i];
+        if(top<0) continue;
+        if(rad<=rs && top>zc){ var p1=top-zc; if(p1>worst) worst=p1; }
+        if(rad<=QUILL_R && top>zq){ var p2=top-zq; if(p2>worst) worst=p2; }
+      }
+    }
+    return worst;
+  }
+
+  function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+  function kneeShift(){return 120 - s.z*ZS;}
+  function tableTopY(){return TABLE_TOP+kneeShift();}
+  function partLeft(){return TABLE_LEFT + s.x*XS + part.offset;}
+  function idx(x,y,z){return (z*part.ny+y)*part.nx+x;}
+
+  function rebuildH(){
+    part.hmap=new Int16Array(part.nx*part.ny);
+    for(var y=0;y<part.ny;y++) for(var x=0;x<part.nx;x++){
+      var t=-1;
+      for(var z=part.nz-1;z>=0;z--){ if(part.vox[idx(x,y,z)]){ t=z; break; } }
+      part.hmap[y*part.nx+x]=t;
+    }
+    topDirty=true;
+  }
+
+  function blankVox(kind,nx,ny,nz){
+    var v=new Uint8Array(nx*ny*nz), x,y,z;
+    if(kind==='round'){
+      var cyc=(ny-1)/2, czc=(nz-1)/2, R=Math.min(cyc,czc);
+      for(z=0;z<nz;z++) for(y=0;y<ny;y++){
+        var dy=y-cyc, dz=z-czc;
+        if(Math.sqrt(dy*dy+dz*dz)<=R+0.5) for(x=0;x<nx;x++) v[(z*ny+y)*nx+x]=1;
+      }
+    } else v.fill(1);
+    return v;
+  }
+
+  function buildTarget(){
+    var J=JOBS[job], n={nx:B.nx,ny:B.ny,nz:B.nz};
+    var base=blankVox(J.kind,n.nx,n.ny,n.nz);
+    var v=new Uint8Array(n.nx*n.ny*n.nz);
+    for(var z=0;z<n.nz;z++) for(var y=0;y<n.ny;y++) for(var x=0;x<n.nx;x++){
+      var k=(z*n.ny+y)*n.nx+x;
+      if(base[k]&&J.f(x,y,z,n)) v[k]=1;
+    }
+    target={vox:v,nx:n.nx,ny:n.ny,nz:n.nz};
+    printDirty=true;
+  }
+
+  function makePart(kind){
+    part.nx=B.nx; part.ny=B.ny; part.nz=B.nz;
+    part.vox=blankVox(kind,part.nx,part.ny,part.nz);
+    part.kind=kind;
+    var sh=lowest(part.vox,part.nx,part.ny,part.nz);
+    if(sh>0) part.vox=shiftDown(part.vox,part.nx,part.ny,part.nz,sh);
+    rebuildH();
+  }
+
+  function lowest(v,nx,ny,nz){
+    var plane=nx*ny;
+    for(var z=0;z<nz;z++) for(var k=0;k<plane;k++) if(v[z*plane+k]) return z;
+    return 0;
+  }
+  function shiftDown(v,nx,ny,nz,sh){
+    var plane=nx*ny, nv=new Uint8Array(v.length);
+    nv.set(v.subarray(sh*plane),0);
+    return nv;
+  }
+  function rotArr(v,nx,ny,nz,kind){
+    var Nx,Ny,Nz,x,y,z,tx,ty,tz;
+    if(kind==='x'){Nx=nx;Ny=nz;Nz=ny;}
+    else if(kind==='y'){Nx=nz;Ny=ny;Nz=nx;}
+    else {Nx=ny;Ny=nx;Nz=nz;}
+    var nv=new Uint8Array(Nx*Ny*Nz);
+    for(z=0;z<nz;z++) for(y=0;y<ny;y++) for(x=0;x<nx;x++){
+      if(!v[(z*ny+y)*nx+x]) continue;
+      if(kind==='x'){tx=x;ty=nz-1-z;tz=y;}
+      else if(kind==='y'){tx=nz-1-z;ty=y;tz=x;}
+      else {tx=ny-1-y;ty=x;tz=z;}
+      nv[(tz*Ny+ty)*Nx+tx]=1;
+    }
+    return {v:nv,nx:Nx,ny:Ny,nz:Nz};
+  }
+
+  function rotate(kind){
+    var r=rotArr(part.vox,part.nx,part.ny,part.nz,kind);
+    var sh=lowest(r.v,r.nx,r.ny,r.nz);
+    if(sh>0) r.v=shiftDown(r.v,r.nx,r.ny,r.nz,sh);
+    part.vox=r.v; part.nx=r.nx; part.ny=r.ny; part.nz=r.nz;
+
+    if(target.vox){
+      var t=rotArr(target.vox,target.nx,target.ny,target.nz,kind);
+      if(sh>0) t.v=shiftDown(t.v,t.nx,t.ny,t.nz,sh);
+      target={vox:t.v,nx:t.nx,ny:t.ny,nz:t.nz};
+      printDirty=true;
+    }
+    rebuildH();
+    part.offset=clamp(part.offset,6,TLEN-part.nx-6);
+  }
+
+  function toolTip(){
+    var a=s.a*Math.PI/180, dy=TOOL_TIP-PIVOT.y;
+    return {x:PIVOT.x-dy*Math.sin(a), y:PIVOT.y+dy*Math.cos(a)};
+  }
+  function bottomOffset(rad){
+    var T=TOOLS[tool];
+    if(T.shape==='ball') return T.r-Math.sqrt(Math.max(0,T.r*T.r-rad*rad));
+    if(T.shape==='point') return rad*1.1;
+    return 0;
+  }
+  function zFloor(st,rad,tipy){
+    var tTop=TABLE_TOP+120-st.z*ZS;
+    return Math.ceil(tTop-(tipy-bottomOffset(rad))-0.5);
+  }
+
+  function interference(st){
+    var T=TOOLS[tool], worst=0, i, j;
+    var tip={x:PIVOT.x-(TOOL_TIP-PIVOT.y)*Math.sin(st.a*Math.PI/180),
+             y:PIVOT.y+(TOOL_TIP-PIVOT.y)*Math.cos(st.a*Math.PI/180)};
+    var r=Math.ceil(T.r);
+    if(part.placed){
+      var left=TABLE_LEFT+st.x*XS+part.offset;
+      var lx=tip.x-left, ly=part.ny/2+st.y;
+      for(j=Math.floor(ly-r);j<=ly+r;j++){
+        if(j<0||j>=part.ny) continue;
+        for(i=Math.floor(lx-r);i<=lx+r;i++){
+          if(i<0||i>=part.nx) continue;
+          var dx=i+0.5-lx, dy=j+0.5-ly, rad=Math.sqrt(dx*dx+dy*dy);
+          if(rad>T.r) continue;
+          var zf=zFloor(st,rad,tip.y), top=part.hmap[j*part.nx+i];
+          if(top>=zf){ var pen=top-zf+1; if(pen>worst) worst=pen; }
+        }
+      }
+    }
+    var tTop=TABLE_TOP+120-st.z*ZS;
+    var tl=tip.x-(TABLE_LEFT+st.x*XS);
+    for(i=Math.floor(tl-r);i<=tl+r;i++){
+      if(i<0||i>=TLEN) continue;
+      var d2=Math.abs(i+0.5-tl);
+      if(d2>T.r) continue;
+      var pen2=(tip.y-bottomOffset(d2))-(tTop+table.dmg[i]);
+      if(pen2>worst) worst=pen2;
+    }
+    var sh=shankHit(st);
+    if(sh>worst) worst=sh;
+    return worst;
+  }
+
+  function axisLocked(a){ return (a==='x'&&machine.xDead)||(a==='y'&&machine.yDead); }
+
+  function setAxis(a,val){
+    var prev=s[a];
+    var next=clamp(Number(val)||0,lim[a][0],lim[a][1]);
+    if(axisLocked(a)&&next!==prev){ inputs[a].value=prev.toFixed(1); ranges[a].value=prev; return false; }
+    if(s.rpm===0&&next!==prev){
+      var before=interference(s);
+      var trial={x:s.x,y:s.y,z:s.z,a:s.a}; trial[a]=next;
+      var after=interference(trial);
+      if(after>0.2&&after>before+0.001){
+        crashT=40; shakeT=18; shakeMag=5;
+        inputs[a].value=prev.toFixed(1); ranges[a].value=prev; return false;
+      }
+    }
+    s[a]=next;
+    if(s.rpm>0&&a!=='a'&&part.placed&&engagedNow()){
+      s[a]=prev;
+      var scale=(a==='x')?XS:((a==='z')?ZS:1);
+      var plunge=(a==='z')?2.8:1;
+      var want=Math.abs(next-prev)*scale*plunge;
+      var got=Math.min(want,allow);
+      allow-=got;
+      if(got<want-0.0001) feedClamped=30;
+      var move=(got/scale/plunge)*(next>prev?1:-1);
+      s[a]=prev+move;
+    }
+    inputs[a].value=s[a].toFixed(1);
+    ranges[a].value=s[a];
+    if(a==='x') wheel.x=s.x*20;
+    if(a==='y') wheel.y=s.y*20;
+    if(a==='z') wheel.z=s.z*40;
+    return true;
+  }
+
+  function cutPart(tip){
+    if(!part.placed) return;
+    var T=TOOLS[tool], removed=0, r=Math.ceil(T.r);
+    var lx=tip.x-partLeft(), ly=part.ny/2+s.y;
+    var zc=Math.min(part.nz-1,zCeil(s,tip.y));
+    for(var j=Math.floor(ly-r);j<=ly+r;j++){
+      if(j<0||j>=part.ny) continue;
+      for(var i=Math.floor(lx-r);i<=lx+r;i++){
+        if(i<0||i>=part.nx) continue;
+        var dx=i+0.5-lx, dy=j+0.5-ly, rad=Math.sqrt(dx*dx+dy*dy);
+        if(rad>T.r) continue;
+        var zf=Math.max(0,zFloor(s,rad,tip.y));
+        if(zf>zc) continue;
+        var hk=j*part.nx+i;
+        if(part.hmap[hk]<zf) continue;
+        for(var z=zf;z<=zc;z++){
+          var k=idx(i,j,z);
+          if(part.vox[k]){ part.vox[k]=0; removed++; }
+        }
+        var nt=-1;
+        for(var z2=part.nz-1;z2>=0;z2--){ if(part.vox[idx(i,j,z2)]){ nt=z2; break; } }
+        part.hmap[hk]=nt;
+      }
+    }
+    if(removed>0){ topDirty=true; spawnChips(tip,Math.min(6,1+removed/90)); }
+  }
+
+  function checkShankCrash(){
+    if(!part.placed||s.rpm<=0) return;
+    if(shankHit(s)<=0.5) return;
+    machine.hp=Math.max(0,machine.hp-6);
+    crashT=70; shakeT=34; shakeMag=8;
+    spawnSparks(toolTip(),10);
+    s.rpm=0;
+    document.getElementById('rngRpm').value=0;
+    document.getElementById('rpmOut').textContent=0;
+    if(demo.on){ demo.on=false; demo.phase='idle';
+      document.getElementById('demoBtn').textContent='run demo mode, cut the alphabet'; }
+    setStatus('tool buried past its flutes, the shank hit the work and the spindle stalled',true);
+    holdMsg=200;
+  }
+
+  function cutTable(tip){
+    var T=TOOLS[tool], tTop=tableTopY();
+    if(tip.y-tTop<=0) return;
+    var tl=tip.x-(TABLE_LEFT+s.x*XS), hit=0, r=Math.ceil(T.r);
+    for(var i=Math.floor(tl-r);i<=tl+r;i++){
+      if(i<0||i>=TLEN) continue;
+      var d=Math.abs(i+0.5-tl);
+      if(d>T.r) continue;
+      if(part.placed){
+        var li=Math.round(TABLE_LEFT+s.x*XS+i-partLeft());
+        var lj=clamp(Math.round(part.ny/2+s.y),0,part.ny-1);
+        if(li>=0&&li<part.nx&&part.hmap[lj*part.nx+li]>=0) continue;
+      }
+      var pen=(tip.y-tTop)-bottomOffset(d);
+      if(pen<=0) continue;
+      var want=Math.min(TT,pen);
+      if(want>table.dmg[i]){ hit+=want-table.dmg[i]; table.dmg[i]=want; }
+      if(table.dmg[i]>=TT-1.5&&!machine.xDead){
+        machine.xDead=true; machine.hp=Math.min(machine.hp,12);
+        deadMsg='X leadscrew milled through, the table will not traverse';
+        shakeT=50; shakeMag=9; feed.on=false; syncFeed();
+      }
+    }
+    if(hit>0.05){
+      machine.hp=Math.max(0,machine.hp-hit*0.9);
+      crashT=18; shakeT=Math.max(shakeT,10); shakeMag=Math.max(shakeMag,4);
+      spawnSparks(tip,3);
+      if(machine.hp<40&&!machine.yDead){
+        machine.yDead=true; deadMsg='saddle screw chewed up, Y will not feed';
+        shakeT=40; shakeMag=8;
+      }
+    }
+  }
+
+  function spawnChips(tip,n){
+    for(var i=0;i<n;i++){
+      var side=Math.random()<0.5?-1:1;
+      chips.push({x:tip.x+side*(2+Math.random()*6),y:tip.y-2-Math.random()*6,
+        vx:side*(1.2+Math.random()*2.6),vy:-(1.4+Math.random()*2.8),life:26+Math.random()*22});
+    }
+    if(chips.length>260) chips.splice(0,chips.length-260);
+  }
+  function spawnSparks(tip,n){
+    for(var i=0;i<n;i++){
+      var ang=-Math.PI/2+(Math.random()-0.5)*2.6, sp=2+Math.random()*4;
+      sparks.push({x:tip.x,y:tip.y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:16+Math.random()*14});
+    }
+    if(sparks.length>200) sparks.splice(0,sparks.length-200);
+  }
+  function stepParts(){
+    var i,c;
+    for(i=chips.length-1;i>=0;i--){c=chips[i];c.x+=c.vx;c.y+=c.vy;c.vy+=0.22;c.life--;if(c.life<=0||c.y>cv.height)chips.splice(i,1);}
+    for(i=sparks.length-1;i>=0;i--){c=sparks[i];c.x+=c.vx;c.y+=c.vy;c.vy+=0.3;c.life--;if(c.life<=0)sparks.splice(i,1);}
+  }
+
+  function sectionIndex(){ return clamp(Math.round(part.ny/2+s.y),0,part.ny-1); }
+
+  function toolPath(T){
+    ctx.beginPath();
+    if(T.shape==='ball'){
+      ctx.moveTo(300-T.r,214); ctx.lineTo(300+T.r,214);
+      ctx.lineTo(300+T.r,TOOL_TIP-T.r); ctx.arc(300,TOOL_TIP-T.r,T.r,0,Math.PI); ctx.closePath();
+    } else if(T.shape==='point'){
+      ctx.moveTo(300-T.r,214); ctx.lineTo(300+T.r,214);
+      ctx.lineTo(300+T.r,TOOL_TIP-T.r*1.1); ctx.lineTo(300,TOOL_TIP);
+      ctx.lineTo(300-T.r,TOOL_TIP-T.r*1.1); ctx.closePath();
+    } else {
+      ctx.moveTo(300-T.r,214); ctx.lineTo(300+T.r,214);
+      ctx.lineTo(300+T.r,TOOL_TIP); ctx.lineTo(300-T.r,TOOL_TIP); ctx.closePath();
+    }
+  }
+
+  function drawHead(){
+    var T=TOOLS[tool];
+    ctx.save();
+    ctx.translate(PIVOT.x,PIVOT.y); ctx.rotate(s.a*Math.PI/180); ctx.translate(-PIVOT.x,-PIVOT.y);
+    ctx.fillStyle='#3E4C37'; ctx.fillRect(266,74,68,72);
+    ctx.fillStyle='#9A9C97'; ctx.fillRect(284,146,32,58);
+    ctx.fillStyle='#2B2924'; ctx.fillRect(292,204,16,12);
+    ctx.fillStyle=crashT>0?'#A84A2A':'#2B2924';
+    toolPath(T); ctx.fill();
+    ctx.strokeStyle='#F0EDE4'; ctx.lineWidth=1.3;
+    for(var f=0;f<3;f++){
+      var ph=(spin/360+f/3)%1, fx=300-T.r+ph*T.r*2;
+      ctx.beginPath(); ctx.moveTo(fx,216); ctx.lineTo(fx-T.r*0.5,TOOL_TIP-8); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawPartSection(behind){
+    if(!part.placed) return;
+    var left=partLeft(), bottom=tableTopY()+(part.fall||0), j=sectionIndex();
+    if(sliceC.width!==part.nx||sliceC.height!==part.nz){ sliceC.width=part.nx; sliceC.height=part.nz; }
+    var im=sliceX.createImageData(part.nx,part.nz), d=im.data;
+    for(var z=0;z<part.nz;z++) for(var x=0;x<part.nx;x++){
+      var o=((part.nz-1-z)*part.nx+x)*4;
+      if(part.vox[idx(x,j,z)]){
+        var sh=160-(part.nz-1-z)*0.5;
+        d[o]=sh; d[o+1]=sh-8; d[o+2]=sh-26; d[o+3]=behind?230:255;
+      } else d[o+3]=0;
+    }
+    sliceX.putImageData(im,0,0);
+    ctx.strokeStyle='rgba(43,41,36,0.25)'; ctx.lineWidth=1; ctx.setLineDash([3,4]);
+    ctx.strokeRect(left,bottom-part.nz,part.nx,part.nz); ctx.setLineDash([]);
+    ctx.drawImage(sliceC,left,bottom-part.nz);
+    ctx.fillStyle='#65675F';
+    ctx.fillRect(left-11,bottom-14,15,14);
+    ctx.fillRect(left+part.nx-4,bottom-14,15,14);
+    if(behind){
+      var T=TOOLS[tool];
+      ctx.save();
+      ctx.translate(PIVOT.x,PIVOT.y); ctx.rotate(s.a*Math.PI/180); ctx.translate(-PIVOT.x,-PIVOT.y);
+      ctx.strokeStyle='rgba(43,41,36,0.6)'; ctx.lineWidth=1.2; ctx.setLineDash([4,4]);
+      toolPath(T); ctx.stroke(); ctx.setLineDash([]);
+      ctx.restore();
+    }
+  }
+
+  function drawWheel(x,y,r,rot,dead){
+    ctx.save(); ctx.translate(x,y); ctx.rotate(rot*Math.PI/180);
+    ctx.fillStyle=dead?'#9A8478':'#C9C3B2'; ctx.strokeStyle='#2B2924'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-r,0); ctx.lineTo(r,0); ctx.moveTo(0,-r); ctx.lineTo(0,r); ctx.stroke();
+    ctx.fillStyle='#2B2924'; ctx.beginPath(); ctx.arc(0,0,r*0.2,0,Math.PI*2); ctx.fill();
+    if(dead){ ctx.strokeStyle='#A84A2A'; ctx.lineWidth=4;
+      ctx.beginPath(); ctx.moveTo(-r*0.7,-r*0.7); ctx.lineTo(r*0.7,r*0.7); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  function drawBlank(kind,x,y,w,h){
+    ctx.save(); ctx.translate(x,y);
+    ctx.fillStyle='#A9A392'; ctx.strokeStyle='#2B2924'; ctx.lineWidth=2;
+    if(kind==='round'){
+      ctx.beginPath();
+      ctx.moveTo(-w/2+h/2,-h/2); ctx.lineTo(w/2-h/2,-h/2);
+      ctx.arc(w/2-h/2,0,h/2,-Math.PI/2,Math.PI/2);
+      ctx.lineTo(-w/2+h/2,h/2);
+      ctx.arc(-w/2+h/2,0,h/2,Math.PI/2,-Math.PI/2);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else { ctx.fillRect(-w/2,-h/2,w,h); ctx.strokeRect(-w/2,-h/2,w,h); }
+    ctx.restore();
+  }
+
+  function drawFeedBox(tx,ks){
+    // little feed box hung off the end of the table
+    var bx=TABLE_RIGHT+tx+6, by=TABLE_TOP+ks+26;
+    ctx.fillStyle=feed.on?'#A84A2A':'#65675F';
+    ctx.fillRect(bx,by,34,26);
+    ctx.strokeStyle='#2B2924'; ctx.lineWidth=2; ctx.strokeRect(bx,by,34,26);
+    ctx.fillStyle='#F0EDE4'; ctx.font='10px Trebuchet MS';
+    ctx.fillText(feed.on?'FEED':'off',bx+6,by+17);
+  }
+
+  function drawMachine(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.save();
+    if(shakeT>0){
+      var m=shakeMag*(shakeT/24);
+      ctx.translate((Math.random()-0.5)*m*2,(Math.random()-0.5)*m*2);
+      ctx.rotate((Math.random()-0.5)*0.008*m);
+    }
+    ctx.fillStyle='#65675F'; ctx.fillRect(40,438,400,34);
+    ctx.fillStyle='#57694B'; ctx.fillRect(70,40,80,400);
+    ctx.fillStyle='#3E4C37'; ctx.fillRect(70,40,16,400);
+    ctx.fillStyle='#57694B'; ctx.fillRect(150,62,158,36);
+
+    var ks=kneeShift(), tx=s.x*XS, i;
+    ctx.fillStyle='#9A9C97'; ctx.fillRect(95,270+ks,100,110);
+    ctx.fillStyle='#65675F'; ctx.fillRect(95,270+ks,100,12);
+    ctx.fillStyle='#65675F'; ctx.fillRect(90,272+ks,240,20);
+
+    var tTop=TABLE_TOP+ks;
+    ctx.fillStyle='#DDD8CB'; ctx.beginPath();
+    ctx.moveTo(TABLE_LEFT+tx,tTop+table.dmg[0]);
+    for(i=0;i<TLEN;i++) ctx.lineTo(TABLE_LEFT+tx+i,tTop+table.dmg[i]);
+    ctx.lineTo(TABLE_RIGHT+tx,tTop+TT); ctx.lineTo(TABLE_LEFT+tx,tTop+TT);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='#2B2924'; ctx.lineWidth=1.5; ctx.stroke();
+
+    ctx.strokeStyle=machine.xDead?'#A84A2A':'#65675F';
+    ctx.lineWidth=machine.xDead?3:2; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(TABLE_LEFT+tx,tTop+TT-4); ctx.lineTo(TABLE_RIGHT+tx,tTop+TT-4); ctx.stroke();
+    ctx.setLineDash([]);
+
+    drawFeedBox(tx,ks);
+    drawWheel(TABLE_RIGHT+26+tx,tTop+11,21,wheel.x,machine.xDead);
+    drawWheel(118,300+ks,19,wheel.y,machine.yDead);
+    drawWheel(215,330+ks,25,wheel.z,false);
+
+    var behind=part.placed&&(part.ny/2+s.y)>1;
+    if(behind) drawHead();
+    drawPartSection(behind);
+
+    ctx.fillStyle='#D3CEC0'; ctx.fillRect(BIN.x,BIN.y,BIN.w,BIN.h);
+    ctx.strokeStyle='#65675F'; ctx.lineWidth=2; ctx.strokeRect(BIN.x,BIN.y,BIN.w,BIN.h);
+    ctx.fillStyle='#65675F'; ctx.font='13px Trebuchet MS';
+    if(!part.placed){
+      ctx.fillText('stock bin, drag a blank up onto the table',BIN.x+12,BIN.y+20);
+      blanks.forEach(function(b){
+        drawBlank(b.kind,b.cx,b.cy,b.w,b.h);
+        ctx.fillStyle='#65675F'; ctx.font='12px Trebuchet MS';
+        ctx.fillText(b.label,b.cx-30,b.cy+40);
+      });
+    } else ctx.fillText('bin empty, one part clamped on the table',BIN.x+12,BIN.y+20);
+    drawShelf();
+
+    if(part.ghost){ ctx.globalAlpha=.75; drawBlank(part.ghost.kind,part.ghost.x,part.ghost.y,B.nx,B.nz); ctx.globalAlpha=1; }
+    if(!behind) drawHead();
+    ctx.fillStyle='#B5760D'; ctx.beginPath(); ctx.arc(PIVOT.x,PIVOT.y,3.5,0,Math.PI*2); ctx.fill();
+
+    var c;
+    for(i=0;i<chips.length;i++){c=chips[i];
+      ctx.globalAlpha=Math.max(0,Math.min(1,c.life/26)); ctx.fillStyle='#8C6A2F'; ctx.fillRect(c.x,c.y,2.4,2.4);}
+    for(i=0;i<sparks.length;i++){c=sparks[i];
+      ctx.globalAlpha=Math.max(0,Math.min(1,c.life/16)); ctx.fillStyle='#E0912B'; ctx.fillRect(c.x,c.y,3,3);}
+    ctx.globalAlpha=1;
+    ctx.restore();
+
+    if(crashT>0){
+      ctx.fillStyle='rgba(168,74,42,'+(0.10*crashT/40+0.05)+')';
+      ctx.fillRect(0,0,cv.width,cv.height);
+      ctx.strokeStyle='#A84A2A'; ctx.lineWidth=5; ctx.strokeRect(3,3,cv.width-6,cv.height-6);
+    }
+  }
+
+  function drawTop(){
+    tctx.clearRect(0,0,tv.width,tv.height);
+    tctx.fillStyle='#9E9987'; tctx.fillRect(0,0,tv.width,tv.height);
+    if(!part.placed){
+      tctx.fillStyle='#65675F'; tctx.font='15px Trebuchet MS';
+      tctx.fillText('no stock on the table yet',132,tv.height/2); return;
+    }
+    if(topC.width!==part.nx||topC.height!==part.ny){ topC.width=part.nx; topC.height=part.ny; topDirty=true; }
+    if(topDirty){
+      var im=topX.createImageData(part.nx,part.ny), d=im.data;
+      for(var k=0;k<part.nx*part.ny;k++){
+        var h=part.hmap[k], o=k*4;
+        if(h<0){ d[o]=94;d[o+1]=92;d[o+2]=86;d[o+3]=255; }
+        else { var f=h/(part.nz-1), base=76+f*94; d[o]=base;d[o+1]=base-6;d[o+2]=base-24;d[o+3]=255; }
+      }
+      topX.putImageData(im,0,0); topDirty=false;
+    }
+    var sc=Math.min((tv.width-40)/part.nx,(tv.height-40)/part.ny);
+    var w=part.nx*sc,h=part.ny*sc,px=(tv.width-w)/2,py=(tv.height-h)/2;
+    tctx.imageSmoothingEnabled=false;
+    tctx.drawImage(topC,px,py,w,h);
+    tctx.strokeStyle='#2B2924'; tctx.lineWidth=2; tctx.strokeRect(px,py,w,h);
+    var tip=toolTip(), lx=tip.x-partLeft(), ly=part.ny/2+s.y;
+    var cx=px+lx*sc, cy=py+ly*sc, T=TOOLS[tool];
+    tctx.strokeStyle='#2B2924'; tctx.setLineDash([4,5]); tctx.lineWidth=1;
+    tctx.beginPath(); tctx.moveTo(cx,0); tctx.lineTo(cx,tv.height);
+    tctx.moveTo(0,cy); tctx.lineTo(tv.width,cy); tctx.stroke(); tctx.setLineDash([]);
+    tctx.fillStyle=s.rpm>0?'#57694B':(crashT>0?'#A84A2A':'#65675F');
+    tctx.beginPath(); tctx.arc(cx,cy,T.r*sc,0,Math.PI*2); tctx.fill();
+    tctx.strokeStyle='#2B2924'; tctx.lineWidth=2; tctx.stroke();
+  }
+
+  function drawPrint(){
+    if(!printDirty) return;
+    printDirty=false;
+    pctx.clearRect(0,0,pv.width,pv.height);
+    pctx.fillStyle='#E7EDF2'; pctx.fillRect(0,0,pv.width,pv.height);
+    pctx.strokeStyle='#2E4A63'; pctx.lineWidth=2; pctx.strokeRect(8,8,pv.width-16,pv.height-16);
+    pctx.fillStyle='#2E4A63'; pctx.font='bold 14px Trebuchet MS';
+    pctx.fillText('job '+(job+1)+', '+JOBS[job].name,18,30);
+    pctx.font='11px Trebuchet MS';
+    pctx.fillText('plan view',18,52);
+    pctx.fillText('section through the middle',18,180);
+
+    var T=target, sc=Math.min(200/T.nx,90/T.ny), x,y,z;
+    var px=20, py=58;
+    // plan view from the target
+    for(x=0;x<T.nx;x++) for(y=0;y<T.ny;y++){
+      var top=-1;
+      for(z=T.nz-1;z>=0;z--){ if(T.vox[(z*T.ny+y)*T.nx+x]){ top=z; break; } }
+      var f=top<0?0:0.25+0.75*(top/(T.nz-1));
+      pctx.fillStyle=top<0?'#B9C6D2':'rgba(46,74,99,'+f*0.8+')';
+      pctx.fillRect(px+x*sc,py+y*sc,Math.ceil(sc),Math.ceil(sc));
+    }
+    pctx.strokeStyle='#2E4A63'; pctx.lineWidth=1.5;
+    pctx.strokeRect(px,py,T.nx*sc,T.ny*sc);
+
+    var sc2=Math.min(200/T.nx,80/T.nz), qx=20, qy=190, mid=Math.floor(T.ny/2);
+    for(x=0;x<T.nx;x++) for(z=0;z<T.nz;z++){
+      if(!T.vox[(z*T.ny+mid)*T.nx+x]) continue;
+      pctx.fillStyle='rgba(46,74,99,0.65)';
+      pctx.fillRect(qx+x*sc2,qy+(T.nz-1-z)*sc2,Math.ceil(sc2),Math.ceil(sc2));
+    }
+    pctx.strokeStyle='#2E4A63'; pctx.lineWidth=1.5;
+    pctx.strokeRect(qx,qy,T.nx*sc2,T.nz*sc2);
+
+    pctx.font='11px Trebuchet MS'; pctx.fillStyle='#2E4A63';
+    pctx.fillText('stock '+B.nx+' by '+B.ny+' by '+B.nz+', '+JOBS[job].kind+' bar',18,pv.height-18);
+  }
+
+  function inspect(){
+    if(!part.placed){ setStatus('no part on the table to inspect',true); holdMsg=110; return; }
+    if(part.nx!==target.nx||part.ny!==target.ny||part.nz!==target.nz){
+      setStatus('part is not sitting the way the print shows, re-fixture it back',true); holdMsg=140; return;
+    }
+    var left=0, over=0, need=0, keep=0;
+    for(var k=0;k<part.vox.length;k++){
+      var t=target.vox[k], p=part.vox[k];
+      if(t){ keep++; if(!p) over++; }
+      else { need++; if(p) left++; }
+    }
+    var cut=need?100*(1-left/need):100;
+    var dmg=keep?100*over/keep:0;
+    if(cut>=97&&dmg<=1.0){
+      if(done.indexOf(job)<0) done.push(job);
+      setStatus('part passes inspection, '+cut.toFixed(1)+' percent cut and '+dmg.toFixed(1)+' percent overcut',false);
+      statusEl.className='status good';
+      holdMsg=200; buildJobList();
+    } else {
+      setStatus('rejected, '+cut.toFixed(1)+' percent of the material is off and '+dmg.toFixed(1)+' percent is cut past the line',true);
+      holdMsg=200;
+    }
+  }
+
+  function buildJobList(){
+    var el=document.getElementById('jobList');
+    el.innerHTML='';
+    JOBS.forEach(function(J,i){
+      var b=document.createElement('button');
+      b.textContent=(i+1);
+      if(i===job) b.className='on';
+      if(done.indexOf(i)>=0) b.className='done';
+      b.addEventListener('click',function(){
+        job=i; buildTarget(); buildJobList();
+        document.getElementById('spec').textContent=JOBS[job].spec;
+        setStatus('job '+(job+1)+' selected, '+JOBS[job].name); holdMsg=120;
+      });
+      el.appendChild(b);
+    });
+    document.getElementById('spec').textContent=JOBS[job].spec;
+  }
+
+  function setStatus(msg,warn){
+    if(msg!==undefined){ statusEl.textContent=msg; statusEl.className='status'+(warn?' warn':''); return; }
+    statusEl.className='status';
+    if(demo.on){
+      statusEl.textContent='demo mode, letter '+ALPHA[demo.letter%26]+', '+demo.stage+' pass '+demo.pass+
+        (demo.phase==='eject'?', part coming off the table':'');
+      statusEl.className='status cutting'; return;
+    }
+    if(feedClamped>0&&s.rpm>0){
+      statusEl.textContent='feeding as fast as the cutter will take it at '+Math.round(s.rpm)+' rpm';
+      statusEl.className='status cutting'; return;
+    }
+    if(machine.xDead||machine.yDead){ statusEl.textContent=deadMsg||'machine damaged, a millwright needs to rebuild it'; statusEl.className='status warn'; return; }
+    if(crashT>0){ statusEl.textContent='crash, the cutter is into the machine'; statusEl.className='status warn'; return; }
+    if(!part.placed){ statusEl.textContent='job '+(job+1)+', drag a '+JOBS[job].kind+' blank onto the table'; return; }
+    var clear=interference(s)<=0;
+    if(s.rpm>0&&!clear){ statusEl.textContent='cutting with the '+TOOLS[tool].label+' at '+Math.round(s.rpm)+' rpm'+(feed.on?', power feed running':''); statusEl.className='status cutting'; return; }
+    statusEl.textContent='positioning, '+TOOLS[tool].label+(clear?' clear of the part':' down in the part')+(feed.on?', power feed running':'');
+  }
+
+  function setHealth(){
+    var v=Math.round(machine.hp);
+    hpBar.style.width=v+'%';
+    hpBar.style.background=v>60?'#57694B':(v>25?'#B5760D':'#A84A2A');
+    hpTxt.textContent=v;
+    document.getElementById('rowX').classList.toggle('dead',machine.xDead);
+    document.getElementById('rowY').classList.toggle('dead',machine.yDead);
+  }
+
+  function syncFeed(){
+    var sw=document.getElementById('feedSw');
+    sw.textContent=feed.on?'feed on':'feed off';
+    sw.classList.toggle('on',feed.on);
+    document.getElementById('feedDir').textContent=feed.dir>0?'to the right':'to the left';
+  }
+
+  function frame(t){
+    var dt=lastT?Math.min(0.05,(t-lastT)/1000):0; lastT=t;
+    if(fac.open){
+      facUpdate(dt); facDraw(); facBoard();
+      requestAnimationFrame(frame); return;
+    }
+    if(demo.on) demoStep(dt);
+    tickAllow(dt);
+    if(feed.on&&!machine.xDead){
+      var moved=setAxis('x',s.x+feed.dir*feed.rate*dt);
+      if(!moved||s.x<=lim.x[0]||s.x>=lim.x[1]){ feed.on=false; syncFeed(); }
+    }
+    if(s.rpm>0){ spin=(spin+s.rpm*0.05)%360; var tip=toolTip(); cutPart(tip); cutTable(tip); checkShankCrash(); }
+    if(crashT>0) crashT--;
+    if(shakeT>0) shakeT--;
+    stepParts();
+    drawMachine(); drawTop(); drawPrint();
+    if(holdMsg>0) holdMsg--; else setStatus();
+    setHealth();
+    requestAnimationFrame(frame);
+  }
+
+  Object.keys(inputs).forEach(function(a){
+    inputs[a].addEventListener('change',function(){setAxis(a,this.value);});
+    inputs[a].addEventListener('keydown',function(e){if(e.key==='Enter')this.blur();});
+    inputs[a].addEventListener('focus',function(){this.select();});
+    ranges[a].addEventListener('input',function(){setAxis(a,this.value);});
+  });
+  document.querySelectorAll('#stepPick button').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('#stepPick button').forEach(function(o){o.classList.remove('on');});
+      b.classList.add('on'); step=Number(b.dataset.step);
+    });
+  });
+  document.querySelectorAll('#toolPick button').forEach(function(b){
+    b.addEventListener('click',function(){
+      if(s.rpm===0&&interference(s)>0.2){ crashT=40; shakeT=14; shakeMag=4; return; }
+      document.querySelectorAll('#toolPick button').forEach(function(o){o.classList.remove('on');});
+      b.classList.add('on'); tool=b.dataset.tool;
+    });
+  });
+  document.querySelectorAll('#fixPick button').forEach(function(b){
+    b.addEventListener('click',function(){
+      if(!part.placed){ setStatus('nothing clamped up to re-fixture',true); holdMsg=90; return; }
+      if(s.rpm>0){ setStatus('stop the spindle before you unclamp the part',true); holdMsg=90; return; }
+      if(interference(s)>0.2){ setStatus('back the cutter out of the part first',true); holdMsg=90; return; }
+      rotate(b.dataset.rot);
+      setStatus('part re-fixtured, new face up'); holdMsg=70;
+    });
+  });
+  document.querySelectorAll('button[data-axis]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var a=b.dataset.axis, inc=(a==='a')?Math.max(1,step):step;
+      setAxis(a,s[a]+inc*Number(b.dataset.dir));
+    });
+  });
+  document.getElementById('rngRpm').addEventListener('input',function(){
+    s.rpm=Number(this.value);
+    document.getElementById('rpmOut').textContent=s.rpm;
+  });
+  document.getElementById('feedSw').addEventListener('click',function(){
+    if(machine.xDead){ setStatus('X drive is wrecked, the feed box has nothing to turn',true); holdMsg=110; return; }
+    feed.on=!feed.on; syncFeed();
+  });
+  document.getElementById('feedDir').addEventListener('click',function(){ feed.dir=-feed.dir; syncFeed(); });
+  document.getElementById('feedRate').addEventListener('input',function(){
+    feed.rate=Number(this.value);
+    document.getElementById('feedOut').textContent=feed.rate;
+  });
+  // ---- factory floor ----
+  var fac={open:false,running:false,n:4,m:[],ops:[],order:[],clock:0,msg:''};
+  var fcv=document.getElementById('factory'), fx=fcv.getContext('2d');
+
+  function facInit(n){
+    fac.n=n; fac.m=[]; fac.ops=[];
+    for(var i=0;i<n;i++){
+      fac.m.push({ch:ALPHA[i%26],prog:0,wear:0,stock:5,need:'',sweep:0,dir:1,made:0,flash:0});
+    }
+    var opCount=Math.max(1,Math.ceil(n/4));
+    for(var k=0;k<opCount;k++) fac.ops.push({x:40+k*60,y:530,tx:40+k*60,ty:530,busy:-1,work:0});
+    fac.order=[];
+    for(var q=0;q<Math.min(3,n);q++){
+      fac.order.push({ch:fac.m[q].ch,need:6+q*2,got:0});
+    }
+    fac.clock=300;
+    fac.msg='';
+  }
+
+  function facCells(){
+    var cols=fac.n<=2?2:(fac.n<=4?2:4);
+    var rows=Math.ceil(fac.n/cols);
+    var w=fcv.width/cols, h=(fcv.height-60)/rows;
+    var out=[];
+    for(var i=0;i<fac.n;i++){
+      out.push({x:(i%cols)*w,y:Math.floor(i/cols)*h,w:w,h:h});
+    }
+    return out;
+  }
+
+  function facUpdate(dt){
+    if(!fac.running) return;
+    fac.clock=Math.max(0,fac.clock-dt);
+    var i;
+    for(i=0;i<fac.m.length;i++){
+      var m=fac.m[i];
+      if(m.flash>0) m.flash-=dt;
+      if(m.need) continue;
+      var rate=(1-0.35*m.wear)/13;      // a part takes about thirteen seconds fresh
+      m.prog+=dt*rate;
+      m.sweep+=dt*m.dir*1.6;
+      if(m.sweep>1){m.sweep=1;m.dir=-1;} if(m.sweep<0){m.sweep=0;m.dir=1;}
+      m.wear+=dt*0.016;
+      if(Math.random()<dt*0.012){ m.need='chips'; m.flash=1; }
+      if(m.wear>=1){ m.need='tool'; m.flash=1; }
+      if(m.prog>=1){
+        m.prog=0; m.made++; m.stock--;
+        if(inv[m.ch]<CAP) inv[m.ch]++;
+        buildBins();
+        for(var o=0;o<fac.order.length;o++) if(fac.order[o].ch===m.ch&&fac.order[o].got<fac.order[o].need) fac.order[o].got++;
+        if(m.stock<=0){ m.need='stock'; m.flash=1; }
+      }
+    }
+    for(i=0;i<fac.ops.length;i++){
+      var p=fac.ops[i];
+      var dx=p.tx-p.x, dy=p.ty-p.y, d=Math.hypot(dx,dy);
+      if(d>2){ p.x+=dx/d*120*dt; p.y+=dy/d*120*dt; }
+      else if(p.busy>=0){
+        p.work-=dt;
+        if(p.work<=0){
+          var mm=fac.m[p.busy];
+          if(mm.need==='tool') mm.wear=0;
+          if(mm.need==='stock') mm.stock=5;
+          mm.need=''; mm.flash=0;
+          p.busy=-1; p.tx=40+i*60; p.ty=530;
+        }
+      }
+    }
+    var doneAll=fac.order.every(function(o){return o.got>=o.need;});
+    if(doneAll&&!fac.msg) fac.msg='quota filled with '+Math.round(fac.clock)+' seconds to spare';
+    else if(fac.clock<=0&&!fac.msg) fac.msg='the shift ran out, order short';
+  }
+
+  function facDispatch(i){
+    for(var k=0;k<fac.ops.length;k++) if(fac.ops[k].busy===i) return;
+    for(var j=0;j<fac.ops.length;j++){
+      var p=fac.ops[j];
+      if(p.busy<0){
+        var c=facCells()[i];
+        p.busy=i; p.tx=c.x+c.w/2; p.ty=c.y+c.h-26;
+        p.work=(fac.m[i].need==='tool')?3.5:2;
+        return;
+      }
+    }
+  }
+
+  function facDraw(){
+    fx.clearRect(0,0,fcv.width,fcv.height);
+    fx.fillStyle='#D3CEC0'; fx.fillRect(0,0,fcv.width,fcv.height);
+    var cells=facCells(), i;
+    for(i=0;i<fac.m.length;i++){
+      var m=fac.m[i], c=cells[i];
+      fx.strokeStyle='#9A9C97'; fx.lineWidth=1; fx.strokeRect(c.x,c.y,c.w,c.h);
+      var bx=c.x+c.w*0.16, bw=c.w*0.68, by=c.y+c.h*0.28, bh=c.h*0.44;
+
+      fx.fillStyle='#57694B'; fx.fillRect(bx,by-c.h*0.16,bw*0.18,bh+c.h*0.16);
+      fx.fillStyle='#3E4C37'; fx.fillRect(bx,by-c.h*0.16,bw*0.18,c.h*0.10);
+      fx.fillStyle='#57694B'; fx.fillRect(bx,by-c.h*0.16,bw*0.8,c.h*0.07);
+
+      var sx=bx+bw*0.2+m.sweep*(bw*0.55);
+      fx.fillStyle='#3E4C37'; fx.fillRect(sx-8,by-c.h*0.10,16,c.h*0.10);
+      fx.fillStyle='#2B2924'; fx.fillRect(sx-2.5,by,5,c.h*0.11);
+
+      fx.fillStyle='#DDD8CB'; fx.fillRect(bx+bw*0.16,by+c.h*0.13,bw*0.78,c.h*0.05);
+      fx.fillStyle='#A9A392';
+      fx.fillRect(bx+bw*0.30,by+c.h*0.075,bw*0.42*(1-m.prog*0.55),c.h*0.055);
+      fx.fillStyle='#65675F'; fx.fillRect(bx+bw*0.10,by+c.h*0.18,bw*0.9,c.h*0.06);
+
+      fx.fillStyle=m.need?( (Math.floor(Date.now()/300)%2)?'#A84A2A':'#E0912B' ):'#57694B';
+      fx.beginPath(); fx.arc(c.x+c.w-20,c.y+18,7,0,Math.PI*2); fx.fill();
+      fx.strokeStyle='#2B2924'; fx.lineWidth=1.5; fx.stroke();
+
+      fx.fillStyle='#2B2924'; fx.font='bold 20px Trebuchet MS';
+      fx.fillText(m.ch,c.x+12,c.y+26);
+      fx.font='11px Trebuchet MS'; fx.fillStyle='#65675F';
+      fx.fillText('made '+m.made+', blanks '+Math.max(0,m.stock),c.x+12,c.y+42);
+      if(m.need) fx.fillText('needs '+(m.need==='tool'?'a tool change':(m.need==='stock'?'more stock':'chips cleared')),c.x+12,c.y+c.h-10);
+
+      fx.fillStyle='#C9C3B2'; fx.fillRect(c.x+12,c.y+c.h-24,c.w-70,6);
+      fx.fillStyle='#57694B'; fx.fillRect(c.x+12,c.y+c.h-24,(c.w-70)*m.prog,6);
+      fx.fillStyle=m.wear>0.7?'#A84A2A':'#B5760D';
+      fx.fillRect(c.x+12,c.y+c.h-16,(c.w-70)*m.wear,3);
+    }
+    for(i=0;i<fac.ops.length;i++){
+      var p=fac.ops[i];
+      fx.fillStyle=p.busy>=0?'#A84A2A':'#2E4A63';
+      fx.beginPath(); fx.arc(p.x,p.y-14,6,0,Math.PI*2); fx.fill();
+      fx.fillRect(p.x-5,p.y-8,10,14);
+      fx.fillStyle='#2B2924'; fx.font='10px Trebuchet MS';
+      fx.fillText('op '+(i+1),p.x-12,p.y+16);
+    }
+  }
+
+  function facBoard(){
+    var el=document.getElementById('facOrder');
+    if(!fac.m.length){ el.textContent='no order on the board'; return; }
+    var t=fac.order.map(function(o){ return o.got+' of '+o.need+' '+o.ch; }).join(', ');
+    el.textContent=(fac.msg?fac.msg+'. ':'')+'order '+t+', '+Math.floor(fac.clock/60)+' minutes '+
+      String(Math.floor(fac.clock%60)).padStart(2,'0')+' left';
+    el.className='status'+(fac.msg?(fac.msg.indexOf('short')>=0?' warn':' good'):'');
+  }
+
+  fcv.addEventListener('pointerdown',function(e){
+    var r=fcv.getBoundingClientRect();
+    var px=(e.clientX-r.left)*(fcv.width/r.width), py=(e.clientY-r.top)*(fcv.height/r.height);
+    var cells=facCells();
+    for(var i=0;i<fac.m.length;i++){
+      var c=cells[i];
+      if(px>=c.x&&px<=c.x+c.w&&py>=c.y&&py<=c.y+c.h){
+        if(fac.m[i].need) facDispatch(i);
+        else if(fac.m[i].prog<0.02){
+          var n=(ALPHA.indexOf(fac.m[i].ch)+1)%26;
+          fac.m[i].ch=ALPHA[n];
+        }
+        return;
+      }
+    }
+  });
+
+  document.querySelectorAll('#facCount button').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('#facCount button').forEach(function(o){o.classList.remove('on');});
+      b.classList.add('on');
+      facInit(Number(b.dataset.n));
+    });
+  });
+  document.getElementById('facRun').addEventListener('click',function(){
+    fac.running=!fac.running;
+    this.textContent=fac.running?'pause the shift':'start the shift';
+    this.classList.toggle('on',fac.running);
+    if(fac.running&&fac.msg){ facInit(fac.n); }
+  });
+  document.getElementById('facBtn').addEventListener('click',function(){
+    fac.open=true; sheet('menuSheet',false);
+    document.getElementById('facPanel').style.display='block';
+    document.querySelectorAll('.workspace').forEach(function(w){ w.style.display='none'; });
+    if(!fac.m.length) facInit(4);
+    window.scrollTo(0,0);
+  });
+  document.getElementById('facClose').addEventListener('click',function(){
+    fac.open=false;
+    document.getElementById('facPanel').style.display='none';
+    document.querySelectorAll('.workspace').forEach(function(w){ w.style.display=''; });
+  });
+
+  function sheet(id,open){ document.getElementById(id).classList.toggle('open',open); }
+  document.getElementById('burger').addEventListener('click',function(){sheet('menuSheet',true);});
+  document.getElementById('menuClose').addEventListener('click',function(){sheet('menuSheet',false);});
+  document.getElementById('infoBtn').addEventListener('click',function(){sheet('infoSheet',true);});
+  document.getElementById('infoClose').addEventListener('click',function(){sheet('infoSheet',false);});
+  document.getElementById('menuSheet').addEventListener('click',function(e){ if(e.target===this) sheet('menuSheet',false); });
+  document.getElementById('infoSheet').addEventListener('click',function(e){ if(e.target===this) sheet('infoSheet',false); });
+
+  document.getElementById('bagBtn').addEventListener('click',function(){
+    if(!part.placed){ setStatus('there is no part on the table',true); holdMsg=110; return; }
+    if(s.rpm>0){ setStatus('stop the spindle before you take the part off',true); holdMsg=110; return; }
+    var ch=identify();
+    addToTray(ch,partThumb());
+    part.placed=false; part.vox=null; part.hmap=null; topDirty=true;
+    setStatus(ch?('part bagged as the letter '+ch):'part bagged, it does not match any letter'); holdMsg=140;
+  });
+
+  document.getElementById('stowBtn').addEventListener('click',function(){
+    for(var i=tray.length-1;i>=0;i--){ if(tray[i].ch) stow(i,tray[i].ch); }
+    sheet('menuSheet',false);
+  });
+  document.getElementById('emptyBtn').addEventListener('click',function(){
+    for(var i=0;i<26;i++) inv[ALPHA[i]]=0;
+    buildBins(); sheet('menuSheet',false);
+  });
+
+  document.getElementById('demoBtn').addEventListener('click',function(){
+    demo.on=!demo.on;
+    sheet('menuSheet',false);
+    this.textContent=demo.on?'stop demo mode':'run demo mode, cut the alphabet';
+    if(demo.on){ feed.on=false; syncFeed(); demo.phase='load'; }
+    else { s.rpm=0; document.getElementById('rngRpm').value=0;
+      document.getElementById('rpmOut').textContent=0; demo.phase='idle'; }
+  });
+  document.getElementById('checkBtn').addEventListener('click',inspect);
+
+  function toCanvas(e){
+    var r=cv.getBoundingClientRect();
+    return {x:(e.clientX-r.left)*(cv.width/r.width),y:(e.clientY-r.top)*(cv.height/r.height)};
+  }
+  var grab=null,lastP=null;
+
+  cv.addEventListener('pointerdown',function(e){
+    var p=toCanvas(e), ks=kneeShift(), tx=s.x*XS;
+    var fx=TABLE_RIGHT+tx+6, fy=TABLE_TOP+ks+26;
+    if(p.x>=fx&&p.x<=fx+34&&p.y>=fy&&p.y<=fy+26){
+      if(!machine.xDead){ feed.on=!feed.on; syncFeed(); }
+      e.preventDefault(); return;
+    }
+    var ws=[{id:'x',cx:TABLE_RIGHT+26+tx,cy:TABLE_TOP+11+ks,r:28},
+            {id:'y',cx:118,cy:300+ks,r:26},
+            {id:'z',cx:215,cy:330+ks,r:32}];
+    for(var i=0;i<ws.length;i++){
+      var w=ws[i];
+      if(Math.hypot(p.x-w.cx,p.y-w.cy)<=w.r){
+        grab={type:'wheel',axis:w.id}; lastP=p; cv.setPointerCapture(e.pointerId); e.preventDefault(); return;
+      }
+    }
+    if(!part.placed){
+      for(var b=0;b<blanks.length;b++){
+        var bl=blanks[b];
+        if(Math.abs(p.x-bl.cx)<=bl.w/2+10&&Math.abs(p.y-bl.cy)<=bl.h/2+10){
+          part.ghost={kind:bl.kind,x:p.x,y:p.y};
+          grab={type:'stock'}; lastP=p; cv.setPointerCapture(e.pointerId); e.preventDefault(); return;
+        }
+      }
+    }
+  });
+
+  cv.addEventListener('pointermove',function(e){
+    if(!grab) return;
+    var p=toCanvas(e);
+    if(grab.type==='wheel'){
+      var d=(p.x-lastP.x)-(p.y-lastP.y);
+      var gain=grab.axis==='z'?0.10:(grab.axis==='y'?0.18:0.22);
+      setAxis(grab.axis,s[grab.axis]+d*gain);
+    } else if(part.ghost){
+      part.ghost.x+=p.x-lastP.x; part.ghost.y+=p.y-lastP.y;
+    }
+    lastP=p;
+  });
+
+  function drop(){
+    if(!part.ghost) return;
+    var ks=kneeShift(), tx=s.x*XS, tTop=TABLE_TOP+ks, g=part.ghost;
+    var over=g.x>TABLE_LEFT+tx-40&&g.x<TABLE_RIGHT+tx+40;
+    var near=Math.abs(g.y+B.nz/2-tTop)<120;
+    if(over&&near){
+      makePart(g.kind);
+      part.offset=clamp(g.x-part.nx/2-(TABLE_LEFT+tx),6,TLEN-part.nx-6);
+      part.placed=true;
+      buildTarget();
+      if(g.kind!==JOBS[job].kind){ setStatus('that is not the stock the print calls for',true); holdMsg=140; }
+    }
+    part.ghost=null;
+  }
+
+  cv.addEventListener('pointerup',function(){ if(grab&&grab.type==='stock') drop(); grab=null; });
+  cv.addEventListener('pointercancel',function(){ part.ghost=null; grab=null; });
+
+  document.getElementById('scrapBtn').addEventListener('click',function(){
+    part.placed=false; part.ghost=null; part.vox=null; part.hmap=null; chips.length=0; topDirty=true;
+    buildTarget();
+  });
+  document.getElementById('fixBtn').addEventListener('click',function(){
+    table.dmg=new Float32Array(TLEN);
+    machine.hp=100; machine.xDead=false; machine.yDead=false; deadMsg='';
+    chips.length=0; sparks.length=0; crashT=0; shakeT=0;
+  });
+
+  ['x','y','z','a'].forEach(function(a){setAxis(a,0);});
+  buildTarget(); buildJobList(); syncFeed(); buildBins(); renderTray();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
