@@ -1,0 +1,42 @@
+name: mill-ionaire itch build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package the newest game file as index.html for itch
+        run: |
+          GAME=$(ls mill-ionaire-v*.html | sort -V | tail -n 1)
+          VER=$(basename "$GAME" .html)
+          echo "VER=$VER" >> "$GITHUB_ENV"
+          mkdir -p itch-build
+          cp "$GAME" itch-build/index.html
+          (cd itch-build && zip -q "../$VER-itch.zip" index.html)
+          ls -l "$VER-itch.zip"
+
+      - name: Publish the zip as the itch-latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete itch-latest --yes --cleanup-tag || true
+          gh release create itch-latest "$VER-itch.zip" --title "$VER itch build" --notes "Upload this zip to itch.io as an HTML game, or let butler push it."
+
+      - name: Push to itch with butler
+        if: ${{ vars.ITCH_TARGET != '' }}
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          curl -sSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d butler-bin
+          chmod +x butler-bin/butler
+          ./butler-bin/butler push itch-build "${{ vars.ITCH_TARGET }}:html" --userversion "$VER-${{ github.run_number }}"

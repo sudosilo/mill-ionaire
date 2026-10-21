@@ -21,7 +21,13 @@ body{
   font-family:"Trebuchet MS","Segoe UI",sans-serif;padding:16px;
 }
 .stage{max-width:1180px;margin:0 auto;}
-header{display:flex;align-items:baseline;justify-content:space-between;border-bottom:3px solid var(--charcoal);padding-bottom:8px;margin-bottom:16px;flex-wrap:wrap;gap:6px;}
+header{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--charcoal);padding-bottom:8px;margin-bottom:12px;gap:10px;}
+.hd{flex:1;min-width:0;text-align:center;}
+.hd>span{display:block;}
+.workspace>div{min-width:0;}
+.dro-cell{min-width:0;}
+.dro-cell input{min-width:0;}
+.jog-row input[type=range]{min-width:0;}
 header h1{font-size:24px;margin:0;}
 header span{font-size:13px;color:var(--steel-dark);}
 .workspace{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;}
@@ -93,6 +99,66 @@ button:active{background:var(--rust);}
 .bin.has{border-color:var(--iron-green);}
 .wide{width:100%;margin-top:8px;min-height:46px;}
 .hint{font-size:13px;line-height:1.55;color:var(--steel-dark);margin:12px 0 0;}
+
+/* ---- v2: tycoon layer ---- */
+.panel{border:2px solid var(--charcoal);box-shadow:3px 3px 0 var(--charcoal);}
+header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
+.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
+.hud div{background:var(--face);border:2px solid var(--charcoal);padding:6px 8px;}
+.hud i{display:block;font-style:normal;font-size:11px;letter-spacing:.1em;color:var(--steel-dark);}
+.hud b{display:block;font-family:"Courier New",monospace;font-size:18px;color:var(--charcoal);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hud .cash b{color:var(--blue);}
+@media (max-width:560px){.hud{grid-template-columns:repeat(2,1fr);}.hud b{font-size:16px;}}
+.tabs{display:flex;gap:6px;margin-bottom:16px;position:sticky;top:0;z-index:10;background:var(--putty);padding:6px 0;}
+.tabs button{flex:1;font-size:14px;min-height:44px;background:var(--face);color:var(--charcoal);border:2px solid var(--charcoal);position:relative;}
+.tabs button.on{background:var(--blue);color:var(--face);}
+.tabs button:hover{background:var(--putty-dark);}
+.tabs button.on:hover{background:var(--blue);}
+.tabs button em{position:absolute;top:-8px;right:-4px;background:var(--rust);color:var(--face);font-style:normal;font-size:11px;min-width:18px;height:18px;line-height:18px;border:2px solid var(--charcoal);display:none;}
+.tabs button em.show{display:block;}
+.view{display:none;}
+.view.on{display:block;}
+.orders{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.ocard{border:2px solid var(--charcoal);background:var(--face);padding:10px;}
+.ocard h4{margin:0 0 4px;font-size:14px;}
+.ocard p{margin:0 0 8px;font-size:13px;color:var(--steel-dark);}
+.tiles{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
+.tile{width:38px;height:44px;border:2px solid var(--charcoal);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:22px;color:#fff;text-shadow:0 1px 0 #000,0 0 3px #000;background-size:cover;position:relative;}
+.tile.miss{opacity:.38;}
+.tile.ok::after{content:"";position:absolute;right:-5px;bottom:-5px;width:12px;height:12px;background:var(--blue);border:2px solid var(--charcoal);}
+.ocard .row{display:flex;gap:6px;align-items:center;}
+.ocard .row b{flex:1;font-family:"Courier New",monospace;font-size:18px;color:var(--blue);}
+.ocard .row button{font-size:13px;min-height:40px;padding:0 12px;}
+.ocard .row button.ship{background:var(--blue);}
+.ocard .row button:disabled{background:var(--steel);cursor:default;}
+.shopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+.fcard{border:2px solid var(--charcoal);background:var(--face);padding:8px;display:flex;flex-direction:column;gap:6px;}
+.fcard canvas{border:1px solid var(--charcoal);height:54px;}
+.fcard h4{margin:0;font-size:14px;}
+.fcard p{margin:0;font-size:12px;color:var(--steel-dark);line-height:1.4;}
+.fcard button{font-size:13px;min-height:40px;}
+.fcard button.use{background:var(--blue);}
+.fcard button.inuse{background:var(--iron-green);cursor:default;}
+.fcard button:disabled{background:var(--steel);cursor:default;}
+.fcard.locked canvas{opacity:.8;}
+.upg{display:flex;align-items:center;gap:10px;border:2px solid var(--charcoal);background:var(--face);padding:8px 10px;margin-bottom:8px;}
+.upg div{flex:1;font-size:13px;line-height:1.45;}
+.upg div b{display:block;font-size:14px;}
+.upg button{font-size:13px;min-height:42px;min-width:110px;background:var(--blue);}
+.upg button:disabled{background:var(--steel);cursor:default;}
+.finrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center;}
+.finrow span{font-size:13px;color:var(--steel-dark);width:112px;}
+.sw{width:40px;height:40px;min-width:40px;min-height:40px;border:2px solid var(--charcoal);padding:0;background-size:cover;}
+.sw.on{outline:3px solid var(--blue);outline-offset:2px;}
+.selbox{border:2px solid var(--charcoal);background:var(--face);padding:10px;margin-top:10px;}
+.selbox .feed span{width:auto;min-width:80px;}
+#facPanel .feed .switch{font-size:14px;min-height:42px;flex:1;min-width:0;}
+#toasts{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:40;display:flex;flex-direction:column;gap:6px;pointer-events:none;width:min(92vw,420px);}
+.toast{background:var(--blue);color:var(--face);border:2px solid var(--charcoal);box-shadow:3px 3px 0 var(--charcoal);padding:8px 12px;font-size:14px;font-weight:bold;transition:opacity .4s;}
+.toast.warn{background:var(--rust);}
+.bin s{display:flex;justify-content:center;gap:2px;height:6px;margin-top:3px;text-decoration:none;}
+.bin s u{width:6px;height:6px;border:1px solid var(--charcoal);}
+.mtg-seal{margin-top:24px;}
 </style>
 </head>
 <body>
@@ -100,52 +166,120 @@ button:active{background:var(--rust);}
 
 <header>
   <button id="burger" class="icon">&#9776;</button>
-  <h1>Mill-ionaire</h1>
-  <span>vertical knee mill, simulated</span>
+  <div class="hd"><h1><span class="br">[</span>Mill-ionaire<span class="br">]</span></h1>
+  <span>cut letters, fill orders, buy mills</span></div>
   <button id="infoBtn" class="icon">i</button>
 </header>
+
+<div class="hud">
+  <div class="cash"><i>CASH</i><b id="hudCash">$0</b></div>
+  <div><i>MARKET RATE</i><b id="hudMarket">100%</b></div>
+  <div><i>MILLS OWNED</i><b id="hudMills">0</b></div>
+  <div><i>TIME ON SHIFT</i><b id="hudTime">0:00</b></div>
+</div>
+
+<nav class="tabs" id="tabs">
+  <button data-view="mill" class="on">the mill</button>
+  <button data-view="orders">orders<em id="badgeOrders"></em></button>
+  <button data-view="floor">floor<em id="badgeFloor"></em></button>
+  <button data-view="shop">shop</button>
+</nav>
+
+<div id="toasts"></div>
 
 <div class="sheet" id="menuSheet">
   <div class="sheetbox">
     <h3>machine menu</h3>
-    <button class="wide" id="facBtn">open the factory floor</button>
+    <button class="wide" id="progBtn">run the order program on the mill</button>
     <button class="wide" id="demoBtn">run demo mode, cut the alphabet</button>
+    <button class="wide" id="facBtn">open the factory floor</button>
     <button class="wide" id="fixBtn">call the millwright and repair the machine</button>
     <button class="wide" id="stowBtn">stow every loose part into the bins</button>
     <button class="wide" id="emptyBtn">empty the inventory bins</button>
+    <button class="wide" id="howBtn">how to play</button>
+    <button class="wide" id="resetBtn">start the whole business over</button>
     <button class="wide" id="menuClose">close</button>
+  </div>
+</div>
+
+<div class="sheet" id="resetSheet">
+  <div class="sheetbox">
+    <h3>start over</h3>
+    <p>This wipes your cash, finishes, floor mills, inventory and orders, and the market rate goes back to full price. It cannot be undone.</p>
+    <button class="wide" id="resetYes" style="background:var(--rust)">wipe it and start over</button>
+    <button class="wide" id="resetNo">keep my business</button>
+  </div>
+</div>
+
+<div class="sheet" id="howSheet">
+  <div class="sheetbox">
+    <h3>how to play</h3>
+    <p>Customers post word orders on the orders tab. Each word has to be made from letters cut in one finish, like brass or blue anodize, and shipping it pays cash.</p>
+    <p>On the mill tab, open the menu and run the order program. The mill loads a blank in the right finish, cuts whatever letter the orders are missing, and drops it straight into the bins. You can also cut by hand with the wheels and sliders, then bag the part and drag it into its bin.</p>
+    <p>Spend your cash in the shop. New finishes pay more per letter but are harder metal, so they cut slower. Floor mills run on their own on the floor tab, and operators keep them going when a light turns amber.</p>
+    <p>The market cools off the longer you run the shop, so every letter pays a little less as the hours go by. Early money is the easiest money you will ever make.</p>
+    <button class="wide" id="howClose">get to work</button>
   </div>
 </div>
 
 <div class="sheet" id="infoSheet">
   <div class="sheetbox">
-    <h3>what this is</h3>
-    <p>This is a simulated vertical knee mill, the kind of manual machine a Bridgeport is. The tall green casting is the column, the arm across the top is the ram, and the head hanging off it holds the spinning cutter. The work sits on the table, and on a machine like this the cutter stays put while the table carries the work to it.</p>
-    <p>X traverses the table left and right, Y moves the saddle in and out, Z raises and lowers the whole knee so the work comes up to the cutter. A tilts the head over for angled work. The big view is a cutaway taken straight through the part at whatever Y the saddle is sitting at, so you see the real section of what you have cut. The panel on the right is the same part seen from above.</p>
-    <p>The part is solid material, not a surface, so you can machine one face, unclamp it, turn it ninety degrees and machine another. Cut past the bottom of the work and you start eating the table, which does permanent damage, and if you cut right through you part the leadscrew and that axis is finished until the millwright rebuilds it.</p>
-    <p>The print panel gives you jobs to make. Demo mode in the menu runs the machine on its own, cutting the alphabet one letter at a time, and finished letters go into the inventory bins.</p>
+    <h3>what it does</h3>
+    <p>Mill-ionaire is a letter shop tycoon built around a simulated vertical knee mill, the kind of manual machine a Bridgeport is. You cut metal letters, fill customer word orders, buy new finishes and more mills, and grow one machine into a factory floor.</p>
+    <p>X traverses the table left and right, Y moves the saddle in and out, Z raises and lowers the whole knee so the work comes up to the cutter. A tilts the head over for angled work. The big view is a cutaway taken straight through the part at whatever Y the saddle is sitting at, and the stock panel is the same part seen from above.</p>
+    <h3>what is real and what is rough</h3>
+    <p>The part is solid material, so you can machine one face, unclamp it, turn it over and machine another. Cut past the bottom of the work and you eat the table, and cut right through and you part the leadscrew until the millwright rebuilds it. The feed rate a cutter will take is rationed by spindle speed and by how hard the finish is. Prices and the market are a game economy, not real shop rates.</p>
+    <h3>how it is built</h3>
+    <p>One HTML file with canvas drawing and plain JavaScript, no downloads and no server. Progress saves in the browser on this device.</p>
+    <h3>the thinking behind it</h3>
+    <p>Every item is a letter, every machine turns blanks into letters, every finish changes what a letter is worth, and every order asks for a set of them. Grow the shop the way a real one grows, one more machine at a time.</p>
     <button class="wide" id="infoClose">close</button>
   </div>
 </div>
 
-<div class="panel" id="facPanel" style="display:none">
+<div class="view" id="view-floor">
+<div class="panel" id="facPanel">
   <div class="panel-label">factory floor</div>
-  <div class="pick" id="facCount">
-    <span>machines</span>
-    <button data-n="2">2</button>
-    <button class="on" data-n="4">4</button>
-    <button data-n="12">12</button>
-  </div>
   <div class="feed">
     <span>shift</span>
-    <button class="switch" id="facRun">start the shift</button>
+    <button class="switch" id="facRun">pause the floor</button>
+    <button class="switch" id="facRush" style="min-width:150px">start a rush shift</button>
     <button class="switch" id="facClose" style="min-width:90px">back to the mill</button>
   </div>
-  <div class="status" id="facOrder">no order on the board</div>
+  <div class="status" id="facOrder">no floor mills yet</div>
   <canvas id="factory" width="700" height="560"></canvas>
-  <p class="hint">Every machine runs its own part. Tap a machine to change what letter it is cutting while it is between parts. When a light goes amber the machine has stopped and needs a hand, so tap it to send the next free operator over. You have fewer operators than machines, so the job is deciding who gets helped first. Finished parts go straight into the inventory bins and count against the order on the board.</p>
+  <div class="selbox" id="facSel" style="display:none"></div>
+  <p class="hint">Floor mills run on their own. On auto they cut whatever the open orders are missing and put it straight in the bins. Tap a mill to set it by hand. When a light goes amber the mill has stopped and needs a hand, so tap it to send the next free operator over. A foreman from the shop sends operators without being told. A rush shift puts a timed quota on the board for a cash bonus.</p>
+</div>
 </div>
 
+<div class="view" id="view-orders">
+  <div class="panel">
+    <div class="panel-label">customer orders</div>
+    <div class="orders" id="orderList"></div>
+    <p class="hint">A blue corner on a tile means that letter is in the bins in the right finish. Letters sitting loose in the tray do not count until they are stowed.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-label">finished parts and inventory</div>
+    <div class="tray" id="tray"></div>
+    <button class="wide" id="stowBtn2">stow every loose part into the bins</button>
+    <div class="bins" id="bins"></div>
+    <p class="hint">Loose parts pile up in the tray at the top. Drag one down onto its matching letter bin to stow it. Each bin holds a hundred of each finish, and a part will not go into the wrong letter. The colored marks under a bin show which finishes are in it.</p>
+  </div>
+</div>
+
+<div class="view" id="view-shop">
+  <div class="panel">
+    <div class="panel-label">machines and crew</div>
+    <div id="upgList"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-label">finishes and textures</div>
+    <div class="shopgrid" id="finList"></div>
+  </div>
+</div>
+
+<div class="view on" id="view-mill">
 <div class="workspace">
 
   <div>
@@ -158,6 +292,11 @@ button:active{background:var(--rust);}
         <div class="dro-cell"><div class="dro-tag">Y</div><input id="inY" type="text" inputmode="decimal" value="0.0"></div>
         <div class="dro-cell"><div class="dro-tag">Z</div><input id="inZ" type="text" inputmode="decimal" value="0.0"></div>
         <div class="dro-cell"><div class="dro-tag">A</div><input id="inA" type="text" inputmode="decimal" value="0.0"></div>
+      </div>
+
+      <div class="finrow" id="finPick" style="margin-top:10px"></div>
+      <div class="feed" style="margin-bottom:0">
+        <button class="switch" id="progBtn2" style="flex:1;background:var(--blue)">run the order program</button>
       </div>
 
       <div class="status" id="status">pick a job from the print, then drag a blank onto the table</div>
@@ -269,19 +408,13 @@ button:active{background:var(--rust);}
     </div>
 
     <div class="panel">
-      <div class="panel-label">finished parts and inventory</div>
-      <div class="tray" id="tray"></div>
-      <div class="bins" id="bins"></div>
-      <p class="hint">Loose parts pile up in the tray at the top. Drag one down onto its matching letter bin to stow it. Each bin holds a hundred, and a part will not go into the wrong letter.</p>
-    </div>
-
-    <div class="panel">
       <div class="panel-label">stock, top view</div>
       <canvas id="top" width="440" height="380"></canvas>
       <p class="hint">Power feed drives the table on its own at the set rate, the way the longitudinal feed box does on a real Bridgeport. Flip the switch on, pick a direction, and the table traverses until you shut it off or it runs out of travel, which is how you get an even finish across a face instead of the wobble you get cranking by hand. It respects the same crash rules, so with the spindle stopped it stops dead against the part instead of driving through it.</p>
     </div>
   </div>
 
+</div>
 </div>
 </div>
 
@@ -368,7 +501,113 @@ button:active{background:var(--rust);}
   var wheel={x:0,y:0,z:0}, spin=0;
 
   var ALPHA='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  var demo={on:false,phase:'idle',letter:0,mask:null,i:0,j:0,dir:1,shelf:[],eject:0,pass:1,stage:'rough'};
+  var demo={on:false,mode:'alpha',phase:'idle',letter:0,mask:null,i:0,j:0,dir:1,shelf:[],eject:0,pass:1,stage:'rough',ch:'A',fin:'alu',wait:0};
+
+  // ---------- finishes and textures ----------
+  var FIN=[
+    {id:'alu',     name:'raw aluminum',  rgb:[182,184,182], pat:'plain',   hard:1.0, pay:1.0, cost:0},
+    {id:'steel',   name:'brushed steel', rgb:[150,153,158], pat:'brushed', hard:1.3, pay:1.4, cost:250},
+    {id:'brass',   name:'brass',         rgb:[200,162,72],  pat:'plain',   hard:1.2, pay:1.8, cost:600},
+    {id:'copper',  name:'copper',        rgb:[192,112,70],  pat:'plain',   hard:1.25,pay:2.2, cost:1200},
+    {id:'blueano', name:'blue anodize',  rgb:[52,102,172],  pat:'ano',     hard:1.1, pay:2.6, cost:2000},
+    {id:'redano',  name:'red anodize',   rgb:[178,54,56],   pat:'ano',     hard:1.1, pay:2.8, cost:2800},
+    {id:'checker', name:'checker plate', rgb:[164,166,164], pat:'checker', hard:1.6, pay:3.4, cost:4000},
+    {id:'walnut',  name:'walnut',        rgb:[118,80,50],   pat:'grain',   hard:1.5, pay:3.8, cost:5200},
+    {id:'knurl',   name:'knurled steel', rgb:[142,142,140], pat:'knurl',   hard:1.8, pay:4.4, cost:7000},
+    {id:'carbon',  name:'carbon fiber',  rgb:[62,62,68],    pat:'carbon',  hard:2.1, pay:5.6, cost:10500},
+    {id:'bronze',  name:'hammered bronze',rgb:[156,112,58], pat:'hammer',  hard:2.3, pay:6.6, cost:15500},
+    {id:'damascus',name:'damascus',      rgb:[128,130,136], pat:'damascus',hard:2.8, pay:9.0, cost:25000}
+  ];
+  var FINBY={}; FIN.forEach(function(f){ FINBY[f.id]=f; });
+  function fin(id){ return FINBY[id]||FIN[0]; }
+
+  function hsh(u,v){ var t=Math.sin(u*127.1+v*311.7)*43758.5453; return t-Math.floor(t); }
+  function patVal(p,u,v){
+    var t,a,b;
+    switch(p){
+      case 'brushed': return (hsh(0,v)-0.5)*30+(hsh(u,v)-0.5)*6;
+      case 'ano': return (hsh(u,v)-0.5)*5+Math.sin(u*0.06)*7;
+      case 'knurl': return (((u+v)%7)===0||(((u-v)%7)+7)%7===0)?-38:8;
+      case 'checker':
+        a=u%10; b=v%10;
+        if(((Math.floor(u/10)+Math.floor(v/10))%2)===0) return (Math.abs(a-b)<1.6&&a>1&&a<9)?34:-6;
+        return (Math.abs(a+b-9)<1.6&&a>1&&a<9)?34:-6;
+      case 'grain':
+        t=Math.sin(u*0.09+Math.sin(v*0.21)*2.4+Math.sin(v*0.05)*3);
+        return t*24+(hsh(u,v)-0.5)*10;
+      case 'carbon':
+        a=Math.floor(u/4); b=Math.floor(v/4);
+        if((a+b)%2) return ((u%4)<3?24:-18);
+        return ((v%4)<3?10:-30);
+      case 'hammer':
+        a=Math.floor(u/9); b=Math.floor(v/9);
+        var cx=a*9+2+hsh(a,b)*5, cy=b*9+2+hsh(b,a)*5;
+        var d=Math.hypot(u-cx,v-cy);
+        return Math.min(1,d/6)*36-22;
+      case 'damascus':
+        t=Math.sin((u+10*Math.sin(v*0.11)+6*Math.sin(u*0.05))*0.42);
+        return t>0.3?36:(t<-0.3?-32:0);
+      default: return (hsh(u,v)-0.5)*6;
+    }
+  }
+  var PATC={};
+  function patTex(id){
+    if(PATC[id]) return PATC[id];
+    var p=fin(id).pat, t=new Int8Array(256*256);
+    for(var v=0;v<256;v++) for(var u=0;u<256;u++) t[v*256+u]=Math.max(-120,Math.min(120,Math.round(patVal(p,u,v))));
+    PATC[id]=t; return t;
+  }
+  // writes one pixel of a finish into image data
+  function finPx(d,o,id,u,v,shade,alpha){
+    var f=fin(id), t=patTex(id), dv=t[((v&255)<<8)|(u&255)];
+    d[o]=Math.max(0,Math.min(255,f.rgb[0]*shade+dv));
+    d[o+1]=Math.max(0,Math.min(255,f.rgb[1]*shade+dv));
+    d[o+2]=Math.max(0,Math.min(255,f.rgb[2]*shade+dv));
+    d[o+3]=alpha;
+  }
+  var SWC={};
+  function swatchURL(id){
+    if(SWC[id]) return SWC[id];
+    var c=document.createElement('canvas'); c.width=48; c.height=48;
+    var x=c.getContext('2d'), im=x.createImageData(48,48);
+    for(var v=0;v<48;v++) for(var u=0;u<48;u++) finPx(im.data,(v*48+u)*4,id,u*2,v*2,1,255);
+    x.putImageData(im,0,0);
+    SWC[id]=c.toDataURL(); return SWC[id];
+  }
+  function finCSS(id){ var r=fin(id).rgb; return 'rgb('+r[0]+','+r[1]+','+r[2]+')'; }
+
+  // ---------- the business, saved in the browser ----------
+  var SAVEKEY='mill-ionaire-v2-save';
+  function freshSave(){
+    return {cash:0,played:0,owned:['alu'],curFin:'alu',inv:{},orders:[],mills:0,ops:1,foreman:false,
+            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1};
+  }
+  var G=freshSave();
+  function loadSave(){
+    try{
+      var raw=localStorage.getItem(SAVEKEY);
+      if(raw){ var o=JSON.parse(raw); var f=freshSave(); for(var k in f) if(o[k]!==undefined) G[k]=o[k]; }
+    }catch(e){}
+  }
+  function writeSave(){ try{ localStorage.setItem(SAVEKEY,JSON.stringify(G)); }catch(e){} }
+
+  // the market cools off the longer the shop has been running
+  function market(){ var h=G.played/3600; return 0.2+0.8*Math.exp(-h/4); }
+  function money(v){ return '$'+Math.floor(v).toLocaleString('en-US'); }
+  var LETTERPTS={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10};
+  function letterBase(ch){ return 10+4*(LETTERPTS[ch]||1); }
+
+  function toast(msg,warn){
+    var box=document.getElementById('toasts'), t=document.createElement('div');
+    t.className='toast'+(warn?' warn':''); t.textContent=msg; box.appendChild(t);
+    while(box.children.length>3) box.removeChild(box.firstChild);
+    setTimeout(function(){ t.style.opacity='0'; },2200);
+    setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); },2700);
+  }
+  function earn(v,why){
+    v=Math.max(1,Math.round(v));
+    G.cash+=v; G.earned+=v; toast('+'+money(v)+' '+why); writeSave();
+  }
 
   function demoMask(ch){
     var c=document.createElement('canvas'); c.width=B.nx; c.height=B.ny;
@@ -388,15 +627,21 @@ button:active{background:var(--rust);}
   function demoSetDepth(){
     // floor level for this pass, never more than the flutes can handle
     var L=Math.max(0,B.nz-demo.pass*12);
+    demo.L=L;
     s.z=clamp((133.5-L)/ZS,lim.z[0],lim.z[1]);
     wheel.z=s.z*40; inputs.z.value=s.z.toFixed(1); ranges.z.value=s.z;
     return L;
   }
 
   function demoLoad(){
-    makePart('square');
+    if(demo.mode==='orders'){
+      var nd=nextNeeded(-1);
+      if(!nd){ demo.phase='wait'; demo.wait=1; s.rpm=0; return; }
+      demo.ch=nd.ch; demo.fin=nd.fin;
+    } else { demo.ch=ALPHA[demo.letter%26]; demo.fin=G.curFin; }
+    makePart('square',demo.fin);
     part.placed=true; part.offset=119; part.fall=0;
-    demo.mask=demoMask(ALPHA[demo.letter%26]);
+    demo.mask=demoMask(demo.ch);
     demo.i=-16; demo.j=1; demo.dir=1; demo.eject=0; demo.pass=1; demo.stage='rough';
     s.rpm=0;
     s.x=clamp((300-TABLE_LEFT-part.offset-demo.i)/XS,lim.x[0],lim.x[1]);
@@ -451,11 +696,16 @@ button:active{background:var(--rust);}
 
   function demoStep(dt){
     if(demo.phase==='load'){ demoLoad(); return; }
+    if(demo.phase==='wait'){
+      demo.wait-=dt;
+      if(demo.wait<=0){ demo.phase='load'; }
+      return;
+    }
     if(demo.phase==='cut'){
       var T=TOOLS[tool];
       var stepover=(demo.stage==='rough')?12:4;
       var margin=T.r+2;
-      var budget=dt;
+      var budget=dt*8*(1+0.35*G.head)/fin(part.fin).hard;
       while(budget>0){
         var cutting=materialUnder(demo.i,demo.j,T.r+1);
         var rate=cutting?((demo.stage==='rough')?26:38):260;
@@ -464,7 +714,10 @@ button:active{background:var(--rust);}
         demo.i+=seg*demo.dir;
         s.x=clamp((300-TABLE_LEFT-part.offset-demo.i)/XS,lim.x[0],lim.x[1]);
         s.y=clamp(demo.j-part.ny/2,lim.y[0],lim.y[1]);
-        if(demoSafe(demo.i,demo.j,margin)) cutPart(toolTip());
+        // the program lifts the cutter over the letter instead of dragging through it
+        var safe=demoSafe(demo.i,demo.j,margin);
+        s.z=clamp((133.5-(safe?demo.L:part.nz+3))/ZS,lim.z[0],lim.z[1]);
+        if(safe) cutPart(toolTip());
         if(demo.i>part.nx+T.r+4||demo.i<-(T.r+4)){
           demo.dir=-demo.dir; demo.j+=stepover;
           demo.i=clamp(demo.i,-(T.r+4),part.nx+T.r+4);
@@ -478,7 +731,8 @@ button:active{background:var(--rust);}
       }
       inputs.x.value=s.x.toFixed(1); ranges.x.value=s.x;
       inputs.y.value=s.y.toFixed(1); ranges.y.value=s.y;
-      wheel.x=s.x*20; wheel.y=s.y*20;
+      inputs.z.value=s.z.toFixed(1); ranges.z.value=s.z;
+      wheel.x=s.x*20; wheel.y=s.y*20; wheel.z=s.z*40;
       return;
     }
     if(demo.phase==='eject'){
@@ -490,23 +744,20 @@ button:active{background:var(--rust);}
       demo.eject++;
       part.offset+=2.5;
       if(part.offset>TLEN-30) part.fall+=4;
-      if(part.fall>120){ part.placed=false; demo.letter++; demo.phase='load'; }
+      if(part.fall>120){ part.placed=false; if(demo.mode==='alpha') demo.letter++; demo.phase='load'; }
       return;
     }
   }
 
   function shelveLetter(){
-    var c=document.createElement('canvas'); c.width=part.nx; c.height=part.ny;
-    var x=c.getContext('2d'), im=x.createImageData(part.nx,part.ny), d=im.data;
-    for(var k=0;k<part.nx*part.ny;k++){
-      var h=part.hmap[k], o=k*4;
-      if(h<0){ d[o+3]=0; }
-      else { d[o]=169;d[o+1]=163;d[o+2]=146;d[o+3]=255; }
-    }
-    x.putImageData(im,0,0);
-    demo.shelf.push({c:c,ch:ALPHA[demo.letter%26]});
+    var c=partThumb();
+    demo.shelf.push({c:c,ch:demo.ch});
     if(demo.shelf.length>9) demo.shelf.shift();
-    addToTray(ALPHA[demo.letter%26],c);
+    G.made=(G.made||0)+1;
+    if(demo.mode==='orders'&&invGet(demo.ch,demo.fin)<CAP){
+      invAdd(demo.ch,demo.fin,1); binsDirty=true; ordersDirty=true; writeSave();
+      toast(demo.ch+' in '+fin(demo.fin).name+' went to the bins');
+    } else addToTray(demo.ch,c,demo.fin);
   }
 
   function drawShelf(){
@@ -523,18 +774,25 @@ button:active{background:var(--rust);}
 
   // inventory, twenty six bins holding up to a hundred each
   var CAP=100;
-  var inv={}, tray=[];
-  for(var ai=0;ai<26;ai++) inv[ALPHA[ai]]=0;
+  var tray=[];
+  function ikey(ch,f){ return ch+'|'+f; }
+  function invGet(ch,f){ return G.inv[ikey(ch,f)]||0; }
+  function invAdd(ch,f,n){ var k=ikey(ch,f); G.inv[k]=Math.max(0,(G.inv[k]||0)+n); if(!G.inv[k]) delete G.inv[k]; }
+  function invTotal(ch){ var t=0; for(var i=0;i<FIN.length;i++) t+=invGet(ch,FIN[i].id); return t; }
+  var binsDirty=true;
 
   function buildBins(){
+    binsDirty=false;
     var el=document.getElementById('bins');
     el.innerHTML='';
     for(var i=0;i<26;i++){
-      var ch=ALPHA[i];
+      var ch=ALPHA[i], tot=invTotal(ch);
       var d=document.createElement('div');
-      d.className='bin'+(inv[ch]>0?' has':'');
+      d.className='bin'+(tot>0?' has':'');
       d.dataset.ch=ch;
-      d.innerHTML='<em>'+ch+'</em><i>'+inv[ch]+' of '+CAP+'</i>';
+      var dots='';
+      FIN.forEach(function(f){ if(invGet(ch,f.id)>0) dots+='<u style="background:'+finCSS(f.id)+'"></u>'; });
+      d.innerHTML='<em>'+ch+'</em><i>'+tot+'</i><s>'+dots+'</s>';
       el.appendChild(d);
     }
   }
@@ -545,7 +803,7 @@ button:active{background:var(--rust);}
     for(var k=0;k<part.nx*part.ny;k++){
       var h=part.hmap[k], o=k*4;
       if(h<0){ d[o+3]=0; }
-      else { d[o]=169;d[o+1]=163;d[o+2]=146;d[o+3]=255; }
+      else finPx(d,o,part.fin,k%part.nx,Math.floor(k/part.nx),0.95,255);
     }
     x.putImageData(im,0,0);
     return c;
@@ -567,8 +825,8 @@ button:active{background:var(--rust);}
     return bestScore>0.55?best:'';
   }
 
-  function addToTray(ch,canvas){
-    tray.push({ch:ch,c:canvas});
+  function addToTray(ch,canvas,f){
+    tray.push({ch:ch,c:canvas,fin:f||'alu'});
     if(tray.length>24) tray.shift();
     renderTray();
   }
@@ -596,9 +854,9 @@ button:active{background:var(--rust);}
     var t=tray[i];
     if(!t) return false;
     if(!t.ch||t.ch!==ch) return false;
-    if(inv[ch]>=CAP) return false;
-    inv[ch]++; tray.splice(i,1);
-    renderTray(); buildBins();
+    if(invGet(ch,t.fin)>=CAP) return false;
+    invAdd(ch,t.fin,1); tray.splice(i,1);
+    renderTray(); buildBins(); writeSave();
     return true;
   }
 
@@ -624,7 +882,7 @@ button:active{background:var(--rust);}
     var bin=el&&el.closest?el.closest('.bin'):null;
     if(bin){
       var t=tray[drag.i];
-      var ok=t&&t.ch===bin.dataset.ch&&inv[bin.dataset.ch]<CAP;
+      var ok=t&&t.ch===bin.dataset.ch&&invGet(t.ch,t.fin)<CAP;
       bin.classList.add(ok?'hot':'bad');
     }
   });
@@ -639,7 +897,7 @@ button:active{background:var(--rust);}
 
   // a cutter can only eat so much metal per second, so feed is rationed
   var allow=0, feedClamped=0;
-  function feedLimit(){ return 2+s.rpm*0.018; }   // units of travel per second
+  function feedLimit(){ return (2+s.rpm*0.018)/(part.placed?fin(part.fin).hard:1); }   // units of travel per second, harder finishes take it slower
   function tickAllow(dt){
     allow=Math.min(allow+feedLimit()*dt, feedLimit()*0.25);
     if(feedClamped>0) feedClamped--;
@@ -650,6 +908,7 @@ button:active{background:var(--rust);}
 
   // highest voxel level the flutes can reach, above this is shank, not cutter
   function zCeil(st,tipy){
+    if(demo.on&&demo.phase==='cut'&&part.nz) return part.nz+2;   // the program runs long reach cutters
     var tTop=TABLE_TOP+120-st.z*ZS;
     return Math.floor(tTop-(tipy-TOOLS[tool].flute)-0.5);
   }
@@ -720,7 +979,8 @@ button:active{background:var(--rust);}
     printDirty=true;
   }
 
-  function makePart(kind){
+  function makePart(kind,f){
+    part.fin=f||G.curFin; part.paid=false;
     part.nx=B.nx; part.ny=B.ny; part.nz=B.nz;
     part.vox=blankVox(kind,part.nx,part.ny,part.nz);
     part.kind=kind;
@@ -883,6 +1143,7 @@ button:active{background:var(--rust);}
 
   function checkShankCrash(){
     if(!part.placed||s.rpm<=0) return;
+    if(demo.on&&demo.phase==='cut') return;   // the program uses an extended holder that clears the work
     if(shankHit(s)<=0.5) return;
     machine.hp=Math.max(0,machine.hp-6);
     crashT=70; shakeT=34; shakeMag=8;
@@ -890,8 +1151,7 @@ button:active{background:var(--rust);}
     s.rpm=0;
     document.getElementById('rngRpm').value=0;
     document.getElementById('rpmOut').textContent=0;
-    if(demo.on){ demo.on=false; demo.phase='idle';
-      document.getElementById('demoBtn').textContent='run demo mode, cut the alphabet'; }
+    if(demo.on){ demo.on=false; demo.phase='idle'; syncDemoBtns(); }
     setStatus('tool buried past its flutes, the shank hit the work and the spindle stalled',true);
     holdMsg=200;
   }
@@ -993,8 +1253,7 @@ button:active{background:var(--rust);}
     for(var z=0;z<part.nz;z++) for(var x=0;x<part.nx;x++){
       var o=((part.nz-1-z)*part.nx+x)*4;
       if(part.vox[idx(x,j,z)]){
-        var sh=160-(part.nz-1-z)*0.5;
-        d[o]=sh; d[o+1]=sh-8; d[o+2]=sh-26; d[o+3]=behind?230:255;
+        finPx(d,o,part.fin,x,z+j*3,0.95-(part.nz-1-z)*0.004,behind?230:255);
       } else d[o+3]=0;
     }
     sliceX.putImageData(im,0,0);
@@ -1027,7 +1286,7 @@ button:active{background:var(--rust);}
 
   function drawBlank(kind,x,y,w,h){
     ctx.save(); ctx.translate(x,y);
-    ctx.fillStyle='#A9A392'; ctx.strokeStyle='#2B2924'; ctx.lineWidth=2;
+    ctx.fillStyle=finCSS(G.curFin); ctx.strokeStyle='#2B2924'; ctx.lineWidth=2;
     if(kind==='round'){
       ctx.beginPath();
       ctx.moveTo(-w/2+h/2,-h/2); ctx.lineTo(w/2-h/2,-h/2);
@@ -1093,7 +1352,7 @@ button:active{background:var(--rust);}
     ctx.strokeStyle='#65675F'; ctx.lineWidth=2; ctx.strokeRect(BIN.x,BIN.y,BIN.w,BIN.h);
     ctx.fillStyle='#65675F'; ctx.font='13px Trebuchet MS';
     if(!part.placed){
-      ctx.fillText('stock bin, drag a blank up onto the table',BIN.x+12,BIN.y+20);
+      ctx.fillText('stock bin, '+fin(G.curFin).name+', drag a blank up onto the table',BIN.x+12,BIN.y+20);
       blanks.forEach(function(b){
         drawBlank(b.kind,b.cx,b.cy,b.w,b.h);
         ctx.fillStyle='#65675F'; ctx.font='12px Trebuchet MS';
@@ -1134,7 +1393,7 @@ button:active{background:var(--rust);}
       for(var k=0;k<part.nx*part.ny;k++){
         var h=part.hmap[k], o=k*4;
         if(h<0){ d[o]=94;d[o+1]=92;d[o+2]=86;d[o+3]=255; }
-        else { var f=h/(part.nz-1), base=76+f*94; d[o]=base;d[o+1]=base-6;d[o+2]=base-24;d[o+3]=255; }
+        else { var f=h/(part.nz-1); finPx(d,o,part.fin,k%part.nx,Math.floor(k/part.nx),0.45+0.6*f,255); }
       }
       topX.putImageData(im,0,0); topDirty=false;
     }
@@ -1205,7 +1464,12 @@ button:active{background:var(--rust);}
     var cut=need?100*(1-left/need):100;
     var dmg=keep?100*over/keep:0;
     if(cut>=97&&dmg<=1.0){
-      if(done.indexOf(job)<0) done.push(job);
+      if(part.paid){ setStatus('this part was already paid for, bag it and load a fresh blank',false); holdMsg=160; return; }
+      var first=done.indexOf(job)<0;
+      earn((first?150:45)*fin(part.fin).pay*market(),first?'for a first article that passed':'for a print job that passed');
+      part.paid=true;
+      if(first) done.push(job);
+      G.done=done.slice();
       setStatus('part passes inspection, '+cut.toFixed(1)+' percent cut and '+dmg.toFixed(1)+' percent overcut',false);
       statusEl.className='status good';
       holdMsg=200; buildJobList();
@@ -1236,8 +1500,14 @@ button:active{background:var(--rust);}
   function setStatus(msg,warn){
     if(msg!==undefined){ statusEl.textContent=msg; statusEl.className='status'+(warn?' warn':''); return; }
     statusEl.className='status';
+    if(demo.on&&demo.mode==='orders'){
+      if(demo.phase==='wait') statusEl.textContent='order program running, every open order is covered, waiting for new work';
+      else statusEl.textContent='order program, cutting '+demo.ch+' in '+fin(demo.fin).name+', '+demo.stage+' pass '+demo.pass+
+        (demo.phase==='eject'?', part going to the bins':'');
+      statusEl.className='status cutting'; return;
+    }
     if(demo.on){
-      statusEl.textContent='demo mode, letter '+ALPHA[demo.letter%26]+', '+demo.stage+' pass '+demo.pass+
+      statusEl.textContent='demo mode, letter '+demo.ch+', '+demo.stage+' pass '+demo.pass+
         (demo.phase==='eject'?', part coming off the table':'');
       statusEl.className='status cutting'; return;
     }
@@ -1271,10 +1541,17 @@ button:active{background:var(--rust);}
 
   function frame(t){
     var dt=lastT?Math.min(0.05,(t-lastT)/1000):0; lastT=t;
-    if(fac.open){
-      facUpdate(dt); facDraw(); facBoard();
-      requestAnimationFrame(frame); return;
+    G.played+=dt;
+    facUpdate(dt);
+    ordersTick(dt);
+    hudT-=dt;
+    if(hudT<=0){ hudT=0.25; drawHud();
+      if(view==='floor') facBoard();
+      if(view==='orders'){ if(binsDirty) buildBins(); renderOrders(); }
+      if(view==='shop') renderShop();
+      saveT-=0.25; if(saveT<=0){ saveT=5; writeSave(); }
     }
+    if(view==='floor') facDraw();
     if(demo.on) demoStep(dt);
     tickAllow(dt);
     if(feed.on&&!machine.xDead){
@@ -1285,7 +1562,7 @@ button:active{background:var(--rust);}
     if(crashT>0) crashT--;
     if(shakeT>0) shakeT--;
     stepParts();
-    drawMachine(); drawTop(); drawPrint();
+    if(view==='mill'){ drawMachine(); drawTop(); drawPrint(); }
     if(holdMsg>0) holdMsg--; else setStatus();
     setHealth();
     requestAnimationFrame(frame);
@@ -1339,58 +1616,106 @@ button:active{background:var(--rust);}
     document.getElementById('feedOut').textContent=feed.rate;
   });
   // ---- factory floor ----
-  var fac={open:false,running:false,n:4,m:[],ops:[],order:[],clock:0,msg:''};
+  var fac={running:true,m:[],ops:[],sel:-1,rush:null};
   var fcv=document.getElementById('factory'), fx=fcv.getContext('2d');
+  var OPY=536;
 
-  function facInit(n){
-    fac.n=n; fac.m=[]; fac.ops=[];
-    for(var i=0;i<n;i++){
-      fac.m.push({ch:ALPHA[i%26],prog:0,wear:0,stock:5,need:'',sweep:0,dir:1,made:0,flash:0});
+  function facSync(){
+    while(G.floor.length<G.mills) G.floor.push({ch:ALPHA[G.floor.length%26],fin:'alu',auto:true});
+    while(fac.m.length<G.mills){
+      var c=G.floor[fac.m.length];
+      fac.m.push({ch:c.ch,fin:c.fin,auto:c.auto!==false,prog:0,wear:0,stock:5,need:'',sweep:0,dir:1,made:0,flash:0,idle:false});
     }
-    var opCount=Math.max(1,Math.ceil(n/4));
-    for(var k=0;k<opCount;k++) fac.ops.push({x:40+k*60,y:530,tx:40+k*60,ty:530,busy:-1,work:0});
-    fac.order=[];
-    for(var q=0;q<Math.min(3,n);q++){
-      fac.order.push({ch:fac.m[q].ch,need:6+q*2,got:0});
+    while(fac.ops.length<G.ops){
+      var k=fac.ops.length;
+      fac.ops.push({x:30+k*56,y:OPY,tx:30+k*56,ty:OPY,busy:-1,work:0});
     }
-    fac.clock=300;
-    fac.msg='';
+  }
+  function facStore(i){ var m=fac.m[i]; G.floor[i]={ch:m.ch,fin:m.fin,auto:m.auto}; writeSave(); }
+
+  // every letter the open orders still need, one entry per missing letter
+  function missingList(){
+    var tmp={}, out=[];
+    G.orders.forEach(function(o){
+      for(var i=0;i<o.word.length;i++){
+        var k=ikey(o.word[i],o.fin);
+        if(tmp[k]===undefined) tmp[k]=G.inv[k]||0;
+        if(tmp[k]>0) tmp[k]--; else out.push({ch:o.word[i],fin:o.fin});
+      }
+    });
+    return out;
+  }
+  function pendingKeys(skipMachine){
+    var p={};
+    fac.m.forEach(function(m,i){
+      if(i===skipMachine||!m.auto||m.idle||m.prog<=0) return;
+      var k=ikey(m.ch,m.fin); p[k]=(p[k]||0)+1;
+    });
+    if(skipMachine!==-1&&demo.on&&demo.mode==='orders'&&(demo.phase==='cut'||demo.phase==='eject')){
+      var k2=ikey(demo.ch,demo.fin); p[k2]=(p[k2]||0)+1;
+    }
+    return p;
+  }
+  // what to cut next, skipping letters some other machine is already on
+  function nextNeeded(who){
+    var miss=missingList(), p=pendingKeys(who);
+    for(var i=0;i<miss.length;i++){
+      var k=ikey(miss[i].ch,miss[i].fin);
+      if(p[k]>0){ p[k]--; continue; }
+      return miss[i];
+    }
+    return null;
   }
 
   function facCells(){
-    var cols=fac.n<=2?2:(fac.n<=4?2:4);
-    var rows=Math.ceil(fac.n/cols);
+    var n=Math.max(1,fac.m.length);
+    var cols=n<=1?1:(n<=4?2:(n<=9?3:4));
+    var rows=Math.ceil(n/cols);
     var w=fcv.width/cols, h=(fcv.height-60)/rows;
     var out=[];
-    for(var i=0;i<fac.n;i++){
-      out.push({x:(i%cols)*w,y:Math.floor(i/cols)*h,w:w,h:h});
-    }
+    for(var i=0;i<n;i++) out.push({x:(i%cols)*w,y:Math.floor(i/cols)*h,w:w,h:h});
     return out;
   }
 
   function facUpdate(dt){
-    if(!fac.running) return;
-    fac.clock=Math.max(0,fac.clock-dt);
+    facSync();
     var i;
+    if(fac.rush&&!fac.rush.over){
+      fac.rush.clock=Math.max(0,fac.rush.clock-dt);
+      var full=fac.rush.order.every(function(o){ return o.got>=o.need; });
+      if(full){ fac.rush.over=true; earn(fac.rush.bonus,'rush shift bonus'); fac.rush.msg='rush quota filled'; }
+      else if(fac.rush.clock<=0){ fac.rush.over=true; fac.rush.msg='the rush ran out of time, no bonus'; toast(fac.rush.msg,true); }
+    }
+    if(!fac.running) return;
     for(i=0;i<fac.m.length;i++){
       var m=fac.m[i];
       if(m.flash>0) m.flash-=dt;
       if(m.need) continue;
-      var rate=(1-0.35*m.wear)/13;      // a part takes about thirteen seconds fresh
+      if(m.prog<=0){
+        if(m.auto){
+          var nd=nextNeeded(i);
+          if(!nd){ m.idle=true; continue; }
+          m.ch=nd.ch; m.fin=nd.fin;
+        }
+        m.idle=false;
+      }
+      var hard=fin(m.fin).hard;
+      var rate=(1-0.35*m.wear)/(13*hard);      // a part takes about thirteen seconds fresh in aluminum
       m.prog+=dt*rate;
       m.sweep+=dt*m.dir*1.6;
       if(m.sweep>1){m.sweep=1;m.dir=-1;} if(m.sweep<0){m.sweep=0;m.dir=1;}
-      m.wear+=dt*0.016;
+      m.wear+=dt*0.016*hard;
       if(Math.random()<dt*0.012){ m.need='chips'; m.flash=1; }
       if(m.wear>=1){ m.need='tool'; m.flash=1; }
       if(m.prog>=1){
-        m.prog=0; m.made++; m.stock--;
-        if(inv[m.ch]<CAP) inv[m.ch]++;
-        buildBins();
-        for(var o=0;o<fac.order.length;o++) if(fac.order[o].ch===m.ch&&fac.order[o].got<fac.order[o].need) fac.order[o].got++;
+        m.prog=0; m.made++; m.stock--; G.made=(G.made||0)+1;
+        if(invGet(m.ch,m.fin)<CAP) invAdd(m.ch,m.fin,1);
+        binsDirty=true; ordersDirty=true;
+        if(fac.rush&&!fac.rush.over) fac.rush.order.forEach(function(o){ if(o.ch===m.ch&&o.got<o.need) o.got++; });
         if(m.stock<=0){ m.need='stock'; m.flash=1; }
       }
     }
+    if(G.foreman) for(i=0;i<fac.m.length;i++) if(fac.m[i].need) facDispatch(i);
     for(i=0;i<fac.ops.length;i++){
       var p=fac.ops[i];
       var dx=p.tx-p.x, dy=p.ty-p.y, d=Math.hypot(dx,dy);
@@ -1402,13 +1727,10 @@ button:active{background:var(--rust);}
           if(mm.need==='tool') mm.wear=0;
           if(mm.need==='stock') mm.stock=5;
           mm.need=''; mm.flash=0;
-          p.busy=-1; p.tx=40+i*60; p.ty=530;
+          p.busy=-1; p.tx=30+i*56; p.ty=OPY;
         }
       }
     }
-    var doneAll=fac.order.every(function(o){return o.got>=o.need;});
-    if(doneAll&&!fac.msg) fac.msg='quota filled with '+Math.round(fac.clock)+' seconds to spare';
-    else if(fac.clock<=0&&!fac.msg) fac.msg='the shift ran out, order short';
   }
 
   function facDispatch(i){
@@ -1427,57 +1749,111 @@ button:active{background:var(--rust);}
   function facDraw(){
     fx.clearRect(0,0,fcv.width,fcv.height);
     fx.fillStyle='#D3CEC0'; fx.fillRect(0,0,fcv.width,fcv.height);
+    if(!fac.m.length){
+      fx.fillStyle='#2B2924'; fx.font='bold 20px Trebuchet MS'; fx.textAlign='center';
+      fx.fillText('the floor is empty',fcv.width/2,fcv.height/2-14);
+      fx.font='15px Trebuchet MS'; fx.fillStyle='#2E4A63';
+      fx.fillText('buy your first floor mill in the shop',fcv.width/2,fcv.height/2+14);
+      fx.textAlign='left';
+    }
     var cells=facCells(), i;
     for(i=0;i<fac.m.length;i++){
       var m=fac.m[i], c=cells[i];
       fx.strokeStyle='#9A9C97'; fx.lineWidth=1; fx.strokeRect(c.x,c.y,c.w,c.h);
-      var bx=c.x+c.w*0.16, bw=c.w*0.68, by=c.y+c.h*0.28, bh=c.h*0.44;
+      if(i===fac.sel){ fx.strokeStyle='#2E4A63'; fx.lineWidth=4; fx.strokeRect(c.x+3,c.y+3,c.w-6,c.h-6); }
+      var FS=Math.max(1,Math.min(2.2,0.9*fcv.width/Math.max(1,fcv.clientWidth||fcv.width)));
+      var HH=Math.min(c.h*0.45,40*FS), mh=(c.h-HH-30)/0.52;
+      var mc={h:mh,y:c.y+HH-0.12*mh};
+      var bx=c.x+c.w*0.16, bw=c.w*0.68, by=mc.y+mc.h*0.28, bh=mc.h*0.44;
 
-      fx.fillStyle='#57694B'; fx.fillRect(bx,by-c.h*0.16,bw*0.18,bh+c.h*0.16);
-      fx.fillStyle='#3E4C37'; fx.fillRect(bx,by-c.h*0.16,bw*0.18,c.h*0.10);
-      fx.fillStyle='#57694B'; fx.fillRect(bx,by-c.h*0.16,bw*0.8,c.h*0.07);
+      fx.fillStyle='#57694B'; fx.fillRect(bx,by-mc.h*0.16,bw*0.18,bh+mc.h*0.16);
+      fx.fillStyle='#3E4C37'; fx.fillRect(bx,by-mc.h*0.16,bw*0.18,mc.h*0.10);
+      fx.fillStyle='#57694B'; fx.fillRect(bx,by-mc.h*0.16,bw*0.8,mc.h*0.07);
 
       var sx=bx+bw*0.2+m.sweep*(bw*0.55);
-      fx.fillStyle='#3E4C37'; fx.fillRect(sx-8,by-c.h*0.10,16,c.h*0.10);
-      fx.fillStyle='#2B2924'; fx.fillRect(sx-2.5,by,5,c.h*0.11);
+      fx.fillStyle='#3E4C37'; fx.fillRect(sx-8,by-mc.h*0.10,16,mc.h*0.10);
+      fx.fillStyle='#2B2924'; fx.fillRect(sx-2.5,by,5,mc.h*0.11);
 
-      fx.fillStyle='#DDD8CB'; fx.fillRect(bx+bw*0.16,by+c.h*0.13,bw*0.78,c.h*0.05);
-      fx.fillStyle='#A9A392';
-      fx.fillRect(bx+bw*0.30,by+c.h*0.075,bw*0.42*(1-m.prog*0.55),c.h*0.055);
-      fx.fillStyle='#65675F'; fx.fillRect(bx+bw*0.10,by+c.h*0.18,bw*0.9,c.h*0.06);
+      fx.fillStyle='#DDD8CB'; fx.fillRect(bx+bw*0.16,by+mc.h*0.13,bw*0.78,mc.h*0.05);
+      if(!m.idle){
+        fx.fillStyle=finCSS(m.fin);
+        fx.fillRect(bx+bw*0.30,by+mc.h*0.075,bw*0.42*(1-m.prog*0.55),mc.h*0.055);
+        fx.strokeStyle='#2B2924'; fx.lineWidth=1;
+        fx.strokeRect(bx+bw*0.30,by+mc.h*0.075,bw*0.42*(1-m.prog*0.55),mc.h*0.055);
+      }
+      fx.fillStyle='#65675F'; fx.fillRect(bx+bw*0.10,by+mc.h*0.18,bw*0.9,mc.h*0.06);
 
-      fx.fillStyle=m.need?( (Math.floor(Date.now()/300)%2)?'#A84A2A':'#E0912B' ):'#57694B';
-      fx.beginPath(); fx.arc(c.x+c.w-20,c.y+18,7,0,Math.PI*2); fx.fill();
+      fx.fillStyle=m.need?( (Math.floor(Date.now()/300)%2)?'#A84A2A':'#E0912B' ):(m.idle?'#9A9C97':'#57694B');
+      fx.beginPath(); fx.arc(c.x+c.w-12-7*FS,c.y+8+7*FS,7*FS,0,Math.PI*2); fx.fill();
       fx.strokeStyle='#2B2924'; fx.lineWidth=1.5; fx.stroke();
 
-      fx.fillStyle='#2B2924'; fx.font='bold 20px Trebuchet MS';
-      fx.fillText(m.ch,c.x+12,c.y+26);
-      fx.font='11px Trebuchet MS'; fx.fillStyle='#65675F';
-      fx.fillText('made '+m.made+', blanks '+Math.max(0,m.stock),c.x+12,c.y+42);
-      if(m.need) fx.fillText('needs '+(m.need==='tool'?'a tool change':(m.need==='stock'?'more stock':'chips cleared')),c.x+12,c.y+c.h-10);
+      fx.fillStyle='#2B2924'; fx.font='bold '+Math.round(22*FS)+'px Trebuchet MS';
+      fx.fillText(m.idle?'-':m.ch,c.x+12,c.y+28*FS);
+      var sq=16*FS;
+      fx.fillStyle=finCSS(m.fin); fx.fillRect(c.x+18+20*FS,c.y+11*FS,sq,sq);
+      fx.strokeStyle='#2B2924'; fx.lineWidth=1.5; fx.strokeRect(c.x+18+20*FS,c.y+11*FS,sq,sq);
+      fx.font='bold '+Math.round(12*FS)+'px Trebuchet MS'; fx.fillStyle=m.auto?'#2E4A63':'#65675F';
+      fx.fillText(m.auto?'auto':'manual',c.x+24+36*FS,c.y+24*FS);
+      fx.fillStyle='#65675F'; fx.font=Math.round(11*FS)+'px Trebuchet MS';
+      var line='mill '+(i+1)+', made '+m.made;
+      if(m.need){ line='needs '+(m.need==='tool'?'a tool change':(m.need==='stock'?'more stock':'chips cleared')); fx.fillStyle='#A84A2A'; }
+      else if(m.idle) line='idle, nothing needed';
+      fx.fillText(line,c.x+12,c.y+HH-4);
 
       fx.fillStyle='#C9C3B2'; fx.fillRect(c.x+12,c.y+c.h-24,c.w-70,6);
-      fx.fillStyle='#57694B'; fx.fillRect(c.x+12,c.y+c.h-24,(c.w-70)*m.prog,6);
+      fx.fillStyle='#2E4A63'; fx.fillRect(c.x+12,c.y+c.h-24,(c.w-70)*m.prog,6);
       fx.fillStyle=m.wear>0.7?'#A84A2A':'#B5760D';
-      fx.fillRect(c.x+12,c.y+c.h-16,(c.w-70)*m.wear,3);
+      fx.fillRect(c.x+12,c.y+c.h-16,(c.w-70)*Math.min(1,m.wear),3);
     }
     for(i=0;i<fac.ops.length;i++){
       var p=fac.ops[i];
       fx.fillStyle=p.busy>=0?'#A84A2A':'#2E4A63';
-      fx.beginPath(); fx.arc(p.x,p.y-14,6,0,Math.PI*2); fx.fill();
-      fx.fillRect(p.x-5,p.y-8,10,14);
-      fx.fillStyle='#2B2924'; fx.font='10px Trebuchet MS';
-      fx.fillText('op '+(i+1),p.x-12,p.y+16);
+      fx.beginPath(); fx.arc(p.x,p.y-20,9,0,Math.PI*2); fx.fill();
+      fx.fillRect(p.x-8,p.y-11,16,20);
+      fx.fillStyle='#2B2924'; fx.font='bold 13px Trebuchet MS';
+      fx.fillText('op '+(i+1),p.x-14,p.y+22);
     }
+    if(G.foreman){ fx.fillStyle='#2E4A63'; fx.font='bold 11px Trebuchet MS'; fx.fillText('foreman on duty',fcv.width-120,OPY+16); }
   }
 
   function facBoard(){
     var el=document.getElementById('facOrder');
-    if(!fac.m.length){ el.textContent='no order on the board'; return; }
-    var t=fac.order.map(function(o){ return o.got+' of '+o.need+' '+o.ch; }).join(', ');
-    el.textContent=(fac.msg?fac.msg+'. ':'')+'order '+t+', '+Math.floor(fac.clock/60)+' minutes '+
-      String(Math.floor(fac.clock%60)).padStart(2,'0')+' left';
-    el.className='status'+(fac.msg?(fac.msg.indexOf('short')>=0?' warn':' good'):'');
+    if(!fac.m.length){ el.textContent='no floor mills yet, buy one in the shop'; el.className='status'; return; }
+    if(fac.rush){
+      var t=fac.rush.order.map(function(o){ return o.got+' of '+o.need+' '+o.ch; }).join(', ');
+      el.textContent=(fac.rush.msg?fac.rush.msg+'. ':'')+'rush quota '+t+', bonus '+money(fac.rush.bonus)+
+        (fac.rush.over?'':', '+Math.floor(fac.rush.clock/60)+':'+String(Math.floor(fac.rush.clock%60)).padStart(2,'0')+' left');
+      el.className='status'+(fac.rush.over?(fac.rush.msg.indexOf('no bonus')>=0?' warn':' good'):' cutting');
+      return;
+    }
+    var need=0, idle=0;
+    fac.m.forEach(function(m){ if(m.need) need++; else if(m.idle) idle++; });
+    el.textContent=(fac.running?'floor running':'floor paused')+', '+fac.m.length+' mills, '+need+' need a hand, '+idle+' idle';
+    el.className='status'+(need?' warn':(fac.running?' cutting':''));
+  }
+
+  function renderSel(){
+    var box=document.getElementById('facSel');
+    if(fac.sel<0||fac.sel>=fac.m.length){ box.style.display='none'; return; }
+    var m=fac.m[fac.sel];
+    box.style.display='block';
+    box.innerHTML='<div class="feed"><span>mill '+(fac.sel+1)+'</span>'+
+      '<button class="switch'+(m.auto?' on':'')+'" id="selAuto" style="'+(m.auto?'background:var(--blue)':'')+'">'+(m.auto?'auto, cutting for orders':'manual, tap for auto')+'</button></div>'+
+      '<div class="feed"><span>letter '+m.ch+'</span><button id="selPrev">&#8592;</button><button id="selNext">&#8594;</button></div>'+
+      '<div class="finrow" id="selFin"><span>finish</span></div>'+
+      '<button class="wide" id="selDone">done</button>';
+    var fr=box.querySelector('#selFin');
+    G.owned.forEach(function(id){
+      var b=document.createElement('button'); b.className='sw'+(id===m.fin?' on':'');
+      b.style.backgroundImage='url('+swatchURL(id)+')'; b.title=fin(id).name;
+      b.addEventListener('click',function(){ m.fin=id; m.auto=false; m.prog=0; facStore(fac.sel); renderSel(); });
+      fr.appendChild(b);
+    });
+    function shift(n){ m.ch=ALPHA[(ALPHA.indexOf(m.ch)+n+26)%26]; m.auto=false; m.prog=0; m.idle=false; facStore(fac.sel); renderSel(); }
+    box.querySelector('#selPrev').addEventListener('click',function(){ shift(-1); });
+    box.querySelector('#selNext').addEventListener('click',function(){ shift(1); });
+    box.querySelector('#selAuto').addEventListener('click',function(){ m.auto=!m.auto; m.prog=0; facStore(fac.sel); renderSel(); });
+    box.querySelector('#selDone').addEventListener('click',function(){ fac.sel=-1; renderSel(); });
   }
 
   fcv.addEventListener('pointerdown',function(e){
@@ -1488,40 +1864,238 @@ button:active{background:var(--rust);}
       var c=cells[i];
       if(px>=c.x&&px<=c.x+c.w&&py>=c.y&&py<=c.y+c.h){
         if(fac.m[i].need) facDispatch(i);
-        else if(fac.m[i].prog<0.02){
-          var n=(ALPHA.indexOf(fac.m[i].ch)+1)%26;
-          fac.m[i].ch=ALPHA[n];
-        }
+        else { fac.sel=(fac.sel===i)?-1:i; renderSel(); }
         return;
       }
     }
   });
 
-  document.querySelectorAll('#facCount button').forEach(function(b){
-    b.addEventListener('click',function(){
-      document.querySelectorAll('#facCount button').forEach(function(o){o.classList.remove('on');});
-      b.classList.add('on');
-      facInit(Number(b.dataset.n));
-    });
-  });
   document.getElementById('facRun').addEventListener('click',function(){
     fac.running=!fac.running;
-    this.textContent=fac.running?'pause the shift':'start the shift';
-    this.classList.toggle('on',fac.running);
-    if(fac.running&&fac.msg){ facInit(fac.n); }
+    this.textContent=fac.running?'pause the floor':'run the floor';
+    this.classList.toggle('on',!fac.running);
   });
-  document.getElementById('facBtn').addEventListener('click',function(){
-    fac.open=true; sheet('menuSheet',false);
-    document.getElementById('facPanel').style.display='block';
-    document.querySelectorAll('.workspace').forEach(function(w){ w.style.display='none'; });
-    if(!fac.m.length) facInit(4);
-    window.scrollTo(0,0);
+  document.getElementById('facRush').addEventListener('click',function(){
+    if(!fac.m.length){ toast('buy a floor mill before you run a rush',true); return; }
+    if(fac.rush&&!fac.rush.over){ toast('a rush is already on the board',true); return; }
+    var pool='ETAOINSHRDLUCMP'.split(''), order=[], n=Math.min(3,fac.m.length);
+    for(var q=0;q<n;q++){
+      var ch=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+      order.push({ch:ch,need:3+Math.ceil(fac.m.length/n)*2,got:0});
+    }
+    fac.rush={order:order,clock:150+30*fac.m.length,bonus:Math.round((120+60*fac.m.length)*market()),over:false,msg:''};
+    toast('rush shift on, set mills to manual and cut the quota letters');
   });
-  document.getElementById('facClose').addEventListener('click',function(){
-    fac.open=false;
-    document.getElementById('facPanel').style.display='none';
-    document.querySelectorAll('.workspace').forEach(function(w){ w.style.display=''; });
+  document.getElementById('facBtn').addEventListener('click',function(){ sheet('menuSheet',false); setView('floor'); });
+  document.getElementById('facClose').addEventListener('click',function(){ setView('mill'); });
+
+  // ---- orders ----
+  var WORDS=['CAT','DOG','MILL','SHOP','OPEN','EXIT','BOLT','NUT','GEAR','SIGN','BAR','CAFE','MESA','ROUTE','DINER','MOTEL',
+    'GAS','EAT','HOME','FARM','RANCH','BLUE','IRON','STEEL','TOOL','WORK','JOB','FIX','BOX','LATHE','DRILL','WELD','SAND',
+    'SUN','DUST','ROAD','MILE','RIG','TRUCK','PARTS','SALE','DELI','PIZZA','TACO','QUIZ','JAZZ','ZONE','KEY','LOCK','DOCK',
+    'YARD','GATE','BARN','HAY','COOP','EGGS','MAPLE','OAK','PINE','LAKE','RIVER','CABIN','CAMP','FIRE','STAR','MOON','NORTH',
+    'WEST','EAST','SOUTH','HOTEL','POST','MAIL','STOP','SLOW','YIELD','PARK','ZOO','ART','MUSIC','BAND','STAGE','ARENA','TEAM',
+    'WIN','GOAL','KICK','PRIDE','HOPE','LOVE','LUCK','GOLD','MINE','OASIS','CANYON','DESERT','GARAGE','SALOON','JUNCTION'];
+  var CLIENTS=['a sign shop','a mailbox maker','a diner owner','a hardware store','a print shop','a ranch gate builder',
+    'a roadside motel','a ball team','a wedding planner','a museum','a gift shop','a trucking yard','a theater','a coffee stand','a campground'];
+  var ordersDirty=true, ordersSig='', orderT=0;
+  function maxOrders(){ return Math.min(5,3+Math.floor(G.mills/4)); }
+  function orderValue(o){ var v=0; for(var i=0;i<o.word.length;i++) v+=letterBase(o.word[i]); return v*1.25*fin(o.fin).pay*market(); }
+  function newOrder(){
+    var maxLen=Math.min(8,3+Math.floor(G.mills/2)+(G.owned.length>3?1:0)+(G.owned.length>7?1:0));
+    var pool=WORDS.filter(function(w){ return w.length<=maxLen; });
+    var w=pool[Math.floor(Math.random()*pool.length)];
+    var f=(Math.random()<0.45)?G.owned[G.owned.length-1]:G.owned[Math.floor(Math.random()*G.owned.length)];
+    return {id:G.nextId++,word:w,fin:f,who:CLIENTS[Math.floor(Math.random()*CLIENTS.length)]};
+  }
+  function haveFlags(o){
+    var used={}, out=[];
+    for(var i=0;i<o.word.length;i++){
+      var ch=o.word[i]; used[ch]=(used[ch]||0)+1;
+      out.push(invGet(ch,o.fin)>=used[ch]);
+    }
+    return out;
+  }
+  function canShip(o){ return haveFlags(o).every(function(x){ return x; }); }
+  function shipOrder(id){
+    for(var i=0;i<G.orders.length;i++){
+      var o=G.orders[i];
+      if(o.id!==id) continue;
+      if(!canShip(o)) return;
+      for(var k=0;k<o.word.length;k++) invAdd(o.word[k],o.fin,-1);
+      G.orders.splice(i,1); G.shipped=(G.shipped||0)+1;
+      earn(orderValue(o),'for '+o.word+' to '+o.who);
+      orderT=2.5; binsDirty=true; ordersDirty=true; buildBins();
+      return;
+    }
+  }
+  function passOrder(id){
+    if(G.passCd>0) return;
+    G.orders=G.orders.filter(function(o){ return o.id!==id; });
+    G.passCd=20; orderT=1; ordersDirty=true; writeSave();
+  }
+  function ordersTick(dt){
+    if(G.passCd>0) G.passCd=Math.max(0,G.passCd-dt);
+    if(G.orders.length<maxOrders()){
+      orderT-=dt;
+      if(orderT<=0){ G.orders.push(newOrder()); orderT=3; ordersDirty=true; writeSave(); }
+    }
+  }
+  function renderOrders(){
+    var shipN=0;
+    var sig=G.orders.map(function(o){ var c=canShip(o); if(c) shipN++; return o.id+':'+haveFlags(o).join('')+':'+Math.round(orderValue(o)); }).join('|')+'/'+(G.passCd>0);
+    var badge=document.getElementById('badgeOrders');
+    badge.textContent=shipN; badge.classList.toggle('show',shipN>0);
+    if(view!=='orders') return;
+    if(sig===ordersSig&&!ordersDirty) return;
+    ordersSig=sig; ordersDirty=false;
+    var el=document.getElementById('orderList'); el.innerHTML='';
+    if(!G.orders.length){ el.innerHTML='<p class="spec">the phone is quiet, a new order is on the way</p>'; return; }
+    G.orders.forEach(function(o){
+      var d=document.createElement('div'); d.className='ocard';
+      var flags=haveFlags(o), tiles='';
+      for(var i=0;i<o.word.length;i++)
+        tiles+='<div class="tile '+(flags[i]?'ok':'miss')+'" style="background-image:url('+swatchURL(o.fin)+')">'+o.word[i]+'</div>';
+      var ok=canShip(o);
+      d.innerHTML='<h4>'+o.word+' in '+fin(o.fin).name+'</h4><p>for '+o.who+'</p><div class="tiles">'+tiles+'</div>'+
+        '<div class="row"><b>'+money(orderValue(o))+'</b>'+
+        '<button class="pass"'+(G.passCd>0?' disabled':'')+'>pass</button>'+
+        '<button class="ship"'+(ok?'':' disabled')+'>ship it</button></div>';
+      d.querySelector('.ship').addEventListener('click',function(){ shipOrder(o.id); });
+      d.querySelector('.pass').addEventListener('click',function(){ passOrder(o.id); });
+      el.appendChild(d);
+    });
+  }
+
+  // ---- shop ----
+  var shopSig='';
+  function millCost(){ return Math.round(250*Math.pow(1.7,G.mills)); }
+  function opCost(){ return Math.round(350*Math.pow(1.6,G.ops-1)); }
+  var HEADCOST=[800,2500,7000];
+  function renderShop(){
+    if(view!=='shop') return;
+    var sig=[Math.floor(G.cash),G.mills,G.ops,G.foreman,G.head,G.owned.join(','),G.curFin].join('/');
+    if(sig===shopSig) return;
+    shopSig=sig;
+    var U=[
+      {k:'mill',name:'floor mill',txt:G.mills>=12?'the floor is full, twelve mills':'a mill that runs on its own on the floor tab, you own '+G.mills+' of twelve',cost:G.mills>=12?0:millCost(),max:G.mills>=12},
+      {k:'op',name:'hire an operator',txt:G.ops>=6?'the crew is full, six operators':'clears chips, changes tools and loads stock, you have '+G.ops+' of six',cost:G.ops>=6?0:opCost(),max:G.ops>=6},
+      {k:'fore',name:'foreman',txt:G.foreman?'on duty, operators go where they are needed without being told':'sends operators to stopped mills without you tapping',cost:G.foreman?0:3000,max:G.foreman},
+      {k:'head',name:'high speed head',txt:G.head>=3?'fully upgraded, the order program cuts at top speed':'makes the order program on your main mill cut faster, level '+G.head+' of three',cost:G.head>=3?0:HEADCOST[G.head],max:G.head>=3}
+    ];
+    var ul=document.getElementById('upgList'); ul.innerHTML='';
+    U.forEach(function(u){
+      var d=document.createElement('div'); d.className='upg';
+      d.innerHTML='<div><b>'+u.name+'</b>'+u.txt+'</div><button'+((u.max||G.cash<u.cost)?' disabled':'')+'>'+(u.max?'owned':money(u.cost))+'</button>';
+      d.querySelector('button').addEventListener('click',function(){ buyUpg(u.k); });
+      ul.appendChild(d);
+    });
+    var fl=document.getElementById('finList'); fl.innerHTML='';
+    FIN.forEach(function(f){
+      var own=G.owned.indexOf(f.id)>=0;
+      var d=document.createElement('div'); d.className='fcard'+(own?'':' locked');
+      var c=document.createElement('canvas'); c.width=180; c.height=60;
+      var x=c.getContext('2d'), im=x.createImageData(180,60);
+      for(var v=0;v<60;v++) for(var u=0;u<180;u++) finPx(im.data,(v*180+u)*4,f.id,u,v,1,255);
+      x.putImageData(im,0,0);
+      x.font='bold 40px Arial'; x.textAlign='center'; x.textBaseline='middle';
+      x.lineWidth=3; x.strokeStyle='rgba(0,0,0,.55)'; x.strokeText('ABC',90,32);
+      x.fillStyle='rgba(255,255,255,.25)'; x.fillText('ABC',90,32);
+      d.appendChild(c);
+      var info=document.createElement('div');
+      info.innerHTML='<h4>'+f.name+'</h4><p>pays '+f.pay.toFixed(1)+' times aluminum, cuts '+(f.hard===1?'at full speed':f.hard.toFixed(1)+' times slower')+'</p>';
+      d.appendChild(info);
+      var b=document.createElement('button');
+      if(own){
+        if(G.curFin===f.id){ b.className='inuse'; b.textContent='loaded in the stock bin'; }
+        else { b.className='use'; b.textContent='load as stock'; b.addEventListener('click',function(){ setFin(f.id); }); }
+      } else {
+        b.textContent='unlock '+money(f.cost);
+        if(G.cash<f.cost) b.disabled=true;
+        b.addEventListener('click',function(){ buyFin(f.id); });
+      }
+      d.appendChild(b);
+      fl.appendChild(d);
+    });
+  }
+  function buyUpg(k){
+    var c=0;
+    if(k==='mill'){ if(G.mills>=12) return; c=millCost(); if(G.cash<c) return; G.cash-=c; G.mills++; facSync(); toast('floor mill '+G.mills+' is bolted down'); }
+    if(k==='op'){ if(G.ops>=6) return; c=opCost(); if(G.cash<c) return; G.cash-=c; G.ops++; facSync(); toast('operator '+G.ops+' clocked in'); }
+    if(k==='fore'){ if(G.foreman) return; c=3000; if(G.cash<c) return; G.cash-=c; G.foreman=true; toast('the foreman is on the floor'); }
+    if(k==='head'){ if(G.head>=3) return; c=HEADCOST[G.head]; if(G.cash<c) return; G.cash-=c; G.head++; toast('high speed head, level '+G.head); }
+    shopSig=''; ordersDirty=true; writeSave(); renderShop();
+  }
+  function buyFin(id){
+    var f=fin(id);
+    if(G.owned.indexOf(id)>=0||G.cash<f.cost) return;
+    G.cash-=f.cost; G.owned.push(id);
+    G.owned.sort(function(a,b){ return FIN.indexOf(fin(a))-FIN.indexOf(fin(b)); });
+    toast(f.name+' unlocked, customers will start asking for it');
+    setFin(id);
+  }
+  function setFin(id){
+    G.curFin=id; shopSig=''; renderFinPick(); renderShop(); writeSave();
+  }
+  function renderFinPick(){
+    var el=document.getElementById('finPick'); el.innerHTML='<span>stock finish</span>';
+    G.owned.forEach(function(id){
+      var b=document.createElement('button'); b.className='sw'+(id===G.curFin?' on':'');
+      b.style.backgroundImage='url('+swatchURL(id)+')'; b.title=fin(id).name;
+      b.addEventListener('click',function(){ setFin(id); });
+      el.appendChild(b);
+    });
+    var lab=document.createElement('span'); lab.style.width='auto'; lab.textContent=fin(G.curFin).name;
+    el.appendChild(lab);
+  }
+
+  // ---- hud and views ----
+  var view='mill', hudT=0, saveT=5;
+  function drawHud(){
+    document.getElementById('hudCash').textContent=money(G.cash);
+    document.getElementById('hudMarket').textContent=Math.round(market()*100)+'%';
+    document.getElementById('hudMills').textContent=1+G.mills;
+    var h=Math.floor(G.played/3600), mi=Math.floor((G.played%3600)/60);
+    document.getElementById('hudTime').textContent=h+':'+String(mi).padStart(2,'0');
+    var need=0; fac.m.forEach(function(m){ if(m.need) need++; });
+    var bf=document.getElementById('badgeFloor'); bf.textContent=need; bf.classList.toggle('show',need>0&&view!=='floor');
+    if(view!=='orders') renderOrders();
+  }
+  function setView(v){
+    view=v;
+    document.querySelectorAll('.view').forEach(function(el){ el.classList.toggle('on',el.id==='view-'+v); });
+    document.querySelectorAll('#tabs button').forEach(function(b){ b.classList.toggle('on',b.dataset.view===v); });
+    ordersSig=''; shopSig=''; ordersDirty=true;
+    if(v==='orders'){ buildBins(); renderTray(); renderOrders(); }
+    if(v==='shop') renderShop();
+    if(v==='floor'){ facSync(); renderSel(); facBoard(); }
+    if(v==='mill') printDirty=true;
+    hudT=0;
+  }
+  document.querySelectorAll('#tabs button').forEach(function(b){
+    b.addEventListener('click',function(){ setView(b.dataset.view); });
   });
+
+  function syncDemoBtns(){
+    var alpha=demo.on&&demo.mode==='alpha', ord=demo.on&&demo.mode==='orders';
+    document.getElementById('demoBtn').textContent=alpha?'stop demo mode':'run demo mode, cut the alphabet';
+    document.getElementById('progBtn').textContent=ord?'stop the order program':'run the order program on the mill';
+    var b2=document.getElementById('progBtn2');
+    b2.textContent=ord?'stop the order program':'run the order program';
+    b2.style.background=ord?'var(--rust)':'var(--blue)';
+  }
+  function runDemo(mode){
+    sheet('menuSheet',false);
+    if(demo.on&&demo.mode===mode){
+      demo.on=false; demo.phase='idle';
+      s.rpm=0; document.getElementById('rngRpm').value=0; document.getElementById('rpmOut').textContent=0;
+    } else {
+      if(machine.xDead||machine.yDead){ toast('the mill is wrecked, call the millwright from the menu first',true); return; }
+      demo.on=true; demo.mode=mode; feed.on=false; syncFeed(); demo.phase='load';
+      if(mode==='orders') toast('order program running, letters go straight to the bins');
+    }
+    syncDemoBtns();
+  }
 
   function sheet(id,open){ document.getElementById(id).classList.toggle('open',open); }
   document.getElementById('burger').addEventListener('click',function(){sheet('menuSheet',true);});
@@ -1535,28 +2109,40 @@ button:active{background:var(--rust);}
     if(!part.placed){ setStatus('there is no part on the table',true); holdMsg=110; return; }
     if(s.rpm>0){ setStatus('stop the spindle before you take the part off',true); holdMsg=110; return; }
     var ch=identify();
-    addToTray(ch,partThumb());
+    if(demo.on){ demo.on=false; demo.phase='idle'; syncDemoBtns(); }
+    addToTray(ch,partThumb(),part.fin);
     part.placed=false; part.vox=null; part.hmap=null; topDirty=true;
-    setStatus(ch?('part bagged as the letter '+ch):'part bagged, it does not match any letter'); holdMsg=140;
+    setStatus(ch?('part bagged as the letter '+ch+', stow it on the orders tab'):'part bagged, it does not match any letter'); holdMsg=140;
   });
 
-  document.getElementById('stowBtn').addEventListener('click',function(){
+  function stowAll(){
     for(var i=tray.length-1;i>=0;i--){ if(tray[i].ch) stow(i,tray[i].ch); }
-    sheet('menuSheet',false);
-  });
+    ordersDirty=true;
+  }
+  document.getElementById('stowBtn').addEventListener('click',function(){ stowAll(); sheet('menuSheet',false); });
+  document.getElementById('stowBtn2').addEventListener('click',stowAll);
   document.getElementById('emptyBtn').addEventListener('click',function(){
-    for(var i=0;i<26;i++) inv[ALPHA[i]]=0;
+    G.inv={}; writeSave(); ordersDirty=true;
     buildBins(); sheet('menuSheet',false);
   });
 
-  document.getElementById('demoBtn').addEventListener('click',function(){
-    demo.on=!demo.on;
-    sheet('menuSheet',false);
-    this.textContent=demo.on?'stop demo mode':'run demo mode, cut the alphabet';
-    if(demo.on){ feed.on=false; syncFeed(); demo.phase='load'; }
-    else { s.rpm=0; document.getElementById('rngRpm').value=0;
-      document.getElementById('rpmOut').textContent=0; demo.phase='idle'; }
+  document.getElementById('demoBtn').addEventListener('click',function(){ runDemo('alpha'); });
+  document.getElementById('progBtn').addEventListener('click',function(){ runDemo('orders'); });
+  document.getElementById('progBtn2').addEventListener('click',function(){ runDemo('orders'); });
+  document.getElementById('howBtn').addEventListener('click',function(){ sheet('menuSheet',false); sheet('howSheet',true); });
+  document.getElementById('howClose').addEventListener('click',function(){ sheet('howSheet',false); G.seenHow=true; writeSave(); });
+  document.getElementById('resetBtn').addEventListener('click',function(){ sheet('menuSheet',false); sheet('resetSheet',true); });
+  document.getElementById('resetNo').addEventListener('click',function(){ sheet('resetSheet',false); });
+  document.getElementById('resetYes').addEventListener('click',function(){
+    try{ localStorage.removeItem(SAVEKEY); }catch(e){}
+    G=freshSave(); resetting=true; location.reload();
   });
+  var resetting=false;
+  ['howSheet','resetSheet'].forEach(function(id){
+    document.getElementById(id).addEventListener('click',function(e){ if(e.target===this) sheet(id,false); });
+  });
+  document.addEventListener('visibilitychange',function(){ if(!resetting) writeSave(); });
+  window.addEventListener('pagehide',function(){ if(!resetting) writeSave(); });
   document.getElementById('checkBtn').addEventListener('click',inspect);
 
   function toCanvas(e){
@@ -1634,9 +2220,173 @@ button:active{background:var(--rust);}
   });
 
   ['x','y','z','a'].forEach(function(a){setAxis(a,0);});
-  buildTarget(); buildJobList(); syncFeed(); buildBins(); renderTray();
+  loadSave();
+  if(G.owned.indexOf(G.curFin)<0) G.curFin='alu';
+  G.orders=G.orders.filter(function(o){ return G.owned.indexOf(o.fin)>=0; });
+  done=(G.done||[]).slice();
+  while(G.orders.length<maxOrders()) G.orders.push(newOrder());
+  facSync();
+  buildTarget(); buildJobList(); syncFeed(); buildBins(); renderTray(); renderFinPick(); syncDemoBtns(); drawHud();
+  writeSave();
+  if(!G.seenHow) sheet('howSheet',true);
   requestAnimationFrame(frame);
 })();
 </script>
+<!-- =====================================================================
+       MOHAVE TECHNOLOGY GROUP // CREATOR SEAL
+       Drop this ONE block into any HTML page, anywhere before </body>.
+       The only thing you edit is the CONFIG object on the next few lines.
+       ===================================================================== -->
+  <script>
+  (function () {
+
+    /* ---------- CONFIG: the only part you change ---------- */
+    var CONFIG = {
+      org:      "Mohave Technology Group",
+      monogram: "MTG",                       // shown in the center of the seal
+      mission:  "Practical software and hardware, built in the field.",
+      github:   "https://github.com/sudosilo",
+      linkedin: "https://www.linkedin.com/in/dicktemple"
+    };
+    /* ----------------------------------------------------- */
+
+
+    /* ---------- LAYER 1: the signature pressed into the source ----------
+       This runs once and writes your identity into the page head so that
+       anyone viewing source, and any machine reading the page, can find
+       the maker even if the footer is removed. */
+    var head = document.head || document.getElementsByTagName("head")[0];
+
+    // A plain comment banner, visible in View Source.
+    head.appendChild(document.createComment(
+      " Made by " + CONFIG.org + " // " + CONFIG.github + " // " + CONFIG.linkedin + " "
+    ));
+
+    // Standard "author" tag set to the group, not a personal name.
+    var metaAuthor = document.createElement("meta");
+    metaAuthor.setAttribute("name", "author");
+    metaAuthor.setAttribute("content", CONFIG.org);
+    head.appendChild(metaAuthor);
+
+    // rel="me" links: the web standard for saying "these profiles are mine".
+    [CONFIG.github, CONFIG.linkedin].forEach(function (url) {
+      var l = document.createElement("link");
+      l.setAttribute("rel", "me");
+      l.setAttribute("href", url);
+      head.appendChild(l);
+    });
+
+    // Structured data block, so search engines and crawlers can read it.
+    var ld = document.createElement("script");
+    ld.type = "application/ld+json";
+    ld.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": CONFIG.org,
+      "sameAs": [CONFIG.github, CONFIG.linkedin]
+    });
+    head.appendChild(ld);
+
+
+    /* ---------- LAYER 2: the visible seal ---------- */
+
+    // The look of the seal. All self contained, no fonts to download.
+    var css = ''
+      + '.mtg-seal{box-sizing:border-box;width:100%;background:#efe9da;'
+      + 'border-top:1px solid #cabfa3;color:#2b2620;'
+      + 'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;'
+      + 'padding:18px 20px;display:flex;flex-direction:column;align-items:center;gap:12px;}'
+      + '.mtg-seal-row{display:flex;align-items:center;gap:14px;}'
+      + '.mtg-seal-btn{background:none;border:0;padding:0;margin:0;cursor:pointer;'
+      + 'display:flex;align-items:center;gap:14px;color:inherit;font:inherit;}'
+      + '.mtg-seal-svg{display:block;transition:transform .18s ease;}'
+      + '.mtg-seal.open .mtg-seal-svg{transform:scale(.94);}'
+      + '.mtg-seal-label{text-align:left;line-height:1.3;}'
+      + '.mtg-seal-org{font-family:Georgia,"Times New Roman",serif;font-size:14px;'
+      + 'letter-spacing:.3px;color:#2b2620;}'
+      + '.mtg-seal-ask{font-size:12px;color:#7a2e28;text-decoration:underline;}'
+      + '.mtg-seal-panel{overflow:hidden;max-height:0;opacity:0;'
+      + 'transition:max-height .25s ease,opacity .25s ease;width:100%;max-width:360px;}'
+      + '.mtg-seal.open .mtg-seal-panel{max-height:200px;opacity:1;}'
+      + '.mtg-seal-mission{font-style:italic;color:#4a443b;font-size:13px;'
+      + 'text-align:center;margin:0 0 12px;line-height:1.5;}'
+      + '.mtg-seal-links{display:flex;justify-content:center;gap:10px;}'
+      + '.mtg-seal-links a{flex:1;text-align:center;text-decoration:none;'
+      + 'font-size:13px;color:#2b2620;background:#faf7ef;border:1px solid #cabfa3;'
+      + 'border-radius:6px;padding:8px 10px;transition:background .15s ease;}'
+      + '.mtg-seal-links a:hover{background:#fff;}'
+      + '.mtg-seal-btn:focus-visible{outline:2px solid #7a2e28;outline-offset:3px;border-radius:4px;}'
+      + '.mtg-seal-links a:focus-visible{outline:2px solid #7a2e28;outline-offset:2px;}'
+      + '@media (prefers-reduced-motion: reduce){'
+      + '.mtg-seal-svg,.mtg-seal-panel{transition:none;}}';
+
+    var style = document.createElement("style");
+    style.textContent = css;
+    head.appendChild(style);
+
+    // The seal artwork. An SVG circle with the org name around the ring,
+    // the monogram in the center, and a small diamond mark at the bottom.
+    function buildSeal() {
+      var org = CONFIG.org.toUpperCase();
+      return ''
+        + '<svg class="mtg-seal-svg" viewBox="0 0 120 120" width="58" height="58" '
+        +   'role="img" aria-label="' + CONFIG.org + ' seal">'
+        +   '<defs>'
+        +     '<path id="mtgTop" d="M 23,60 A 37,37 0 0 1 97,60" fill="none"/>'
+        +   '</defs>'
+        +   '<circle cx="60" cy="60" r="55" fill="none" stroke="#7a2e28" stroke-width="2.5"/>'
+        +   '<circle cx="60" cy="60" r="48" fill="none" stroke="#7a2e28" stroke-width="1"/>'
+        +   '<text font-family="Georgia,serif" font-size="8" fill="#7a2e28">'
+        +     '<textPath href="#mtgTop" startOffset="50%" text-anchor="middle" '
+        +     'textLength="106" lengthAdjust="spacingAndGlyphs">'
+        +     org + '</textPath>'
+        +   '</text>'
+        +   '<text x="60" y="60" text-anchor="middle" dominant-baseline="central" '
+        +     'font-family="Georgia,serif" font-weight="700" font-size="27" '
+        +     'fill="#7a2e28">' + CONFIG.monogram + '</text>'
+        +   '<g fill="#7a2e28">'
+        +     '<rect x="58" y="83.5" width="4" height="4"/>'
+        +     '<rect x="63" y="88.5" width="4" height="4"/>'
+        +     '<rect x="53" y="93.5" width="4" height="4"/>'
+        +     '<rect x="58" y="93.5" width="4" height="4"/>'
+        +     '<rect x="63" y="93.5" width="4" height="4"/>'
+        +   '</g>'
+        + '</svg>';
+    }
+
+    // Build the footer element.
+    var seal = document.createElement("footer");
+    seal.className = "mtg-seal";
+    seal.innerHTML = ''
+      + '<div class="mtg-seal-row">'
+      +   '<button class="mtg-seal-btn" type="button" aria-expanded="false">'
+      +     buildSeal()
+      +     '<span class="mtg-seal-label">'
+      +       '<span class="mtg-seal-org">' + CONFIG.org + '</span><br>'
+      +       '<span class="mtg-seal-ask">Who made this?</span>'
+      +     '</span>'
+      +   '</button>'
+      + '</div>'
+      + '<div class="mtg-seal-panel">'
+      +   '<p class="mtg-seal-mission">' + CONFIG.mission + '</p>'
+      +   '<div class="mtg-seal-links">'
+      +     '<a href="' + CONFIG.github + '" target="_blank" rel="noopener me">GitHub</a>'
+      +     '<a href="' + CONFIG.linkedin + '" target="_blank" rel="noopener me">LinkedIn</a>'
+      +   '</div>'
+      + '</div>';
+
+    // Tapping the seal opens or closes the panel.
+    var btn = seal.querySelector(".mtg-seal-btn");
+    btn.addEventListener("click", function () {
+      var nowOpen = seal.classList.toggle("open");
+      btn.setAttribute("aria-expanded", nowOpen ? "true" : "false");
+    });
+
+    // Place the seal at the very bottom of the page.
+    document.body.appendChild(seal);
+
+  })();
+  </script>
+  <!-- ===================== END CREATOR SEAL ===================== -->
 </body>
 </html>
