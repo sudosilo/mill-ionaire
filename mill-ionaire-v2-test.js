@@ -102,8 +102,9 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
       await page.click('#burger'); await page.click(id); await page.waitForTimeout(80);
       for (const sh of ['#howSheet', '#resetSheet']) if (await page.isVisible(sh + '.open')) await page.click(sh + ' button:last-child');
     }
-    await page.click('#infoBtn'); ok(await page.isVisible('#infoSheet.open'), 'info panel opens');
-    await page.click('#infoClose'); ok(!(await page.isVisible('#infoSheet.open')), 'info panel closes');
+    await page.click('#infoBtn'); ok(await page.isVisible('#howSheet.open'), 'the i button opens how to play');
+    ok(/what it does/.test(await txt(page, '#howSheet')) && /how to play/.test(await txt(page, '#howSheet')), 'the i button and the menu share the same information');
+    await page.click('#howClose'); ok(!(await page.isVisible('#howSheet.open')), 'how to play closes');
     await page.click('#burger'); await page.click('#facBtn');
     ok(await page.isVisible('#view-floor.on'), 'menu opens the factory floor');
     await page.click('#facClose');

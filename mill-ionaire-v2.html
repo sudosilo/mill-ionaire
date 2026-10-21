@@ -80,6 +80,7 @@ button:active{background:var(--rust);}
 .grp[open] summary::before{content:"- ";}
 .grpbody{padding:12px 10px 4px;}
 .icon{min-width:46px;min-height:46px;font-size:20px;background:var(--charcoal);color:var(--face);border-radius:0;}
+#infoBtn{min-width:32px;min-height:32px;width:32px;height:32px;font-size:15px;padding:0;background:var(--blue);}
 .sheet{display:none;position:fixed;inset:0;background:rgba(43,41,36,0.45);z-index:20;padding:20px;overflow:auto;}
 .sheet.open{display:block;}
 .sheetbox{max-width:560px;margin:40px auto;background:var(--face);border:2px solid var(--charcoal);padding:18px;}
@@ -221,15 +222,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   <div class="sheetbox">
     <h3>how to play</h3>
     <p>Customers post word orders on the orders tab. Each word has to be made from letters cut in one finish, like brass or blue anodize, and shipping it pays cash.</p>
-    <p>On the mill tab, open the menu and run the order program. The mill loads a blank in the right finish, cuts whatever letter the orders are missing, and drops it straight into the bins. You can also cut by hand with the wheels and sliders, then bag the part and drag it into its bin.</p>
+    <p>On the mill tab, tap run the order program under the machine. The mill loads a blank in the right finish, cuts whatever letter the orders are missing, and drops it straight into the bins. You can also cut by hand with the wheels and sliders, then bag the part and drag it into its bin.</p>
     <p>Spend your cash in the shop. New finishes pay more per letter but are harder metal, so they cut slower. Floor mills run on their own on the floor tab, and operators keep them going when a light turns amber.</p>
     <p>The market cools off the longer you run the shop, so every letter pays a little less as the hours go by. Early money is the easiest money you will ever make.</p>
-    <button class="wide" id="howClose">get to work</button>
-  </div>
-</div>
-
-<div class="sheet" id="infoSheet">
-  <div class="sheetbox">
     <h3>what it does</h3>
     <p>Mill-ionaire is a letter shop tycoon built around a simulated vertical knee mill, the kind of manual machine a Bridgeport is. You cut metal letters, fill customer word orders, buy new finishes and more mills, and grow one machine into a factory floor.</p>
     <p>X traverses the table left and right, Y moves the saddle in and out, Z raises and lowers the whole knee so the work comes up to the cutter. A tilts the head over for angled work. The big view is a cutaway taken straight through the part at whatever Y the saddle is sitting at, and the stock panel is the same part seen from above.</p>
@@ -239,7 +234,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <p>One HTML file with canvas drawing and plain JavaScript, no downloads and no server. Progress saves in the browser on this device.</p>
     <h3>the thinking behind it</h3>
     <p>Every item is a letter, every machine turns blanks into letters, every finish changes what a letter is worth, and every order asks for a set of them. Grow the shop the way a real one grows, one more machine at a time.</p>
-    <button class="wide" id="infoClose">close</button>
+    <button class="wide" id="howClose">get to work</button>
   </div>
 </div>
 
@@ -2202,10 +2197,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function sheet(id,open){ document.getElementById(id).classList.toggle('open',open); }
   document.getElementById('burger').addEventListener('click',function(){sheet('menuSheet',true);});
   document.getElementById('menuClose').addEventListener('click',function(){sheet('menuSheet',false);});
-  document.getElementById('infoBtn').addEventListener('click',function(){sheet('infoSheet',true);});
-  document.getElementById('infoClose').addEventListener('click',function(){sheet('infoSheet',false);});
+  document.getElementById('infoBtn').addEventListener('click',function(){sheet('howSheet',true);});
   document.getElementById('menuSheet').addEventListener('click',function(e){ if(e.target===this) sheet('menuSheet',false); });
-  document.getElementById('infoSheet').addEventListener('click',function(e){ if(e.target===this) sheet('infoSheet',false); });
 
   document.getElementById('bagBtn').addEventListener('click',function(){
     if(!part.placed){ setStatus('there is no part on the table',true); holdMsg=110; return; }
