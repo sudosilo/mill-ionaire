@@ -580,14 +580,49 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var SAVEKEY='mill-ionaire-v2-save';
   function freshSave(){
     return {cash:0,played:0,owned:['alu'],curFin:'alu',inv:{},orders:[],mills:0,ops:1,foreman:false,
-            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1};
+            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[]};
   }
   var G=freshSave();
+  // reads the save and throws away anything that is the wrong shape, so a damaged save never breaks the game
   function loadSave(){
-    try{
-      var raw=localStorage.getItem(SAVEKEY);
-      if(raw){ var o=JSON.parse(raw); var f=freshSave(); for(var k in f) if(o[k]!==undefined) G[k]=o[k]; }
-    }catch(e){}
+    var o=null;
+    try{ var raw=localStorage.getItem(SAVEKEY); if(raw) o=JSON.parse(raw); }catch(e){ o=null; }
+    if(!o||typeof o!=='object'||Array.isArray(o)) return;
+    var f=freshSave(), k;
+    for(k in f){
+      var v=o[k], d=f[k];
+      if(v===undefined||v===null) continue;
+      if(Array.isArray(d)!==Array.isArray(v)||typeof v!==typeof d) continue;
+      if(typeof d==='number'&&!isFinite(v)) continue;
+      G[k]=v;
+    }
+    function int(n,a,b){ n=Math.floor(Number(n)||0); return n<a?a:(n>b?b:n); }
+    G.cash=Math.max(0,G.cash); G.played=Math.max(0,G.played); G.earned=Math.max(0,G.earned);
+    G.mills=int(G.mills,0,12); G.ops=int(G.ops,1,6); G.head=int(G.head,0,3); G.passCd=Math.max(0,Math.min(20,G.passCd));
+    G.made=Math.max(0,G.made); G.shipped=Math.max(0,G.shipped); G.foreman=G.foreman===true;
+    var own=['alu'];
+    G.owned.forEach(function(id){ if(typeof id==='string'&&FINBY[id]&&own.indexOf(id)<0) own.push(id); });
+    own.sort(function(a,b){ return FIN.indexOf(FINBY[a])-FIN.indexOf(FINBY[b]); });
+    G.owned=own;
+    if(own.indexOf(G.curFin)<0) G.curFin='alu';
+    var inv={};
+    for(k in G.inv){
+      var m=/^([A-Z])\|([a-z]+)$/.exec(k), n=Math.floor(Number(G.inv[k]));
+      if(m&&FINBY[m[2]]&&n>0) inv[k]=Math.min(100,n);
+    }
+    G.inv=inv;
+    var maxId=0;
+    G.orders=G.orders.filter(function(q){
+      return q&&typeof q.word==='string'&&/^[A-Z]{1,12}$/.test(q.word)&&own.indexOf(q.fin)>=0;
+    }).slice(0,5).map(function(q){
+      var id=Math.floor(Number(q.id))||0; if(id>maxId) maxId=id;
+      return {id:id,word:q.word,fin:q.fin,who:CLIENTS.indexOf(q.who)>=0?q.who:CLIENTS[0]};
+    });
+    G.nextId=Math.max(int(G.nextId,1,1e9),maxId+1);
+    G.floor=G.floor.filter(function(c){ return c&&typeof c.ch==='string'&&/^[A-Z]$/.test(c.ch)&&FINBY[c.fin]; })
+      .slice(0,12).map(function(c){ return {ch:c.ch,fin:own.indexOf(c.fin)>=0?c.fin:'alu',auto:c.auto!==false}; });
+    G.done=G.done.filter(function(j){ return typeof j==='number'&&j>=0&&j<JOBS.length; });
+    G.tray=G.tray.filter(function(t){ return t&&typeof t.ch==='string'&&/^[A-Z]?$/.test(t.ch)&&FINBY[t.fin]; }).slice(-24);
   }
   function writeSave(){ try{ localStorage.setItem(SAVEKEY,JSON.stringify(G)); }catch(e){} }
 
@@ -828,10 +863,23 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function addToTray(ch,canvas,f){
     tray.push({ch:ch,c:canvas,fin:f||'alu'});
     if(tray.length>24) tray.shift();
-    renderTray();
+    renderTray(); writeSave();
+  }
+  // redraws a saved loose part, since only its letter and finish are kept
+  function letterThumb(ch,f){
+    var c=document.createElement('canvas'); c.width=B.nx; c.height=B.ny;
+    var x=c.getContext('2d'), im=x.createImageData(B.nx,B.ny), d=im.data;
+    var m=ch?demoMask(ch):null;
+    for(var k=0;k<B.nx*B.ny;k++){
+      if(m&&!m[k]) d[k*4+3]=0;
+      else finPx(d,k*4,f,k%B.nx,Math.floor(k/B.nx),0.95,255);
+    }
+    x.putImageData(im,0,0);
+    return c;
   }
 
   function renderTray(){
+    G.tray=tray.map(function(t){ return {ch:t.ch||'',fin:t.fin}; });
     var el=document.getElementById('tray');
     el.innerHTML='';
     if(!tray.length){
@@ -1398,10 +1446,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       topX.putImageData(im,0,0); topDirty=false;
     }
     var sc=Math.min((tv.width-40)/part.nx,(tv.height-40)/part.ny);
-    var w=part.nx*sc,h=part.ny*sc,px=(tv.width-w)/2,py=(tv.height-h)/2;
+    var w=part.nx*sc,hh=part.ny*sc,px=(tv.width-w)/2,py=(tv.height-hh)/2;
     tctx.imageSmoothingEnabled=false;
-    tctx.drawImage(topC,px,py,w,h);
-    tctx.strokeStyle='#2B2924'; tctx.lineWidth=2; tctx.strokeRect(px,py,w,h);
+    tctx.drawImage(topC,px,py,w,hh);
+    tctx.strokeStyle='#2B2924'; tctx.lineWidth=2; tctx.strokeRect(px,py,w,hh);
     var tip=toolTip(), lx=tip.x-partLeft(), ly=part.ny/2+s.y;
     var cx=px+lx*sc, cy=py+ly*sc, T=TOOLS[tool];
     tctx.strokeStyle='#2B2924'; tctx.setLineDash([4,5]); tctx.lineWidth=1;
@@ -1943,16 +1991,23 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   }
   function renderOrders(){
     var shipN=0;
-    var sig=G.orders.map(function(o){ var c=canShip(o); if(c) shipN++; return o.id+':'+haveFlags(o).join('')+':'+Math.round(orderValue(o)); }).join('|')+'/'+(G.passCd>0);
+    var sig=G.orders.map(function(o){ var c=canShip(o); if(c) shipN++; return o.id+':'+haveFlags(o).join(''); }).join('|')+'/'+(G.passCd>0);
     var badge=document.getElementById('badgeOrders');
     badge.textContent=shipN; badge.classList.toggle('show',shipN>0);
     if(view!=='orders') return;
-    if(sig===ordersSig&&!ordersDirty) return;
+    if(sig===ordersSig&&!ordersDirty){
+      // only the prices move with the market, so update them without rebuilding the buttons
+      document.querySelectorAll('#orderList .ocard').forEach(function(d){
+        var o=G.orders.filter(function(q){ return String(q.id)===d.dataset.id; })[0];
+        if(o) d.querySelector('.row b').textContent=money(orderValue(o));
+      });
+      return;
+    }
     ordersSig=sig; ordersDirty=false;
     var el=document.getElementById('orderList'); el.innerHTML='';
     if(!G.orders.length){ el.innerHTML='<p class="spec">the phone is quiet, a new order is on the way</p>'; return; }
     G.orders.forEach(function(o){
-      var d=document.createElement('div'); d.className='ocard';
+      var d=document.createElement('div'); d.className='ocard'; d.dataset.id=o.id;
       var flags=haveFlags(o), tiles='';
       for(var i=0;i<o.word.length;i++)
         tiles+='<div class="tile '+(flags[i]?'ok':'miss')+'" style="background-image:url('+swatchURL(o.fin)+')">'+o.word[i]+'</div>';
@@ -2153,8 +2208,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 
   cv.addEventListener('pointerdown',function(e){
     var p=toCanvas(e), ks=kneeShift(), tx=s.x*XS;
-    var fx=TABLE_RIGHT+tx+6, fy=TABLE_TOP+ks+26;
-    if(p.x>=fx&&p.x<=fx+34&&p.y>=fy&&p.y<=fy+26){
+    var fbx=TABLE_RIGHT+tx+6, fby=TABLE_TOP+ks+26;
+    if(p.x>=fbx&&p.x<=fbx+34&&p.y>=fby&&p.y<=fby+26){
       if(!machine.xDead){ feed.on=!feed.on; syncFeed(); }
       e.preventDefault(); return;
     }
@@ -2217,12 +2272,13 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     table.dmg=new Float32Array(TLEN);
     machine.hp=100; machine.xDead=false; machine.yDead=false; deadMsg='';
     chips.length=0; sparks.length=0; crashT=0; shakeT=0;
+    sheet('menuSheet',false);
+    toast('the millwright rebuilt the machine, good as new');
   });
 
   ['x','y','z','a'].forEach(function(a){setAxis(a,0);});
   loadSave();
-  if(G.owned.indexOf(G.curFin)<0) G.curFin='alu';
-  G.orders=G.orders.filter(function(o){ return G.owned.indexOf(o.fin)>=0; });
+  tray=G.tray.map(function(t){ return {ch:t.ch,fin:t.fin,c:letterThumb(t.ch,t.fin)}; });
   done=(G.done||[]).slice();
   while(G.orders.length<maxOrders()) G.orders.push(newOrder());
   facSync();

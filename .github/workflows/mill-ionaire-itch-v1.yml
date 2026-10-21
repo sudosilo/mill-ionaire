@@ -9,7 +9,23 @@ permissions:
   contents: write
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install a headless browser
+        run: |
+          npm install --no-save playwright@1.47.2
+          npx playwright install --with-deps chromium
+      - name: Play the game end to end
+        run: node mill-ionaire-v2-test.js
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,14 +45,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete itch-latest --yes --cleanup-tag || true
-          gh release create itch-latest "$VER-itch.zip" --title "$VER itch build" --notes "Upload this zip to itch.io as an HTML game, or let butler push it."
-
-      - name: Push to itch with butler
-        if: ${{ vars.ITCH_TARGET != '' }}
-        env:
-          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: |
-          curl -sSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
-          unzip -q butler.zip -d butler-bin
-          chmod +x butler-bin/butler
-          ./butler-bin/butler push itch-build "${{ vars.ITCH_TARGET }}:html" --userversion "$VER-${{ github.run_number }}"
+          gh release create itch-latest "$VER-itch.zip" --title "$VER itch build" --notes "Upload this zip to itch.io as an HTML game."
