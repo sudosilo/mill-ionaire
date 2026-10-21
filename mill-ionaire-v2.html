@@ -159,6 +159,12 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 .bin s{display:flex;justify-content:center;gap:2px;height:6px;margin-top:3px;text-decoration:none;}
 .bin s u{width:6px;height:6px;border:1px solid var(--charcoal);}
 .mtg-seal{margin-top:24px;}
+@keyframes beaconPulse{0%,100%{outline-color:var(--blue);box-shadow:0 0 0 0 rgba(46,74,99,.85);}50%{outline-color:var(--amber);box-shadow:0 0 0 10px rgba(181,118,13,0);}}
+@keyframes beaconBob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,-4px);}}
+.beacon{outline:4px solid var(--blue);outline-offset:3px;animation:beaconPulse .9s infinite;position:relative;z-index:6;}
+.beacon::before{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 10px);transform:translate(-50%,0);background:var(--blue);color:#fff;font-size:12px;font-weight:bold;letter-spacing:.06em;padding:4px 9px;border:2px solid var(--charcoal);white-space:nowrap;animation:beaconBob .9s infinite;pointer-events:none;text-transform:uppercase;}
+.beacon.below::before{bottom:auto;top:calc(100% + 10px);}
+@media (prefers-reduced-motion:reduce){.beacon,.beacon::before{animation:none;}}
 </style>
 </head>
 <body>
@@ -191,7 +197,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   <div class="sheetbox">
     <h3>machine menu</h3>
     <button class="wide" id="progBtn">run the order program on the mill</button>
-    <button class="wide" id="demoBtn">run demo mode, cut the alphabet</button>
+    <button class="wide" id="demoBtn">cut the whole alphabet, one letter after another</button>
     <button class="wide" id="facBtn">open the factory floor</button>
     <button class="wide" id="fixBtn">call the millwright and repair the machine</button>
     <button class="wide" id="stowBtn">stow every loose part into the bins</button>
@@ -580,7 +586,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var SAVEKEY='mill-ionaire-v2-save';
   function freshSave(){
     return {cash:0,played:0,owned:['alu'],curFin:'alu',inv:{},orders:[],mills:0,ops:1,foreman:false,
-            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[]};
+            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false};
   }
   var G=freshSave();
   // reads the save and throws away anything that is the wrong shape, so a damaged save never breaks the game
@@ -1555,7 +1561,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       statusEl.className='status cutting'; return;
     }
     if(demo.on){
-      statusEl.textContent='demo mode, letter '+demo.ch+', '+demo.stage+' pass '+demo.pass+
+      statusEl.textContent='alphabet run, letter '+demo.ch+', '+demo.stage+' pass '+demo.pass+
         (demo.phase==='eject'?', part coming off the table':'');
       statusEl.className='status cutting'; return;
     }
@@ -1593,7 +1599,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     facUpdate(dt);
     ordersTick(dt);
     hudT-=dt;
-    if(hudT<=0){ hudT=0.25; drawHud();
+    if(hudT<=0){ hudT=0.25; drawHud(); guideTick();
       if(view==='floor') facBoard();
       if(view==='orders'){ if(binsDirty) buildBins(); renderOrders(); }
       if(view==='shop') renderShop();
@@ -2104,6 +2110,47 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     el.appendChild(lab);
   }
 
+
+  // ---- getting started: a flashing marker on the next thing to tap ----
+  var beaconEl=null;
+  function anyShippable(){ return G.orders.some(canShip); }
+  function guideTarget(){
+    if(G.guideDone) return null;
+    var tabSel=function(v){ return '#tabs button[data-view='+v+']'; };
+    if(G.shipped<1||(G.mills<1&&G.cash<millCost())){
+      if(anyShippable()){
+        if(view!=='orders') return [tabSel('orders'),'ship it','below'];
+        return ['#orderList .ship:not([disabled])','tap to ship',''];
+      }
+      if(!(demo.on&&demo.mode==='orders')){
+        if(view!=='mill') return [tabSel('mill'),'start here','below'];
+        return ['#progBtn2','tap here first',''];
+      }
+      return null;
+    }
+    if(G.mills<1){
+      if(view!=='shop') return [tabSel('shop'),'buy a mill','below'];
+      return ['#upgList .upg:first-child button','buy this',''];
+    }
+    if(!G.sawFloor){
+      if(view!=='floor') return [tabSel('floor'),'watch it run','below'];
+      G.sawFloor=true; G.guideDone=true; writeSave();
+    }
+    return null;
+  }
+  function guideTick(){
+    var t=guideTarget(), el=t?document.querySelector(t[0]):null;
+    if(el!==beaconEl){
+      if(beaconEl){ beaconEl.classList.remove('beacon','below'); beaconEl.removeAttribute('data-tip'); }
+      beaconEl=el;
+    }
+    if(el){
+      if(!el.classList.contains('beacon')) el.classList.add('beacon');
+      el.classList.toggle('below',t[2]==='below');
+      if(el.getAttribute('data-tip')!==t[1]) el.setAttribute('data-tip',t[1]);
+    }
+  }
+
   // ---- hud and views ----
   var view='mill', hudT=0, saveT=5;
   function drawHud(){
@@ -2133,7 +2180,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 
   function syncDemoBtns(){
     var alpha=demo.on&&demo.mode==='alpha', ord=demo.on&&demo.mode==='orders';
-    document.getElementById('demoBtn').textContent=alpha?'stop demo mode':'run demo mode, cut the alphabet';
+    document.getElementById('demoBtn').textContent=alpha?'stop the alphabet run':'cut the whole alphabet, one letter after another';
     document.getElementById('progBtn').textContent=ord?'stop the order program':'run the order program on the mill';
     var b2=document.getElementById('progBtn2');
     b2.textContent=ord?'stop the order program':'run the order program';

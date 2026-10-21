@@ -72,6 +72,27 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await ctx.close();
   }
 
+  // ---- getting started marker and wording ----
+  {
+    const { ctx, page, errors } = await open(browser, { clock: true });
+    await closeHow(page); await page.clock.runFor(600);
+    ok(await page.$eval('#progBtn2', e => e.classList.contains('beacon')), 'a flashing marker points at the order program on a fresh start');
+    await tab(page, 'shop'); await page.clock.runFor(600);
+    ok(await page.$eval('#tabs button[data-view=mill]', e => e.classList.contains('beacon')), 'the marker leads back to the mill from another tab');
+    await tab(page, 'mill'); await page.click('#progBtn2'); await page.clock.runFor(600);
+    ok(!(await page.$eval('#progBtn2', e => e.classList.contains('beacon'))), 'the marker moves off once the program is running');
+    let shipTab = false;
+    for (let i = 0; i < 40 && !shipTab; i++) { await page.clock.runFor(10000); shipTab = await page.$eval('#tabs button[data-view=orders]', e => e.classList.contains('beacon')); }
+    ok(shipTab, 'the marker points at the orders tab when an order is ready');
+    await tab(page, 'orders'); await page.clock.runFor(600);
+    ok(await page.$$eval('#orderList .ship.beacon', n => n.length) === 1, 'the marker sits on the ship button');
+    const words = await page.evaluate(() => { const b = document.body.cloneNode(true); b.querySelectorAll('script,style').forEach(x => x.remove()); return b.textContent + ' ' + [...document.querySelectorAll('button')].map(x => x.textContent).join(' '); });
+    ok(!/demo/i.test(words), 'the word demo appears nowhere in the game');
+    ok(errors.length === 0, 'no script errors with the getting started marker', errors.join(' | '));
+    if (SHOTS) await page.screenshot({ path: SHOTS + '/guide.png' });
+    await ctx.close();
+  }
+
   // ---- every menu item and sheet ----
   {
     const { ctx, page, errors } = await open(browser);
@@ -159,7 +180,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await ctx.close();
   }
 
-  // ---- demo mode runs the alphabet without stalling ----
+  // ---- the alphabet run cuts letters without stalling ----
   {
     const { ctx, page, errors } = await open(browser, { clock: true });
     await closeHow(page);
@@ -167,10 +188,10 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.clock.runFor(240000);
     await tab(page, 'orders'); await page.clock.runFor(300);
     const loose = await page.$$eval('#tray .chip', n => n.length);
-    ok(loose >= 2, 'demo mode lands letters in the tray', loose + ' parts');
+    ok(loose >= 2, 'the alphabet run lands letters in the tray', loose + ' parts');
     await page.click('#stowBtn2');
     ok(await page.$$eval('#tray .chip', n => n.length) === 0, 'stow all empties the tray');
-    ok(errors.length === 0, 'no script errors in demo mode', errors.join(' | '));
+    ok(errors.length === 0, 'no script errors on the alphabet run', errors.join(' | '));
     await ctx.close();
   }
 
