@@ -2088,7 +2088,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function opCost(){ return Math.round(350*Math.pow(1.6,G.ops-1)); }
   var HEADCOST=[800,2500,7000], CHIPCOST=2500, LUBECOST=[900,3200], BITCOST=[1500,5000], SOFTCOST=[1200,4500];
   // running costs: operators draw wages once the floor has a mill, and every running mill draws power
-  var WAGE=15, FLOORPOWER=8, MILLPOWER=3, billT=0, warnedBroke=false;
+  var WAGE=3.75, FLOORPOWER=2, MILLPOWER=0.75, billT=0, warnedBroke=false;
   function runningMills(){ var n=0; fac.m.forEach(function(m){ if(fac.running&&!m.idle&&!m.need&&!m.stopped) n++; }); return n; }
   function costPerMin(){
     var wages=G.mills>0?G.ops*WAGE:0;

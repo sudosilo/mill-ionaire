@@ -316,7 +316,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.clock.runFor(60000);
     await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
     let g = await save(page);
-    ok(g.paidWages > 25 && g.paidPower > 5, 'a minute of running pays wages and the power bill', 'wages ' + g.paidWages.toFixed(1) + ' power ' + g.paidPower.toFixed(1));
+    ok(g.paidWages > 5 && g.paidPower > 1, 'a minute of running pays wages and the power bill', 'wages ' + g.paidWages.toFixed(1) + ' power ' + g.paidPower.toFixed(1));
     for (const name of ['chip conveyor', 'better coolant', 'better cutters', 'better software']) {
       const card = page.locator('#upgList .upg', { hasText: name });
       await card.locator('button').click(); await page.clock.runFor(200);
@@ -332,7 +332,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     const floor = [{ ch: 'E', fin: 'alu', auto: false }];
     const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 3, mills: 1, ops: 3, floor });
     const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
-    await tab(page, 'floor'); await page.clock.runFor(20000);
+    await tab(page, 'floor'); await page.clock.runFor(60000);
     ok(/power cut/.test(await txt(page, '#facOrder')), 'running out of cash cuts the power and sends the crew home', await txt(page, '#facOrder'));
     ok((await save(page)).cash >= 0, 'bills never push cash below zero');
     ok(errors.length === 0, 'no script errors when the shop goes broke', errors.join(' | '));
