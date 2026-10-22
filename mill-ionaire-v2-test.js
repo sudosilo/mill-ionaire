@@ -97,18 +97,22 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
   {
     const { ctx, page, errors } = await open(browser);
     await closeHow(page);
-    const items = ['#howBtn', '#resetBtn', '#stowBtn', '#emptyBtn'];
+    const items = ['#howBtn', '#resetBtn'];
     for (const id of items) {
       await page.click('#burger'); await page.click(id); await page.waitForTimeout(80);
-      for (const sh of ['#howSheet', '#resetSheet']) if (await page.isVisible(sh + '.open')) await page.click(sh + ' button:last-child');
+      for (const sh of ['#howSheet', '#resetSheet', '#emptySheet']) if (await page.isVisible(sh + '.open')) await page.click(sh + ' button:last-child');
     }
     await page.click('#infoBtn'); ok(await page.isVisible('#howSheet.open'), 'the i button opens how to play');
     ok(/what it does/.test(await txt(page, '#howSheet')) && /how to play/.test(await txt(page, '#howSheet')), 'the i button and the menu share the same information');
     await page.click('#howClose'); ok(!(await page.isVisible('#howSheet.open')), 'how to play closes');
     ok(await page.isVisible('#view-mill #demoBtn') && await page.isVisible('#view-mill #fixBtn'), 'alphabet run and millwright sit on the mill itself');
     await page.click('#fixBtn'); await page.waitForTimeout(80);
-    await page.click('#burger'); await page.click('#facBtn');
-    ok(await page.isVisible('#view-floor.on'), 'menu opens the factory floor');
+    ok(await page.$$eval('#menuSheet button', n => n.map(b => b.id).join(',')) === 'howBtn,resetBtn,menuClose', 'the menu holds only how to play, start over and close');
+    await page.click('#burger'); await page.click('#resetBtn');
+    ok(/scrap heap/.test(await txt(page, '#resetSheet')), 'start over asks for confirmation first');
+    await page.click('#resetNo');
+    await tab(page, 'floor');
+    ok(await page.isVisible('#view-floor.on'), 'the floor tab opens the factory floor');
     await page.click('#facClose');
     ok(await page.isVisible('#view-mill.on'), 'back to the mill works');
     ok(errors.length === 0, 'no script errors working every menu item', errors.join(' | '));
@@ -270,6 +274,34 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.click('#menuClose');
     await page.waitForTimeout(1000);
     ok(errors.length === 0, 'no script errors with the whole shop making sound', errors.join(' | '));
+    await ctx.close();
+  }
+
+  // ---- emptying the bins asks first, and one floor mill can be stopped ----
+  {
+    const floor = [{ ch: 'E', fin: 'alu', auto: false }, { ch: 'T', fin: 'alu', auto: false }];
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, mills: 2, ops: 2, floor, inv: { 'A|alu': 5 } });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await tab(page, 'orders'); await page.clock.runFor(300);
+    await page.click('#emptyBtn'); await page.clock.runFor(100);
+    ok(/scrap all this hard work/.test(await txt(page, '#emptySheet')), 'emptying the bins asks for confirmation');
+    await page.click('#emptyNo'); await page.clock.runFor(300);
+    ok(Object.keys((await save(page)).inv).length === 1, 'saying no keeps the letters');
+    await page.click('#emptyBtn'); await page.click('#emptyYes'); await page.clock.runFor(300);
+    ok(Object.keys((await save(page)).inv).length === 0, 'saying yes empties the bins');
+    await tab(page, 'floor'); await page.clock.runFor(300);
+    const fb = await (await page.$('#factory')).boundingBox();
+    await page.mouse.click(fb.x + fb.width * 0.5, fb.y + fb.height * 0.06); await page.clock.runFor(200);
+    await page.click('#selStop'); await page.clock.runFor(200);
+    let g = await save(page);
+    ok(g.floor[0].stopped === true && g.floor[1].stopped !== true, 'one floor mill stops on its own while the rest keep running');
+    await page.clock.runFor(60000);
+    await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    g = await save(page);
+    ok(!g.inv['E|alu'] && g.inv['T|alu'] > 0, 'the stopped mill makes nothing while the running mill keeps cutting', JSON.stringify(g.inv));
+    await page.click('#selStop'); await page.clock.runFor(200);
+    ok((await save(page)).floor[0].stopped === false, 'the stopped mill starts again');
+    ok(errors.length === 0, 'no script errors stopping mills and emptying bins', errors.join(' | '));
     await ctx.close();
   }
 

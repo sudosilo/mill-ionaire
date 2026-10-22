@@ -205,10 +205,6 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 <div class="sheet" id="menuSheet">
   <div class="sheetbox">
     <h3>machine menu</h3>
-    <button class="wide" id="progBtn">run the order program on the mill</button>
-    <button class="wide" id="facBtn">open the factory floor</button>
-    <button class="wide" id="stowBtn">stow every loose part into the bins</button>
-    <button class="wide" id="emptyBtn">empty the inventory bins</button>
     <div class="feed" style="margin-top:8px"><span>shop volume</span><input type="range" id="volRange" min="0" max="100" step="1" value="60" style="flex:1;height:34px;accent-color:#2E4A63;"></div>
     <button class="wide" id="howBtn">how to play</button>
     <button class="wide" id="resetBtn">start the whole business over</button>
@@ -218,10 +214,19 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 
 <div class="sheet" id="resetSheet">
   <div class="sheetbox">
-    <h3>start over</h3>
+    <h3>are you sure you want to throw the whole damn business in the scrap heap?</h3>
     <p>This wipes your cash, finishes, floor mills, inventory and orders, and the market rate goes back to full price. It cannot be undone.</p>
-    <button class="wide" id="resetYes" style="background:var(--rust)">wipe it and start over</button>
-    <button class="wide" id="resetNo">keep my business</button>
+    <button class="wide" id="resetYes" style="background:var(--rust)">yes, scrap the whole business</button>
+    <button class="wide" id="resetNo">no, keep my business</button>
+  </div>
+</div>
+
+<div class="sheet" id="emptySheet">
+  <div class="sheetbox">
+    <h3>are you sure you want to scrap all this hard work?</h3>
+    <p>This throws out every letter in the inventory bins, in every finish. It cannot be undone.</p>
+    <button class="wide" id="emptyYes" style="background:var(--rust)">yes, scrap every letter in the bins</button>
+    <button class="wide" id="emptyNo">no, keep my letters</button>
   </div>
 </div>
 
@@ -272,6 +277,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <div class="tray" id="tray"></div>
     <button class="wide" id="stowBtn2">stow every loose part into the bins</button>
     <div class="bins" id="bins"></div>
+    <button class="wide" id="emptyBtn" style="background:var(--rust);margin-top:12px">empty the inventory bins</button>
     <p class="hint">Loose parts pile up in the tray at the top. Drag one down onto its matching letter bin to stow it. Each bin holds a hundred of each finish, and a part will not go into the wrong letter. The colored marks under a bin show which finishes are in it.</p>
   </div>
 </div>
@@ -632,7 +638,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     });
     G.nextId=Math.max(int(G.nextId,1,1e9),maxId+1);
     G.floor=G.floor.filter(function(c){ return c&&typeof c.ch==='string'&&/^[A-Z]$/.test(c.ch)&&FINBY[c.fin]; })
-      .slice(0,12).map(function(c){ return {ch:c.ch,fin:own.indexOf(c.fin)>=0?c.fin:'alu',auto:c.auto!==false}; });
+      .slice(0,12).map(function(c){ return {ch:c.ch,fin:own.indexOf(c.fin)>=0?c.fin:'alu',auto:c.auto!==false,stopped:c.stopped===true}; });
     G.done=G.done.filter(function(j){ return typeof j==='number'&&j>=0&&j<JOBS.length; });
     G.tray=G.tray.filter(function(t){ return t&&typeof t.ch==='string'&&/^[A-Z]?$/.test(t.ch)&&FINBY[t.fin]; }).slice(-24);
   }
@@ -1686,14 +1692,14 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     while(G.floor.length<G.mills) G.floor.push({ch:ALPHA[G.floor.length%26],fin:'alu',auto:true});
     while(fac.m.length<G.mills){
       var c=G.floor[fac.m.length];
-      fac.m.push({ch:c.ch,fin:c.fin,auto:c.auto!==false,prog:0,wear:0,stock:5,need:'',sweep:0,dir:1,made:0,flash:0,idle:false});
+      fac.m.push({ch:c.ch,fin:c.fin,auto:c.auto!==false,stopped:c.stopped===true,prog:0,wear:0,stock:5,need:'',sweep:0,dir:1,made:0,flash:0,idle:false});
     }
     while(fac.ops.length<G.ops){
       var k=fac.ops.length;
       fac.ops.push({x:30+k*56,y:OPY(),tx:30+k*56,ty:OPY(),busy:-1,work:0});
     }
   }
-  function facStore(i){ var m=fac.m[i]; G.floor[i]={ch:m.ch,fin:m.fin,auto:m.auto}; writeSave(); }
+  function facStore(i){ var m=fac.m[i]; G.floor[i]={ch:m.ch,fin:m.fin,auto:m.auto,stopped:m.stopped}; writeSave(); }
 
   // every letter the open orders still need, one entry per missing letter
   function missingList(){
@@ -1710,7 +1716,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function pendingKeys(skipMachine){
     var p={};
     fac.m.forEach(function(m,i){
-      if(i===skipMachine||!m.auto||m.idle||m.prog<=0) return;
+      if(i===skipMachine||!m.auto||m.idle||m.stopped||m.prog<=0) return;
       var k=ikey(m.ch,m.fin); p[k]=(p[k]||0)+1;
     });
     if(skipMachine!==-1&&demo.on&&demo.mode==='orders'&&(demo.phase==='cut'||demo.phase==='eject')){
@@ -1759,7 +1765,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     for(i=0;i<fac.m.length;i++){
       var m=fac.m[i];
       if(m.flash>0) m.flash-=dt;
-      if(m.need) continue;
+      if(m.need||m.stopped) continue;
       if(m.prog<=0){
         if(m.auto){
           var nd=nextNeeded(i);
@@ -1895,9 +1901,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     for(i=0;i<fac.m.length;i++){
       var m=fac.m[i];
       var line='mill '+(i+2)+', made '+m.made;
-      if(m.need) line='needs '+(m.need==='tool'?'a tool change':(m.need==='stock'?'more stock':'chips cleared'));
+      if(m.stopped) line='mill '+(i+2)+', stopped';
+      else if(m.need) line='needs '+(m.need==='tool'?'a tool change':(m.need==='stock'?'more stock':'chips cleared'));
       else if(m.idle) line='idle, nothing needed';
-      drawBay(cells[i+1],{sel:i===fac.sel,busy:!m.idle,ch:m.ch,fin:m.fin,prog:m.prog,sweep:m.sweep,need:!!m.need,
+      drawBay(cells[i+1],{sel:i===fac.sel,busy:!m.idle&&!m.stopped,ch:m.ch,fin:m.fin,prog:m.prog,sweep:m.sweep,need:!!m.need,
         tag:m.auto?'auto':'manual',tagBlue:m.auto,line:line,wear:m.wear});
     }
     for(i=fac.m.length+1;i<BAYS;i++) drawOpenBay(cells[i],i===fac.m.length+1);
@@ -1937,6 +1944,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       '<button class="switch'+(m.auto?' on':'')+'" id="selAuto" style="'+(m.auto?'background:var(--blue)':'')+'">'+(m.auto?'auto, cutting for orders':'manual, tap for auto')+'</button></div>'+
       '<div class="feed"><span>letter '+m.ch+'</span><button id="selPrev">&#8592;</button><button id="selNext">&#8594;</button></div>'+
       '<div class="finrow" id="selFin"><span>finish</span></div>'+
+      '<button class="wide" id="selStop" style="background:'+(m.stopped?'var(--blue)':'var(--rust)')+'">'+(m.stopped?'start this mill':'stop this mill')+'</button>'+
       '<button class="wide" id="selDone">done</button>';
     var fr=box.querySelector('#selFin');
     G.owned.forEach(function(id){
@@ -1949,6 +1957,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     box.querySelector('#selPrev').addEventListener('click',function(){ shift(-1); });
     box.querySelector('#selNext').addEventListener('click',function(){ shift(1); });
     box.querySelector('#selAuto').addEventListener('click',function(){ m.auto=!m.auto; m.prog=0; facStore(fac.sel); renderSel(); });
+    box.querySelector('#selStop').addEventListener('click',function(){ m.stopped=!m.stopped; m.prog=0; facStore(fac.sel); renderSel(); toast('mill '+(fac.sel+2)+(m.stopped?' stopped':' running again')); });
     box.querySelector('#selDone').addEventListener('click',function(){ fac.sel=-1; renderSel(); });
   }
 
@@ -1984,7 +1993,6 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     fac.rush={order:order,clock:150+30*fac.m.length,bonus:Math.round((120+60*fac.m.length)*market()),over:false,msg:''};
     toast('rush shift on, set mills to manual and cut the quota letters');
   });
-  document.getElementById('facBtn').addEventListener('click',function(){ sheet('menuSheet',false); setView('floor'); });
   document.getElementById('facClose').addEventListener('click',function(){ setView('mill'); });
 
   // ---- orders ----
@@ -2312,7 +2320,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var n=Math.max(1,fac.m.length), each=(view==='floor'?0.85:0.32)/Math.pow(n,0.38);
     for(var k=0;k<SND.floor.length;k++){
       var m=fac.m[k];
-      var on=m&&fac.running&&!m.idle&&!m.need;
+      var on=m&&fac.running&&!m.idle&&!m.need&&!m.stopped;
       var rpm=on?(1100+((k*137)%600)):0;
       var cut=on?(0.45+0.35*Math.abs(Math.sin(m.sweep*Math.PI*1.5+k))):0;
       sndSet(SND.floor[k],each,rpm,cut,3);
@@ -2374,7 +2382,6 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function syncDemoBtns(){
     var alpha=demo.on&&demo.mode==='alpha', ord=demo.on&&demo.mode==='orders';
     document.getElementById('demoBtn').textContent=alpha?'stop the alphabet run':'cut the whole alphabet';
-    document.getElementById('progBtn').textContent=ord?'stop the order program':'run the order program on the mill';
     document.getElementById('demoBtn').classList.toggle('on',alpha);
     var b2=document.getElementById('progBtn2');
     b2.textContent=ord?'stop the order program':'run the order program';
@@ -2413,15 +2420,16 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     for(var i=tray.length-1;i>=0;i--){ if(tray[i].ch) stow(i,tray[i].ch); }
     ordersDirty=true;
   }
-  document.getElementById('stowBtn').addEventListener('click',function(){ stowAll(); sheet('menuSheet',false); });
   document.getElementById('stowBtn2').addEventListener('click',stowAll);
-  document.getElementById('emptyBtn').addEventListener('click',function(){
+  document.getElementById('emptyBtn').addEventListener('click',function(){ sheet('emptySheet',true); });
+  document.getElementById('emptyNo').addEventListener('click',function(){ sheet('emptySheet',false); });
+  document.getElementById('emptyYes').addEventListener('click',function(){
     G.inv={}; writeSave(); ordersDirty=true;
-    buildBins(); sheet('menuSheet',false);
+    buildBins(); sheet('emptySheet',false);
+    toast('the bins went to the scrap heap',true);
   });
 
   document.getElementById('demoBtn').addEventListener('click',function(){ runDemo('alpha'); });
-  document.getElementById('progBtn').addEventListener('click',function(){ runDemo('orders'); });
   document.getElementById('progBtn2').addEventListener('click',function(){ runDemo('orders'); });
   document.getElementById('howBtn').addEventListener('click',function(){ sheet('menuSheet',false); sheet('howSheet',true); });
   document.getElementById('howClose').addEventListener('click',function(){ sheet('howSheet',false); G.seenHow=true; writeSave(); });
@@ -2432,7 +2440,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     G=freshSave(); resetting=true; location.reload();
   });
   var resetting=false;
-  ['howSheet','resetSheet'].forEach(function(id){
+  ['howSheet','resetSheet','emptySheet'].forEach(function(id){
     document.getElementById(id).addEventListener('click',function(e){ if(e.target===this) sheet(id,false); });
   });
   document.addEventListener('visibilitychange',function(){ if(!resetting) writeSave(); });
