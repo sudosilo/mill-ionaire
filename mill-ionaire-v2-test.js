@@ -225,11 +225,51 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.click('#facRush'); await page.clock.runFor(500);
     ok(/rush quota/.test(await txt(page, '#facOrder')), 'a rush shift posts a quota');
     const fb = await (await page.$('#factory')).boundingBox();
-    await page.mouse.click(fb.x + fb.width * 0.1, fb.y + fb.height * 0.1); await page.clock.runFor(200);
+    await page.mouse.click(fb.x + fb.width * 0.5, fb.y + fb.height * 0.06); await page.clock.runFor(200);
     ok(await page.isVisible('#facSel'), 'tapping a floor mill opens its settings');
     await page.click('#selNext'); await page.click('#selAuto'); await page.click('#selDone');
     ok(errors.length === 0, 'no script errors in the shop and on the floor', errors.join(' | '));
     if (SHOTS) await page.screenshot({ path: SHOTS + '/floor.png' });
+    await ctx.close();
+  }
+
+  // ---- a full floor: your mill plus twelve floor mills ----
+  {
+    const floor = Array.from({ length: 12 }, (_, i) => ({ ch: 'ETAOINSHRDLU'[i], fin: 'alu', auto: true }));
+    const seed = JSON.stringify({ cash: 500, seenHow: true, guideDone: true, mills: 12, ops: 6, foreman: true, floor });
+    for (const width of [412, 1280]) {
+      const { ctx, page, errors } = await open(browser, { save: seed, clock: true, width });
+      await tab(page, 'floor'); await page.clock.runFor(30000);
+      ok(/plus 12 floor mills/.test(await txt(page, '#facOrder')) && /, 0 open bays/.test(await txt(page, '#facOrder')), `a full floor reads twelve floor mills and no open bays at ${width} wide`, await txt(page, '#facOrder'));
+      const sw = await page.evaluate(() => document.documentElement.scrollWidth);
+      ok(sw <= width, `a full floor fits without sideways scroll at ${width} wide`);
+      const fb = await (await page.$('#factory')).boundingBox();
+      await page.mouse.click(fb.x + fb.width * 0.15, fb.y + fb.height * 0.06); await page.clock.runFor(200);
+      ok(await page.isVisible('#view-mill.on'), `tapping your mill on the floor goes to the mill at ${width} wide`);
+      ok(errors.length === 0, `no script errors on a full floor at ${width} wide`, errors.join(' | '));
+      if (SHOTS) { await tab(page, 'floor'); await page.clock.runFor(500); await (await page.$('#facPanel')).screenshot({ path: SHOTS + '/fullfloor-' + width + '.png' }); }
+      await ctx.close();
+    }
+  }
+
+  // ---- shop sound ----
+  {
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, mills: 6, ops: 2, floor: [] });
+    const { ctx, page, errors } = await open(browser, { save: seed });
+    await page.click('#progBtn2'); await page.waitForTimeout(1500);
+    await tab(page, 'floor'); await page.waitForTimeout(1500);
+    const st = await page.evaluate(() => typeof AudioContext);
+    ok(st === 'function', 'the browser offers sound to the game');
+    await page.click('#soundBtn'); await page.waitForTimeout(200);
+    ok((await save(page)).sound === false, 'the sound button turns shop sound off and remembers it');
+    await page.click('#soundBtn'); await page.waitForTimeout(200);
+    ok((await save(page)).sound === true, 'the sound button turns shop sound back on');
+    await page.click('#burger');
+    await page.$eval('#volRange', e => { e.value = 25; e.dispatchEvent(new Event('input')); });
+    ok(Math.abs((await save(page)).vol - 0.25) < 0.001, 'the volume slider sets and remembers the shop volume');
+    await page.click('#menuClose');
+    await page.waitForTimeout(1000);
+    ok(errors.length === 0, 'no script errors with the whole shop making sound', errors.join(' | '));
     await ctx.close();
   }
 
@@ -337,7 +377,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     shipped = g.shipped;
     ok(shipped >= 5, 'half an hour with a floor running ships a steady stream of orders', shipped + ' orders');
     ok(Object.values(g.inv).every(v => v <= 100), 'no bin goes over a hundred');
-    ok(g.orders.length <= 5, 'the order board never overflows', g.orders.length + ' orders');
+    ok(g.orders.length <= 9, 'the order board never overflows', g.orders.length + ' orders');
     ok(errors.length === 0, 'no script errors over half an hour of play', errors.join(' | '));
     results.push('     (half an hour of game time took ' + ((Date.now() - t0) / 1000).toFixed(0) + ' real seconds)');
     await ctx.close();

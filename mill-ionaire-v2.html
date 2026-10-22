@@ -80,6 +80,10 @@ button:active{background:var(--rust);}
 .grp[open] summary::before{content:"- ";}
 .grpbody{padding:12px 10px 4px;}
 .icon{min-width:46px;min-height:46px;font-size:20px;background:var(--charcoal);color:var(--face);border-radius:0;}
+
+.hdbtns{display:flex;gap:6px;align-items:center;}
+#soundBtn{min-width:32px;min-height:32px;width:32px;height:32px;font-size:16px;padding:0;background:var(--blue);}
+#soundBtn.off{background:var(--steel);}
 #infoBtn{min-width:32px;min-height:32px;width:32px;height:32px;font-size:15px;padding:0;background:var(--blue);}
 .sheet{display:none;position:fixed;inset:0;background:rgba(43,41,36,0.45);z-index:20;padding:20px;overflow:auto;}
 .sheet.open{display:block;}
@@ -179,7 +183,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   <button id="burger" class="icon">&#9776;</button>
   <div class="hd"><h1><span class="br">[</span>Mill-ionaire<span class="br">]</span></h1>
   <span>cut letters, fill orders, buy mills</span></div>
-  <button id="infoBtn" class="icon">i</button>
+  <div class="hdbtns"><button id="soundBtn" class="icon" title="shop sound">&#9834;</button><button id="infoBtn" class="icon">i</button></div>
 </header>
 
 <div class="hud">
@@ -205,6 +209,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <button class="wide" id="facBtn">open the factory floor</button>
     <button class="wide" id="stowBtn">stow every loose part into the bins</button>
     <button class="wide" id="emptyBtn">empty the inventory bins</button>
+    <div class="feed" style="margin-top:8px"><span>shop volume</span><input type="range" id="volRange" min="0" max="100" step="1" value="60" style="flex:1;height:34px;accent-color:#2E4A63;"></div>
     <button class="wide" id="howBtn">how to play</button>
     <button class="wide" id="resetBtn">start the whole business over</button>
     <button class="wide" id="menuClose">close</button>
@@ -587,7 +592,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var SAVEKEY='mill-ionaire-v2-save';
   function freshSave(){
     return {cash:0,played:0,owned:['alu'],curFin:'alu',inv:{},orders:[],mills:0,ops:1,foreman:false,
-            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false};
+            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6};
   }
   var G=freshSave();
   // reads the save and throws away anything that is the wrong shape, so a damaged save never breaks the game
@@ -606,7 +611,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     function int(n,a,b){ n=Math.floor(Number(n)||0); return n<a?a:(n>b?b:n); }
     G.cash=Math.max(0,G.cash); G.played=Math.max(0,G.played); G.earned=Math.max(0,G.earned);
     G.mills=int(G.mills,0,12); G.ops=int(G.ops,1,6); G.head=int(G.head,0,3); G.passCd=Math.max(0,Math.min(20,G.passCd));
-    G.made=Math.max(0,G.made); G.shipped=Math.max(0,G.shipped); G.foreman=G.foreman===true;
+    G.made=Math.max(0,G.made); G.shipped=Math.max(0,G.shipped); G.foreman=G.foreman===true; G.sound=G.sound!==false; G.vol=Math.max(0,Math.min(1,G.vol));
     var own=['alu'];
     G.owned.forEach(function(id){ if(typeof id==='string'&&FINBY[id]&&own.indexOf(id)<0) own.push(id); });
     own.sort(function(a,b){ return FIN.indexOf(FINBY[a])-FIN.indexOf(FINBY[b]); });
@@ -621,7 +626,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var maxId=0;
     G.orders=G.orders.filter(function(q){
       return q&&typeof q.word==='string'&&/^[A-Z]{1,12}$/.test(q.word)&&own.indexOf(q.fin)>=0;
-    }).slice(0,5).map(function(q){
+    }).slice(0,9).map(function(q){
       var id=Math.floor(Number(q.id))||0; if(id>maxId) maxId=id;
       return {id:id,word:q.word,fin:q.fin,who:CLIENTS.indexOf(q.who)>=0?q.who:CLIENTS[0]};
     });
@@ -1193,13 +1198,14 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
         part.hmap[hk]=nt;
       }
     }
-    if(removed>0){ topDirty=true; spawnChips(tip,Math.min(6,1+removed/90)); }
+    if(removed>0){ topDirty=true; spawnChips(tip,Math.min(6,1+removed/90)); SND.mainCut=Math.min(1.5,SND.mainCut+0.25+removed/300); }
   }
 
   function checkShankCrash(){
     if(!part.placed||s.rpm<=0) return;
     if(demo.on&&demo.phase==='cut') return;   // the program uses an extended holder that clears the work
     if(shankHit(s)<=0.5) return;
+    sndThunk();
     machine.hp=Math.max(0,machine.hp-6);
     crashT=70; shakeT=34; shakeMag=8;
     spawnSparks(toolTip(),10);
@@ -1235,6 +1241,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       }
     }
     if(hit>0.05){
+      sndThunk();
       machine.hp=Math.max(0,machine.hp-hit*0.9);
       crashT=18; shakeT=Math.max(shakeT,10); shakeMag=Math.max(shakeMag,4);
       spawnSparks(tip,3);
@@ -1599,6 +1606,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     G.played+=dt;
     facUpdate(dt);
     ordersTick(dt);
+    sndTick(dt);
     hudT-=dt;
     if(hudT<=0){ hudT=0.25; drawHud(); guideTick();
       if(view==='floor') facBoard();
@@ -1673,7 +1681,6 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   // ---- factory floor ----
   var fac={running:true,m:[],ops:[],sel:-1,rush:null};
   var fcv=document.getElementById('factory'), fx=fcv.getContext('2d');
-  var OPY=536;
 
   function facSync(){
     while(G.floor.length<G.mills) G.floor.push({ch:ALPHA[G.floor.length%26],fin:'alu',auto:true});
@@ -1683,7 +1690,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
     while(fac.ops.length<G.ops){
       var k=fac.ops.length;
-      fac.ops.push({x:30+k*56,y:OPY,tx:30+k*56,ty:OPY,busy:-1,work:0});
+      fac.ops.push({x:30+k*56,y:OPY(),tx:30+k*56,ty:OPY(),busy:-1,work:0});
     }
   }
   function facStore(i){ var m=fac.m[i]; G.floor[i]={ch:m.ch,fin:m.fin,auto:m.auto}; writeSave(); }
@@ -1722,15 +1729,22 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     return null;
   }
 
-  function facCells(){
-    var n=Math.max(1,fac.m.length);
-    var cols=n<=1?1:(n<=4?2:(n<=9?3:4));
-    var rows=Math.ceil(n/cols);
-    var w=fcv.width/cols, h=(fcv.height-60)/rows;
-    var out=[];
-    for(var i=0;i<n;i++) out.push({x:(i%cols)*w,y:Math.floor(i/cols)*h,w:w,h:h});
+  // the floor has thirteen bays: your mill first, then room for twelve floor mills
+  var BAYS=13, BAYH=175;
+  function bayCols(){ return (fcv.clientWidth&&fcv.clientWidth<520)?3:4; }
+  function facFit(){
+    var rows=Math.ceil(BAYS/bayCols()), h=rows*BAYH+70;
+    if(fcv.height!==h) fcv.height=h;
+  }
+  function OPY(){ return fcv.height-28; }
+  function bayCells(){
+    facFit();
+    var cols=bayCols(), w=fcv.width/cols, out=[];
+    for(var i=0;i<BAYS;i++) out.push({x:(i%cols)*w,y:Math.floor(i/cols)*BAYH,w:w,h:BAYH});
     return out;
   }
+  // cell for floor mill i, which sits one bay after your own mill
+  function facCells(){ return bayCells().slice(1); }
 
   function facUpdate(dt){
     facSync();
@@ -1773,6 +1787,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(G.foreman) for(i=0;i<fac.m.length;i++) if(fac.m[i].need) facDispatch(i);
     for(i=0;i<fac.ops.length;i++){
       var p=fac.ops[i];
+      if(p.busy<0) p.ty=OPY();
       var dx=p.tx-p.x, dy=p.ty-p.y, d=Math.hypot(dx,dy);
       if(d>2){ p.x+=dx/d*120*dt; p.y+=dy/d*120*dt; }
       else if(p.busy>=0){
@@ -1782,7 +1797,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
           if(mm.need==='tool') mm.wear=0;
           if(mm.need==='stock') mm.stock=5;
           mm.need=''; mm.flash=0;
-          p.busy=-1; p.tx=30+i*56; p.ty=OPY;
+          p.busy=-1; p.tx=30+i*56; p.ty=OPY();
         }
       }
     }
@@ -1801,65 +1816,91 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
   }
 
+  function drawBay(c,o){
+    var FS=Math.max(1,Math.min(2.2,0.9*fcv.width/Math.max(1,fcv.clientWidth||fcv.width)));
+    if(o.mine){ fx.fillStyle='#E4E9EE'; fx.fillRect(c.x,c.y,c.w,c.h); }
+    fx.strokeStyle='#9A9C97'; fx.lineWidth=1; fx.strokeRect(c.x,c.y,c.w,c.h);
+    if(o.mine){ fx.strokeStyle='#2E4A63'; fx.lineWidth=3; fx.strokeRect(c.x+2,c.y+2,c.w-4,c.h-4); }
+    if(o.sel){ fx.strokeStyle='#2E4A63'; fx.lineWidth=4; fx.strokeRect(c.x+3,c.y+3,c.w-6,c.h-6); }
+    var HH=Math.min(c.h*0.45,40*FS), mh=(c.h-HH-30)/0.52;
+    var mc={h:mh,y:c.y+HH-0.12*mh};
+    var bx=c.x+c.w*0.16, bw=c.w*0.68, by=mc.y+mc.h*0.28, bh=mc.h*0.44;
+
+    fx.fillStyle='#57694B'; fx.fillRect(bx,by-mc.h*0.16,bw*0.18,bh+mc.h*0.16);
+    fx.fillStyle='#3E4C37'; fx.fillRect(bx,by-mc.h*0.16,bw*0.18,mc.h*0.10);
+    fx.fillStyle='#57694B'; fx.fillRect(bx,by-mc.h*0.16,bw*0.8,mc.h*0.07);
+
+    var sx=bx+bw*0.2+o.sweep*(bw*0.55);
+    fx.fillStyle='#3E4C37'; fx.fillRect(sx-8,by-mc.h*0.10,16,mc.h*0.10);
+    fx.fillStyle='#2B2924'; fx.fillRect(sx-2.5,by,5,mc.h*0.11);
+
+    fx.fillStyle='#DDD8CB'; fx.fillRect(bx+bw*0.16,by+mc.h*0.13,bw*0.78,mc.h*0.05);
+    if(o.busy){
+      fx.fillStyle=finCSS(o.fin);
+      fx.fillRect(bx+bw*0.30,by+mc.h*0.075,bw*0.42*(1-o.prog*0.55),mc.h*0.055);
+      fx.strokeStyle='#2B2924'; fx.lineWidth=1;
+      fx.strokeRect(bx+bw*0.30,by+mc.h*0.075,bw*0.42*(1-o.prog*0.55),mc.h*0.055);
+    }
+    fx.fillStyle='#65675F'; fx.fillRect(bx+bw*0.10,by+mc.h*0.18,bw*0.9,mc.h*0.06);
+
+    fx.fillStyle=o.need?( (Math.floor(Date.now()/300)%2)?'#A84A2A':'#E0912B' ):(o.busy?'#57694B':'#9A9C97');
+    fx.beginPath(); fx.arc(c.x+c.w-12-7*FS,c.y+8+7*FS,7*FS,0,Math.PI*2); fx.fill();
+    fx.strokeStyle='#2B2924'; fx.lineWidth=1.5; fx.stroke();
+
+    fx.fillStyle='#2B2924'; fx.font='bold '+Math.round(22*FS)+'px Trebuchet MS';
+    fx.fillText(o.busy?o.ch:'-',c.x+12,c.y+28*FS);
+    var sq=16*FS;
+    fx.fillStyle=finCSS(o.fin); fx.fillRect(c.x+18+20*FS,c.y+11*FS,sq,sq);
+    fx.strokeStyle='#2B2924'; fx.lineWidth=1.5; fx.strokeRect(c.x+18+20*FS,c.y+11*FS,sq,sq);
+    fx.font='bold '+Math.round(12*FS)+'px Trebuchet MS'; fx.fillStyle=o.tagBlue?'#2E4A63':'#65675F';
+    fx.fillText(o.tag,c.x+24+36*FS,c.y+24*FS);
+    fx.fillStyle=o.need?'#A84A2A':'#65675F'; fx.font=Math.round(11*FS)+'px Trebuchet MS';
+    fx.fillText(o.line,c.x+12,c.y+HH-4);
+
+    fx.fillStyle='#C9C3B2'; fx.fillRect(c.x+12,c.y+c.h-24,c.w-70,6);
+    fx.fillStyle='#2E4A63'; fx.fillRect(c.x+12,c.y+c.h-24,(c.w-70)*Math.min(1,o.prog),6);
+    if(o.wear!==undefined){
+      fx.fillStyle=o.wear>0.7?'#A84A2A':'#B5760D';
+      fx.fillRect(c.x+12,c.y+c.h-16,(c.w-70)*Math.min(1,o.wear),3);
+    }
+  }
+
+  function drawOpenBay(c,first){
+    var FS=Math.max(1,Math.min(2.2,0.9*fcv.width/Math.max(1,fcv.clientWidth||fcv.width)));
+    fx.save();
+    fx.strokeStyle='#9A9C97'; fx.lineWidth=2; fx.setLineDash([8,6]);
+    fx.strokeRect(c.x+6,c.y+6,c.w-12,c.h-12);
+    fx.restore();
+    fx.textAlign='center';
+    fx.fillStyle='#65675F'; fx.font='bold '+Math.round(13*FS)+'px Trebuchet MS';
+    fx.fillText('open bay',c.x+c.w/2,c.y+c.h/2-4);
+    if(first){
+      fx.fillStyle='#2E4A63'; fx.font=Math.round(11*FS)+'px Trebuchet MS';
+      fx.fillText('next mill '+money(millCost()),c.x+c.w/2,c.y+c.h/2+14*FS);
+    }
+    fx.textAlign='left';
+  }
+
   function facDraw(){
+    var cells=bayCells(), i;
     fx.clearRect(0,0,fcv.width,fcv.height);
     fx.fillStyle='#D3CEC0'; fx.fillRect(0,0,fcv.width,fcv.height);
-    if(!fac.m.length){
-      fx.fillStyle='#2B2924'; fx.font='bold 20px Trebuchet MS'; fx.textAlign='center';
-      fx.fillText('the floor is empty',fcv.width/2,fcv.height/2-14);
-      fx.font='15px Trebuchet MS'; fx.fillStyle='#2E4A63';
-      fx.fillText('buy your first floor mill in the shop',fcv.width/2,fcv.height/2+14);
-      fx.textAlign='left';
-    }
-    var cells=facCells(), i;
+    // your own mill, the one on the mill tab
+    var on=demo.on&&(demo.phase==='cut'||demo.phase==='eject')&&part.placed;
+    var pr=on?Math.min(1,((demo.pass-1)+(demo.stage==='finish'?0.5:0)+Math.max(0,Math.min(1,demo.j/part.ny))*0.5)/Math.ceil(B.nz/12)):0;
+    drawBay(cells[0],{mine:true,busy:on,ch:demo.ch,fin:on?demo.fin:G.curFin,prog:demo.phase==='eject'?1:pr,
+      sweep:on?Math.max(0,Math.min(1,demo.i/part.nx)):0.5,need:machine.xDead||machine.yDead,
+      tag:'your mill',tagBlue:true,
+      line:(machine.xDead||machine.yDead)?'wrecked, call the millwright':(on?'mill 1, '+(demo.mode==='orders'?'order program':'alphabet run'):'mill 1, tap to run it')});
     for(i=0;i<fac.m.length;i++){
-      var m=fac.m[i], c=cells[i];
-      fx.strokeStyle='#9A9C97'; fx.lineWidth=1; fx.strokeRect(c.x,c.y,c.w,c.h);
-      if(i===fac.sel){ fx.strokeStyle='#2E4A63'; fx.lineWidth=4; fx.strokeRect(c.x+3,c.y+3,c.w-6,c.h-6); }
-      var FS=Math.max(1,Math.min(2.2,0.9*fcv.width/Math.max(1,fcv.clientWidth||fcv.width)));
-      var HH=Math.min(c.h*0.45,40*FS), mh=(c.h-HH-30)/0.52;
-      var mc={h:mh,y:c.y+HH-0.12*mh};
-      var bx=c.x+c.w*0.16, bw=c.w*0.68, by=mc.y+mc.h*0.28, bh=mc.h*0.44;
-
-      fx.fillStyle='#57694B'; fx.fillRect(bx,by-mc.h*0.16,bw*0.18,bh+mc.h*0.16);
-      fx.fillStyle='#3E4C37'; fx.fillRect(bx,by-mc.h*0.16,bw*0.18,mc.h*0.10);
-      fx.fillStyle='#57694B'; fx.fillRect(bx,by-mc.h*0.16,bw*0.8,mc.h*0.07);
-
-      var sx=bx+bw*0.2+m.sweep*(bw*0.55);
-      fx.fillStyle='#3E4C37'; fx.fillRect(sx-8,by-mc.h*0.10,16,mc.h*0.10);
-      fx.fillStyle='#2B2924'; fx.fillRect(sx-2.5,by,5,mc.h*0.11);
-
-      fx.fillStyle='#DDD8CB'; fx.fillRect(bx+bw*0.16,by+mc.h*0.13,bw*0.78,mc.h*0.05);
-      if(!m.idle){
-        fx.fillStyle=finCSS(m.fin);
-        fx.fillRect(bx+bw*0.30,by+mc.h*0.075,bw*0.42*(1-m.prog*0.55),mc.h*0.055);
-        fx.strokeStyle='#2B2924'; fx.lineWidth=1;
-        fx.strokeRect(bx+bw*0.30,by+mc.h*0.075,bw*0.42*(1-m.prog*0.55),mc.h*0.055);
-      }
-      fx.fillStyle='#65675F'; fx.fillRect(bx+bw*0.10,by+mc.h*0.18,bw*0.9,mc.h*0.06);
-
-      fx.fillStyle=m.need?( (Math.floor(Date.now()/300)%2)?'#A84A2A':'#E0912B' ):(m.idle?'#9A9C97':'#57694B');
-      fx.beginPath(); fx.arc(c.x+c.w-12-7*FS,c.y+8+7*FS,7*FS,0,Math.PI*2); fx.fill();
-      fx.strokeStyle='#2B2924'; fx.lineWidth=1.5; fx.stroke();
-
-      fx.fillStyle='#2B2924'; fx.font='bold '+Math.round(22*FS)+'px Trebuchet MS';
-      fx.fillText(m.idle?'-':m.ch,c.x+12,c.y+28*FS);
-      var sq=16*FS;
-      fx.fillStyle=finCSS(m.fin); fx.fillRect(c.x+18+20*FS,c.y+11*FS,sq,sq);
-      fx.strokeStyle='#2B2924'; fx.lineWidth=1.5; fx.strokeRect(c.x+18+20*FS,c.y+11*FS,sq,sq);
-      fx.font='bold '+Math.round(12*FS)+'px Trebuchet MS'; fx.fillStyle=m.auto?'#2E4A63':'#65675F';
-      fx.fillText(m.auto?'auto':'manual',c.x+24+36*FS,c.y+24*FS);
-      fx.fillStyle='#65675F'; fx.font=Math.round(11*FS)+'px Trebuchet MS';
-      var line='mill '+(i+1)+', made '+m.made;
-      if(m.need){ line='needs '+(m.need==='tool'?'a tool change':(m.need==='stock'?'more stock':'chips cleared')); fx.fillStyle='#A84A2A'; }
+      var m=fac.m[i];
+      var line='mill '+(i+2)+', made '+m.made;
+      if(m.need) line='needs '+(m.need==='tool'?'a tool change':(m.need==='stock'?'more stock':'chips cleared'));
       else if(m.idle) line='idle, nothing needed';
-      fx.fillText(line,c.x+12,c.y+HH-4);
-
-      fx.fillStyle='#C9C3B2'; fx.fillRect(c.x+12,c.y+c.h-24,c.w-70,6);
-      fx.fillStyle='#2E4A63'; fx.fillRect(c.x+12,c.y+c.h-24,(c.w-70)*m.prog,6);
-      fx.fillStyle=m.wear>0.7?'#A84A2A':'#B5760D';
-      fx.fillRect(c.x+12,c.y+c.h-16,(c.w-70)*Math.min(1,m.wear),3);
+      drawBay(cells[i+1],{sel:i===fac.sel,busy:!m.idle,ch:m.ch,fin:m.fin,prog:m.prog,sweep:m.sweep,need:!!m.need,
+        tag:m.auto?'auto':'manual',tagBlue:m.auto,line:line,wear:m.wear});
     }
+    for(i=fac.m.length+1;i<BAYS;i++) drawOpenBay(cells[i],i===fac.m.length+1);
     for(i=0;i<fac.ops.length;i++){
       var p=fac.ops[i];
       fx.fillStyle=p.busy>=0?'#A84A2A':'#2E4A63';
@@ -1868,12 +1909,12 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       fx.fillStyle='#2B2924'; fx.font='bold 13px Trebuchet MS';
       fx.fillText('op '+(i+1),p.x-14,p.y+22);
     }
-    if(G.foreman){ fx.fillStyle='#2E4A63'; fx.font='bold 11px Trebuchet MS'; fx.fillText('foreman on duty',fcv.width-120,OPY+16); }
+    if(G.foreman){ fx.fillStyle='#2E4A63'; fx.font='bold 13px Trebuchet MS'; fx.fillText('foreman on duty',fcv.width-130,OPY()+16); }
   }
 
   function facBoard(){
     var el=document.getElementById('facOrder');
-    if(!fac.m.length){ el.textContent='no floor mills yet, buy one in the shop'; el.className='status'; return; }
+    if(!fac.m.length){ el.textContent='your mill is the only one on the floor, buy floor mills in the shop to fill the open bays'; el.className='status'; return; }
     if(fac.rush){
       var t=fac.rush.order.map(function(o){ return o.got+' of '+o.need+' '+o.ch; }).join(', ');
       el.textContent=(fac.rush.msg?fac.rush.msg+'. ':'')+'rush quota '+t+', bonus '+money(fac.rush.bonus)+
@@ -1883,7 +1924,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
     var need=0, idle=0;
     fac.m.forEach(function(m){ if(m.need) need++; else if(m.idle) idle++; });
-    el.textContent=(fac.running?'floor running':'floor paused')+', '+fac.m.length+' mills, '+need+' need a hand, '+idle+' idle';
+    el.textContent=(fac.running?'floor running':'floor paused')+', your mill plus '+fac.m.length+' floor mills, '+need+' need a hand, '+idle+' idle, '+(12-fac.m.length)+' open bays';
     el.className='status'+(need?' warn':(fac.running?' cutting':''));
   }
 
@@ -1892,7 +1933,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(fac.sel<0||fac.sel>=fac.m.length){ box.style.display='none'; return; }
     var m=fac.m[fac.sel];
     box.style.display='block';
-    box.innerHTML='<div class="feed"><span>mill '+(fac.sel+1)+'</span>'+
+    box.innerHTML='<div class="feed"><span>mill '+(fac.sel+2)+'</span>'+
       '<button class="switch'+(m.auto?' on':'')+'" id="selAuto" style="'+(m.auto?'background:var(--blue)':'')+'">'+(m.auto?'auto, cutting for orders':'manual, tap for auto')+'</button></div>'+
       '<div class="feed"><span>letter '+m.ch+'</span><button id="selPrev">&#8592;</button><button id="selNext">&#8594;</button></div>'+
       '<div class="finrow" id="selFin"><span>finish</span></div>'+
@@ -1914,14 +1955,16 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   fcv.addEventListener('pointerdown',function(e){
     var r=fcv.getBoundingClientRect();
     var px=(e.clientX-r.left)*(fcv.width/r.width), py=(e.clientY-r.top)*(fcv.height/r.height);
-    var cells=facCells();
-    for(var i=0;i<fac.m.length;i++){
-      var c=cells[i];
-      if(px>=c.x&&px<=c.x+c.w&&py>=c.y&&py<=c.y+c.h){
-        if(fac.m[i].need) facDispatch(i);
-        else { fac.sel=(fac.sel===i)?-1:i; renderSel(); }
-        return;
-      }
+    var cells=bayCells();
+    for(var b=0;b<cells.length;b++){
+      var c=cells[b];
+      if(!(px>=c.x&&px<=c.x+c.w&&py>=c.y&&py<=c.y+c.h)) continue;
+      if(b===0){ setView('mill'); window.scrollTo(0,0); return; }
+      var i=b-1;
+      if(i>=fac.m.length){ setView('shop'); return; }
+      if(fac.m[i].need) facDispatch(i);
+      else { fac.sel=(fac.sel===i)?-1:i; renderSel(); }
+      return;
     }
   });
 
@@ -1954,7 +1997,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var CLIENTS=['a sign shop','a mailbox maker','a diner owner','a hardware store','a print shop','a ranch gate builder',
     'a roadside motel','a ball team','a wedding planner','a museum','a gift shop','a trucking yard','a theater','a coffee stand','a campground'];
   var ordersDirty=true, ordersSig='', orderT=0;
-  function maxOrders(){ return Math.min(5,3+Math.floor(G.mills/4)); }
+  function maxOrders(){ return Math.min(9,3+Math.ceil(G.mills/2)); }
   function orderValue(o){ var v=0; for(var i=0;i<o.word.length;i++) v+=letterBase(o.word[i]); return v*1.25*fin(o.fin).pay*market(); }
   function newOrder(){
     var maxLen=Math.min(8,3+Math.floor(G.mills/2)+(G.owned.length>3?1:0)+(G.owned.length>7?1:0));
@@ -1979,7 +2022,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       if(!canShip(o)) return;
       for(var k=0;k<o.word.length;k++) invAdd(o.word[k],o.fin,-1);
       G.orders.splice(i,1); G.shipped=(G.shipped||0)+1;
-      earn(orderValue(o),'for '+o.word+' to '+o.who);
+      earn(orderValue(o),'for '+o.word+' to '+o.who); sndDing();
       orderT=2.5; binsDirty=true; ordersDirty=true; buildBins();
       return;
     }
@@ -2152,6 +2195,154 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       if(el.getAttribute('data-tip')!==t[1]) el.setAttribute('data-tip',t[1]);
     }
   }
+
+
+  // ---- shop sound: every running mill hums, chatters while it cuts, and squeals once in a while ----
+  var SND={ctx:null,master:null,comp:null,noise:null,main:null,floor:[],t:0,mainCut:0,lastSqueal:0,lastThunk:0};
+  function sndInit(){
+    if(SND.ctx) return;
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return;
+    try{ SND.ctx=new AC(); }catch(e){ SND.ctx=null; return; }
+    var c=SND.ctx;
+    SND.comp=c.createDynamicsCompressor();
+    SND.comp.threshold.value=-20; SND.comp.ratio.value=4;
+    SND.master=c.createGain(); SND.master.gain.value=0;
+    SND.master.connect(SND.comp); SND.comp.connect(c.destination);
+    var len=c.sampleRate*2, buf=c.createBuffer(1,len,c.sampleRate), d=buf.getChannelData(0), last=0;
+    for(var i=0;i<len;i++){ var w=Math.random()*2-1; last=(last+0.02*w)/1.02; d[i]=w*0.6+last*3; }
+    SND.noise=buf;
+    SND.main=sndVoice(0,0);
+  }
+  // one machine: motor hum, a whine an octave up, and cutting chatter pulsed at the tooth rate
+  function sndVoice(pan,seed){
+    var c=SND.ctx, v={};
+    v.out=c.createGain(); v.out.gain.value=0;
+    var dest=v.out;
+    if(c.createStereoPanner){ v.pan=c.createStereoPanner(); v.pan.pan.value=pan; v.out.connect(v.pan); v.pan.connect(SND.master); }
+    else v.out.connect(SND.master);
+    v.hum=c.createOscillator(); v.hum.type='sawtooth'; v.hum.frequency.value=58+seed*1.7;
+    v.humLp=c.createBiquadFilter(); v.humLp.type='lowpass'; v.humLp.frequency.value=320;
+    v.humG=c.createGain(); v.humG.gain.value=0;
+    v.hum.connect(v.humLp); v.humLp.connect(v.humG); v.humG.connect(dest);
+    v.whine=c.createOscillator(); v.whine.type='triangle'; v.whine.frequency.value=400;
+    v.whineG=c.createGain(); v.whineG.gain.value=0;
+    v.whine.connect(v.whineG); v.whineG.connect(dest);
+    v.nz=c.createBufferSource(); v.nz.buffer=SND.noise; v.nz.loop=true; v.nz.loopStart=(seed*0.137)%1.5;
+    v.bp=c.createBiquadFilter(); v.bp.type='bandpass'; v.bp.frequency.value=1400+seed*60; v.bp.Q.value=1.6;
+    v.chat=c.createGain(); v.chat.gain.value=0;
+    v.lfo=c.createOscillator(); v.lfo.type='square'; v.lfo.frequency.value=40;
+    v.lfoG=c.createGain(); v.lfoG.gain.value=0;
+    v.lfo.connect(v.lfoG); v.lfoG.connect(v.chat.gain);
+    v.nz.connect(v.bp); v.bp.connect(v.chat); v.chat.connect(dest);
+    v.hum.start(); v.whine.start(); v.nz.start(); v.lfo.start();
+    return v;
+  }
+  function sndSet(v,level,rpm,cut,flutes){
+    var c=SND.ctx, t=c.currentTime, k=0.08;
+    var run=rpm>0?1:0;
+    v.out.gain.setTargetAtTime(level,t,k);
+    v.hum.frequency.setTargetAtTime(40+rpm*0.03,t,k);
+    v.humG.gain.setTargetAtTime(run*0.16,t,k);
+    v.whine.frequency.setTargetAtTime(180+rpm*0.32,t,k);
+    v.whineG.gain.setTargetAtTime(run*0.018,t,k);
+    var tooth=Math.max(8,Math.min(120,rpm/60*(flutes||3)));
+    v.lfo.frequency.setTargetAtTime(tooth,t,k);
+    v.chat.gain.setTargetAtTime(cut*0.10,t,k);
+    v.lfoG.gain.setTargetAtTime(cut*0.08,t,k);
+    v.bp.frequency.setTargetAtTime(900+rpm*0.5+cut*400,t,0.2);
+  }
+  // a short quiet squeal, the kind a machinist hears and backs the feed off for
+  function sndSqueal(v,amount){
+    var c=SND.ctx, t=c.currentTime;
+    if(t-SND.lastSqueal<4) return;
+    SND.lastSqueal=t;
+    var o=c.createOscillator(), g=c.createGain(), vib=c.createOscillator(), vg=c.createGain();
+    var f=2100+Math.random()*1500, dur=0.22+Math.random()*0.45;
+    o.type='sine'; o.frequency.value=f;
+    vib.frequency.value=7+Math.random()*6; vg.gain.value=f*0.012;
+    vib.connect(vg); vg.connect(o.frequency);
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(0.022*amount,t+0.05);
+    g.gain.setTargetAtTime(0,t+dur*0.6,dur*0.25);
+    o.connect(g); g.connect(v.out);
+    o.start(t); vib.start(t); o.stop(t+dur+0.4); vib.stop(t+dur+0.4);
+  }
+  function sndThunk(){
+    if(!SND.ctx||G.sound===false) return;
+    var c=SND.ctx, t=c.currentTime;
+    if(t-SND.lastThunk<0.35) return;
+    SND.lastThunk=t;
+    var n=c.createBufferSource(), lp=c.createBiquadFilter(), g=c.createGain();
+    n.buffer=SND.noise; lp.type='lowpass'; lp.frequency.value=260;
+    g.gain.setValueAtTime(0.5,t); g.gain.setTargetAtTime(0,t+0.04,0.08);
+    n.connect(lp); lp.connect(g); g.connect(SND.master);
+    n.start(t); n.stop(t+0.5);
+  }
+  function sndDing(){
+    if(!SND.ctx||G.sound===false) return;
+    var c=SND.ctx, t=c.currentTime;
+    [880,1320,1760].forEach(function(f,i){
+      var o=c.createOscillator(), g=c.createGain();
+      o.type='sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(0,t+i*0.07);
+      g.gain.linearRampToValueAtTime(0.09,t+i*0.07+0.01);
+      g.gain.setTargetAtTime(0,t+i*0.07+0.03,0.18);
+      o.connect(g); g.connect(SND.master);
+      o.start(t+i*0.07); o.stop(t+i*0.07+1.2);
+    });
+  }
+  function sndTick(dt){
+    SND.mainCut=Math.max(0,SND.mainCut-dt*2.5);
+    if(!SND.ctx) return;
+    SND.t-=dt; if(SND.t>0) return; SND.t=0.05;
+    var c=SND.ctx;
+    SND.master.gain.setTargetAtTime(G.sound===false?0:1.7*G.vol,c.currentTime,0.1);
+    if(G.sound===false) return;
+    // your mill, up front when you are standing at it
+    var T=TOOLS[tool], hard=part.placed?fin(part.fin).hard:1;
+    var mainCut=Math.min(1,SND.mainCut);
+    sndSet(SND.main,view==='mill'?1:(view==='floor'?0.55:0.3),s.rpm,mainCut,T.flute>20?2:(T.r>15?6:3));
+    if(s.rpm>0&&mainCut>0.2&&Math.random()<0.002*hard*mainCut) sndSqueal(SND.main,mainCut);
+    // the floor, softer per mill so a full shop swells instead of getting loud
+    while(SND.floor.length<fac.m.length){
+      var i=SND.floor.length, col=(i+1)%4;
+      SND.floor.push(sndVoice(-0.75+col*0.5,i+1));
+    }
+    var n=Math.max(1,fac.m.length), each=(view==='floor'?0.85:0.32)/Math.pow(n,0.38);
+    for(var k=0;k<SND.floor.length;k++){
+      var m=fac.m[k];
+      var on=m&&fac.running&&!m.idle&&!m.need;
+      var rpm=on?(1100+((k*137)%600)):0;
+      var cut=on?(0.45+0.35*Math.abs(Math.sin(m.sweep*Math.PI*1.5+k))):0;
+      sndSet(SND.floor[k],each,rpm,cut,3);
+      if(on&&Math.random()<0.05*0.006*fin(m.fin).hard) sndSqueal(SND.floor[k],0.7);
+    }
+  }
+  function sndWake(){
+    if(G.sound===false) return;
+    sndInit();
+    if(SND.ctx&&SND.ctx.state==='suspended') SND.ctx.resume();
+  }
+  ['pointerdown','keydown'].forEach(function(ev){ document.addEventListener(ev,sndWake,true); });
+  document.addEventListener('visibilitychange',function(){
+    if(!SND.ctx) return;
+    if(document.hidden) SND.ctx.suspend(); else if(G.sound!==false) SND.ctx.resume();
+  });
+  function syncSoundBtn(){
+    var b=document.getElementById('soundBtn');
+    b.classList.toggle('off',G.sound===false);
+    b.innerHTML=G.sound===false?'&#9834;&#215;':'&#9834;';
+    var r=document.getElementById('volRange'); if(r) r.value=Math.round(G.vol*100);
+  }
+  document.getElementById('soundBtn').addEventListener('click',function(){
+    G.sound=G.sound===false; writeSave(); syncSoundBtn();
+    if(G.sound) sndWake();
+    toast(G.sound?'shop sound on':'shop sound off');
+  });
+  document.getElementById('volRange').addEventListener('input',function(){
+    G.vol=Math.max(0,Math.min(1,Number(this.value)/100)); writeSave();
+  });
 
   // ---- hud and views ----
   var view='mill', hudT=0, saveT=5;
@@ -2330,7 +2521,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   done=(G.done||[]).slice();
   while(G.orders.length<maxOrders()) G.orders.push(newOrder());
   facSync();
-  buildTarget(); buildJobList(); syncFeed(); buildBins(); renderTray(); renderFinPick(); syncDemoBtns(); drawHud();
+  buildTarget(); buildJobList(); syncFeed(); buildBins(); renderTray(); renderFinPick(); syncDemoBtns(); syncSoundBtn(); drawHud();
   writeSave();
   if(!G.seenHow) sheet('howSheet',true);
   requestAnimationFrame(frame);
