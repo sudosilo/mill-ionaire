@@ -280,7 +280,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
   // ---- emptying the bins asks first, and one floor mill can be stopped ----
   {
     const floor = [{ ch: 'E', fin: 'alu', auto: false }, { ch: 'T', fin: 'alu', auto: false }];
-    const seed = JSON.stringify({ seenHow: true, guideDone: true, mills: 2, ops: 2, floor, inv: { 'A|alu': 5 } });
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 5000, mills: 2, ops: 2, floor, inv: { 'A|alu': 5 } });
     const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
     await tab(page, 'orders'); await page.clock.runFor(300);
     await page.click('#emptyBtn'); await page.clock.runFor(100);
@@ -302,6 +302,40 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.click('#selStop'); await page.clock.runFor(200);
     ok((await save(page)).floor[0].stopped === false, 'the stopped mill starts again');
     ok(errors.length === 0, 'no script errors stopping mills and emptying bins', errors.join(' | '));
+    await ctx.close();
+  }
+
+  // ---- wages, power bill and shop upgrades ----
+  {
+    const floor = [{ ch: 'E', fin: 'alu', auto: false }, { ch: 'T', fin: 'alu', auto: false }];
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 20000, mills: 2, ops: 2, floor });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await tab(page, 'shop'); await page.clock.runFor(300);
+    ok(/running costs \$\d+ a minute/.test(await txt(page, '#costLine')), 'the shop shows running costs a minute', await txt(page, '#costLine'));
+    const c0 = (await save(page)).cash;
+    await page.clock.runFor(60000);
+    await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    let g = await save(page);
+    ok(g.paidWages > 25 && g.paidPower > 5, 'a minute of running pays wages and the power bill', 'wages ' + g.paidWages.toFixed(1) + ' power ' + g.paidPower.toFixed(1));
+    for (const name of ['chip conveyor', 'better coolant', 'better cutters', 'better software']) {
+      const card = page.locator('#upgList .upg', { hasText: name });
+      await card.locator('button').click(); await page.clock.runFor(200);
+    }
+    g = await save(page);
+    ok(g.chipConv === true && g.lube === 1 && g.bits === 1 && g.soft === 1, 'chip conveyor, coolant, cutters and software can be bought');
+    await tab(page, 'floor'); await page.clock.runFor(120000);
+    ok(!/chips cleared/.test(await page.evaluate(() => document.getElementById('facOrder').textContent)), 'with chip conveyors no mill stops for chips');
+    ok(errors.length === 0, 'no script errors with bills and upgrades', errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    const floor = [{ ch: 'E', fin: 'alu', auto: false }];
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 3, mills: 1, ops: 3, floor });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await tab(page, 'floor'); await page.clock.runFor(20000);
+    ok(/power cut/.test(await txt(page, '#facOrder')), 'running out of cash cuts the power and sends the crew home', await txt(page, '#facOrder'));
+    ok((await save(page)).cash >= 0, 'bills never push cash below zero');
+    ok(errors.length === 0, 'no script errors when the shop goes broke', errors.join(' | '));
     await ctx.close();
   }
 

@@ -236,6 +236,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <p>Customers post word orders on the orders tab. Each word has to be made from letters cut in one finish, like brass or blue anodize, and shipping it pays cash.</p>
     <p>On the mill tab, tap run the order program under the machine. The mill loads a blank in the right finish, cuts whatever letter the orders are missing, and drops it straight into the bins. You can also cut by hand with the wheels and sliders, then bag the part and drag it into its bin.</p>
     <p>Spend your cash in the shop. New finishes pay more per letter but are harder metal, so they cut slower. Floor mills run on their own on the floor tab, and operators keep them going when a light turns amber.</p>
+    <p>Once you own a floor mill, your operators draw wages every minute, and every running mill draws power. If the cash runs dry the power gets cut and the crew goes home until you ship an order. Chip conveyors, better coolant, better cutters and better software in the shop make every mill run harder for the same bills.</p>
     <p>The market cools off the longer you run the shop, so every letter pays a little less as the hours go by. Early money is the easiest money you will ever make.</p>
     <h3>what it does</h3>
     <p>Mill-ionaire is a letter shop tycoon built around a simulated vertical knee mill, the kind of manual machine a Bridgeport is. You cut metal letters, fill customer word orders, buy new finishes and more mills, and grow one machine into a factory floor.</p>
@@ -254,7 +255,6 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 <div class="panel" id="facPanel">
   <div class="panel-label">factory floor</div>
   <div class="feed">
-    <span>shift</span>
     <button class="switch" id="facRun">pause the floor</button>
     <button class="switch" id="facRush" style="min-width:150px">start a rush shift</button>
     <button class="switch" id="facClose" style="min-width:90px">back to the mill</button>
@@ -285,6 +285,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 <div class="view" id="view-shop">
   <div class="panel">
     <div class="panel-label">machines and crew</div>
+    <div class="status" id="costLine" style="margin:0 0 10px"></div>
     <div id="upgList"></div>
   </div>
   <div class="panel">
@@ -598,7 +599,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var SAVEKEY='mill-ionaire-v2-save';
   function freshSave(){
     return {cash:0,played:0,owned:['alu'],curFin:'alu',inv:{},orders:[],mills:0,ops:1,foreman:false,
-            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6};
+            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0};
   }
   var G=freshSave();
   // reads the save and throws away anything that is the wrong shape, so a damaged save never breaks the game
@@ -616,7 +617,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
     function int(n,a,b){ n=Math.floor(Number(n)||0); return n<a?a:(n>b?b:n); }
     G.cash=Math.max(0,G.cash); G.played=Math.max(0,G.played); G.earned=Math.max(0,G.earned);
-    G.mills=int(G.mills,0,12); G.ops=int(G.ops,1,6); G.head=int(G.head,0,3); G.passCd=Math.max(0,Math.min(20,G.passCd));
+    G.mills=int(G.mills,0,12); G.ops=int(G.ops,1,6); G.head=int(G.head,0,3); G.chipConv=G.chipConv===true; G.lube=int(G.lube,0,2); G.bits=int(G.bits,0,2); G.soft=int(G.soft,0,2); G.broke=G.broke===true; G.passCd=Math.max(0,Math.min(20,G.passCd));
     G.made=Math.max(0,G.made); G.shipped=Math.max(0,G.shipped); G.foreman=G.foreman===true; G.sound=G.sound!==false; G.vol=Math.max(0,Math.min(1,G.vol));
     var own=['alu'];
     G.owned.forEach(function(id){ if(typeof id==='string'&&FINBY[id]&&own.indexOf(id)<0) own.push(id); });
@@ -758,7 +759,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       var T=TOOLS[tool];
       var stepover=(demo.stage==='rough')?12:4;
       var margin=T.r+2;
-      var budget=dt*8*(1+0.35*G.head)/fin(part.fin).hard;
+      var budget=dt*8*(1+0.35*G.head)*(1+0.2*G.bits)*(1+0.25*G.soft)/fin(part.fin).hard;
       while(budget>0){
         var cutting=materialUnder(demo.i,demo.j,T.r+1);
         var rate=cutting?((demo.stage==='rough')?26:38):260;
@@ -1761,7 +1762,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       if(full){ fac.rush.over=true; earn(fac.rush.bonus,'rush shift bonus'); fac.rush.msg='rush quota filled'; }
       else if(fac.rush.clock<=0){ fac.rush.over=true; fac.rush.msg='the rush ran out of time, no bonus'; toast(fac.rush.msg,true); }
     }
-    if(!fac.running) return;
+    payBills(dt);
+    if(!fac.running||G.broke) return;
     for(i=0;i<fac.m.length;i++){
       var m=fac.m[i];
       if(m.flash>0) m.flash-=dt;
@@ -1775,12 +1777,12 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
         m.idle=false;
       }
       var hard=fin(m.fin).hard;
-      var rate=(1-0.35*m.wear)/(13*hard);      // a part takes about thirteen seconds fresh in aluminum
+      var rate=(1-0.35*m.wear)*(1+0.25*G.bits)*(1+0.1*G.soft)/(13*hard);      // a part takes about thirteen seconds fresh in aluminum
       m.prog+=dt*rate;
       m.sweep+=dt*m.dir*1.6;
       if(m.sweep>1){m.sweep=1;m.dir=-1;} if(m.sweep<0){m.sweep=0;m.dir=1;}
-      m.wear+=dt*0.016*hard;
-      if(Math.random()<dt*0.012){ m.need='chips'; m.flash=1; }
+      m.wear+=dt*0.016*hard*(1-0.3*G.lube)*(1-0.15*G.bits);
+      if(!G.chipConv&&Math.random()<dt*0.012){ m.need='chips'; m.flash=1; }
       if(m.wear>=1){ m.need='tool'; m.flash=1; }
       if(m.prog>=1){
         m.prog=0; m.made++; m.stock--; G.made=(G.made||0)+1;
@@ -1801,7 +1803,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
         if(p.work<=0){
           var mm=fac.m[p.busy];
           if(mm.need==='tool') mm.wear=0;
-          if(mm.need==='stock') mm.stock=5;
+          if(mm.need==='stock') mm.stock=5+3*G.soft;
           mm.need=''; mm.flash=0;
           p.busy=-1; p.tx=30+i*56; p.ty=OPY();
         }
@@ -1931,7 +1933,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
     var need=0, idle=0;
     fac.m.forEach(function(m){ if(m.need) need++; else if(m.idle) idle++; });
-    el.textContent=(fac.running?'floor running':'floor paused')+', your mill plus '+fac.m.length+' floor mills, '+need+' need a hand, '+idle+' idle, '+(12-fac.m.length)+' open bays';
+    el.textContent=(G.broke?'power cut and crew sent home, ship an order to pay the bills':(fac.running?'floor running':'floor paused'))+', costs '+money(costPerMin())+' a minute, your mill plus '+fac.m.length+' floor mills, '+need+' need a hand, '+idle+' idle, '+(12-fac.m.length)+' open bays';
     el.className='status'+(need?' warn':(fac.running?' cutting':''));
   }
 
@@ -2084,22 +2086,51 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var shopSig='';
   function millCost(){ return Math.round(250*Math.pow(1.7,G.mills)); }
   function opCost(){ return Math.round(350*Math.pow(1.6,G.ops-1)); }
-  var HEADCOST=[800,2500,7000];
+  var HEADCOST=[800,2500,7000], CHIPCOST=2500, LUBECOST=[900,3200], BITCOST=[1500,5000], SOFTCOST=[1200,4500];
+  // running costs: operators draw wages once the floor has a mill, and every running mill draws power
+  var WAGE=15, FLOORPOWER=8, MILLPOWER=3, billT=0, warnedBroke=false;
+  function runningMills(){ var n=0; fac.m.forEach(function(m){ if(fac.running&&!m.idle&&!m.need&&!m.stopped) n++; }); return n; }
+  function costPerMin(){
+    var wages=G.mills>0?G.ops*WAGE:0;
+    var power=(G.broke?0:runningMills()*FLOORPOWER)+(s.rpm>0?MILLPOWER:0);
+    return wages+power;
+  }
+  function payBills(dt){
+    billT+=dt; if(billT<1) return; billT-=1;
+    var wages=(G.mills>0?G.ops*WAGE:0)/60, power=((G.broke?0:runningMills()*FLOORPOWER)+(s.rpm>0?MILLPOWER:0))/60;
+    var bill=wages+power;
+    if(bill<=0) return;
+    if(G.cash>=bill){
+      G.cash-=bill; G.paidWages+=wages; G.paidPower+=power;
+      if(G.broke){ G.broke=false; warnedBroke=false; toast('bills paid, the crew is back and the power is on'); }
+    } else {
+      G.cash=0;
+      if(!G.broke){ G.broke=true; }
+      if(!warnedBroke){ warnedBroke=true; toast('out of cash, the floor lost power and the crew went home',true); }
+    }
+  }
   function renderShop(){
     if(view!=='shop') return;
-    var sig=[Math.floor(G.cash),G.mills,G.ops,G.foreman,G.head,G.owned.join(','),G.curFin].join('/');
+    var sig=[Math.floor(G.cash),G.mills,G.ops,G.foreman,G.head,G.chipConv,G.lube,G.bits,G.soft,G.owned.join(','),G.curFin,Math.round(costPerMin())].join('/');
     if(sig===shopSig) return;
     shopSig=sig;
     var U=[
-      {k:'mill',name:'floor mill',txt:G.mills>=12?'the floor is full, twelve mills':'a mill that runs on its own on the floor tab, you own '+G.mills+' of twelve',cost:G.mills>=12?0:millCost(),max:G.mills>=12},
-      {k:'op',name:'hire an operator',txt:G.ops>=6?'the crew is full, six operators':'clears chips, changes tools and loads stock, you have '+G.ops+' of six',cost:G.ops>=6?0:opCost(),max:G.ops>=6},
-      {k:'fore',name:'foreman',txt:G.foreman?'on duty, operators go where they are needed without being told':'sends operators to stopped mills without you tapping',cost:G.foreman?0:3000,max:G.foreman},
-      {k:'head',name:'high speed head',txt:G.head>=3?'fully upgraded, the order program cuts at top speed':'makes the order program on your main mill cut faster, level '+G.head+' of three',cost:G.head>=3?0:HEADCOST[G.head],max:G.head>=3}
+      {k:'mill',name:'floor mill',verb:'buy a mill',txt:G.mills>=12?'the floor is full, twelve mills':'a mill that runs on its own on the floor tab, you own '+G.mills+' of twelve',cost:G.mills>=12?0:millCost(),max:G.mills>=12},
+      {k:'op',name:'hire an operator',verb:'hire',txt:G.ops>=6?'the crew is full, six operators':'a person, not a mill, who clears chips, changes tools and loads stock, you have '+G.ops+' of six',cost:G.ops>=6?0:opCost(),max:G.ops>=6},
+      {k:'fore',name:'foreman',verb:'hire',txt:G.foreman?'on duty, operators go where they are needed without being told':'sends operators to stopped mills without you tapping',cost:G.foreman?0:3000,max:G.foreman},
+      {k:'head',name:'high speed head',verb:'upgrade',txt:G.head>=3?'fully upgraded, the order program cuts at top speed':'makes the order program on your main mill cut faster, level '+G.head+' of three',cost:G.head>=3?0:HEADCOST[G.head],max:G.head>=3},
+      {k:'chip',name:'chip conveyor',verb:'install',txt:G.chipConv?'installed, floor mills never stop to have chips cleared':'carries chips away so floor mills never stop for a chip clearing',cost:G.chipConv?0:CHIPCOST,max:G.chipConv},
+      {k:'lube',name:'better coolant',verb:'upgrade',txt:G.lube>=2?'synthetic coolant, tools wear slowest and squeal least':'tools wear slower and the cutters squeal less, level '+G.lube+' of two',cost:G.lube>=2?0:LUBECOST[G.lube],max:G.lube>=2},
+      {k:'bits',name:'better cutters',verb:'upgrade',txt:G.bits>=2?'coated carbide, every mill cuts at its fastest':'carbide cutters cut faster and last longer on every mill, level '+G.bits+' of two',cost:G.bits>=2?0:BITCOST[G.bits],max:G.bits>=2},
+      {k:'soft',name:'better software',verb:'upgrade',txt:G.soft>=2?'nesting software, fastest programs and the most parts per stock load':'faster toolpaths and more parts out of every stock load, level '+G.soft+' of two',cost:G.soft>=2?0:SOFTCOST[G.soft],max:G.soft>=2}
     ];
+    var cl=document.getElementById('costLine');
+    cl.textContent='running costs '+money(costPerMin())+' a minute, wages '+money(G.mills>0?G.ops*WAGE:0)+' for '+G.ops+(G.ops===1?' operator':' operators')+(G.mills>0?'':' (unpaid until you own a floor mill)')+', power '+money(runningMills()*FLOORPOWER+(s.rpm>0?MILLPOWER:0))+' for the mills running now';
+    cl.className='status'+(G.broke?' warn':'');
     var ul=document.getElementById('upgList'); ul.innerHTML='';
     U.forEach(function(u){
       var d=document.createElement('div'); d.className='upg';
-      d.innerHTML='<div><b>'+u.name+'</b>'+u.txt+'</div><button'+((u.max||G.cash<u.cost)?' disabled':'')+'>'+(u.max?'owned':money(u.cost))+'</button>';
+      d.innerHTML='<div><b>'+u.name+'</b>'+u.txt+'</div><button'+((u.max||G.cash<u.cost)?' disabled':'')+'>'+(u.max?'owned':u.verb+'<br>'+money(u.cost))+'</button>';
       d.querySelector('button').addEventListener('click',function(){ buyUpg(u.k); });
       ul.appendChild(d);
     });
@@ -2137,6 +2168,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(k==='op'){ if(G.ops>=6) return; c=opCost(); if(G.cash<c) return; G.cash-=c; G.ops++; facSync(); toast('operator '+G.ops+' clocked in'); }
     if(k==='fore'){ if(G.foreman) return; c=3000; if(G.cash<c) return; G.cash-=c; G.foreman=true; toast('the foreman is on the floor'); }
     if(k==='head'){ if(G.head>=3) return; c=HEADCOST[G.head]; if(G.cash<c) return; G.cash-=c; G.head++; toast('high speed head, level '+G.head); }
+    if(k==='chip'){ if(G.chipConv) return; c=CHIPCOST; if(G.cash<c) return; G.cash-=c; G.chipConv=true; toast('chip conveyors are running, no more chip stops'); }
+    if(k==='lube'){ if(G.lube>=2) return; c=LUBECOST[G.lube]; if(G.cash<c) return; G.cash-=c; G.lube++; toast(G.lube===1?'flood coolant is on':'synthetic coolant is on'); }
+    if(k==='bits'){ if(G.bits>=2) return; c=BITCOST[G.bits]; if(G.cash<c) return; G.cash-=c; G.bits++; toast(G.bits===1?'carbide cutters loaded':'coated carbide cutters loaded'); }
+    if(k==='soft'){ if(G.soft>=2) return; c=SOFTCOST[G.soft]; if(G.cash<c) return; G.cash-=c; G.soft++; toast(G.soft===1?'new CAM software installed':'nesting software installed'); }
     shopSig=''; ordersDirty=true; writeSave(); renderShop();
   }
   function buyFin(id){
@@ -2311,7 +2346,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var T=TOOLS[tool], hard=part.placed?fin(part.fin).hard:1;
     var mainCut=Math.min(1,SND.mainCut);
     sndSet(SND.main,view==='mill'?1:(view==='floor'?0.55:0.3),s.rpm,mainCut,T.flute>20?2:(T.r>15?6:3));
-    if(s.rpm>0&&mainCut>0.2&&Math.random()<0.002*hard*mainCut) sndSqueal(SND.main,mainCut);
+    if(s.rpm>0&&mainCut>0.2&&Math.random()<0.002*hard*mainCut*(1-0.35*G.lube)) sndSqueal(SND.main,mainCut);
     // the floor, softer per mill so a full shop swells instead of getting loud
     while(SND.floor.length<fac.m.length){
       var i=SND.floor.length, col=(i+1)%4;
@@ -2324,7 +2359,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       var rpm=on?(1100+((k*137)%600)):0;
       var cut=on?(0.45+0.35*Math.abs(Math.sin(m.sweep*Math.PI*1.5+k))):0;
       sndSet(SND.floor[k],each,rpm,cut,3);
-      if(on&&Math.random()<0.05*0.006*fin(m.fin).hard) sndSqueal(SND.floor[k],0.7);
+      if(on&&Math.random()<0.05*0.006*fin(m.fin).hard*(1-0.35*G.lube)) sndSqueal(SND.floor[k],0.7);
     }
   }
   function sndWake(){
