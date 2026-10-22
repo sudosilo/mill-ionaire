@@ -153,6 +153,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 .sw.on{outline:3px solid var(--blue);outline-offset:2px;}
 .selbox{border:2px solid var(--charcoal);background:var(--face);padding:10px;margin-top:10px;}
 .selbox .feed span{width:auto;min-width:80px;}
+
+.millbtns{margin-top:8px;margin-bottom:0;}
+.millbtns .switch{flex:1;min-width:0;font-size:14px;min-height:44px;}
 #facPanel .feed .switch{font-size:14px;min-height:42px;flex:1;min-width:0;}
 #toasts{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:40;display:flex;flex-direction:column;gap:6px;pointer-events:none;width:min(92vw,420px);}
 .toast{background:var(--blue);color:var(--face);border:2px solid var(--charcoal);box-shadow:3px 3px 0 var(--charcoal);padding:8px 12px;font-size:14px;font-weight:bold;transition:opacity .4s;}
@@ -164,6 +167,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 @keyframes beaconBob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,-4px);}}
 .beacon{outline:4px solid var(--blue);outline-offset:3px;animation:beaconPulse .9s infinite;position:relative;z-index:6;}
 .beacon::before{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 10px);transform:translate(-50%,0);background:var(--blue);color:#fff;font-size:12px;font-weight:bold;letter-spacing:.06em;padding:4px 9px;border:2px solid var(--charcoal);white-space:nowrap;animation:beaconBob .9s infinite;pointer-events:none;text-transform:uppercase;}
+.beacon-room{margin-top:40px !important;}
 .beacon.below::before{bottom:auto;top:calc(100% + 10px);}
 @media (prefers-reduced-motion:reduce){.beacon,.beacon::before{animation:none;}}
 </style>
@@ -198,9 +202,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   <div class="sheetbox">
     <h3>machine menu</h3>
     <button class="wide" id="progBtn">run the order program on the mill</button>
-    <button class="wide" id="demoBtn">cut the whole alphabet, one letter after another</button>
     <button class="wide" id="facBtn">open the factory floor</button>
-    <button class="wide" id="fixBtn">call the millwright and repair the machine</button>
     <button class="wide" id="stowBtn">stow every loose part into the bins</button>
     <button class="wide" id="emptyBtn">empty the inventory bins</button>
     <button class="wide" id="howBtn">how to play</button>
@@ -298,6 +300,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       <div class="finrow" id="finPick" style="margin-top:10px"></div>
       <div class="feed" style="margin-bottom:0">
         <button class="switch" id="progBtn2" style="flex:1;background:var(--blue)">run the order program</button>
+      </div>
+      <div class="feed millbtns">
+        <button class="switch" id="demoBtn">cut the whole alphabet</button>
+        <button class="switch" id="fixBtn">call the millwright</button>
       </div>
 
       <div class="status" id="status">pick a job from the print, then drag a blank onto the table</div>
@@ -2136,12 +2142,13 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function guideTick(){
     var t=guideTarget(), el=t?document.querySelector(t[0]):null;
     if(el!==beaconEl){
-      if(beaconEl){ beaconEl.classList.remove('beacon','below'); beaconEl.removeAttribute('data-tip'); }
+      if(beaconEl){ beaconEl.classList.remove('beacon','below'); beaconEl.removeAttribute('data-tip'); if(beaconEl.parentElement) beaconEl.parentElement.classList.remove('beacon-room'); }
       beaconEl=el;
     }
     if(el){
       if(!el.classList.contains('beacon')) el.classList.add('beacon');
       el.classList.toggle('below',t[2]==='below');
+      if(el.id==='progBtn2') el.parentElement.classList.add('beacon-room');
       if(el.getAttribute('data-tip')!==t[1]) el.setAttribute('data-tip',t[1]);
     }
   }
@@ -2175,8 +2182,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 
   function syncDemoBtns(){
     var alpha=demo.on&&demo.mode==='alpha', ord=demo.on&&demo.mode==='orders';
-    document.getElementById('demoBtn').textContent=alpha?'stop the alphabet run':'cut the whole alphabet, one letter after another';
+    document.getElementById('demoBtn').textContent=alpha?'stop the alphabet run':'cut the whole alphabet';
     document.getElementById('progBtn').textContent=ord?'stop the order program':'run the order program on the mill';
+    document.getElementById('demoBtn').classList.toggle('on',alpha);
     var b2=document.getElementById('progBtn2');
     b2.textContent=ord?'stop the order program':'run the order program';
     b2.style.background=ord?'var(--rust)':'var(--blue)';

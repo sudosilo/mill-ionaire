@@ -97,7 +97,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
   {
     const { ctx, page, errors } = await open(browser);
     await closeHow(page);
-    const items = ['#howBtn', '#resetBtn', '#stowBtn', '#emptyBtn', '#fixBtn'];
+    const items = ['#howBtn', '#resetBtn', '#stowBtn', '#emptyBtn'];
     for (const id of items) {
       await page.click('#burger'); await page.click(id); await page.waitForTimeout(80);
       for (const sh of ['#howSheet', '#resetSheet']) if (await page.isVisible(sh + '.open')) await page.click(sh + ' button:last-child');
@@ -105,6 +105,8 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.click('#infoBtn'); ok(await page.isVisible('#howSheet.open'), 'the i button opens how to play');
     ok(/what it does/.test(await txt(page, '#howSheet')) && /how to play/.test(await txt(page, '#howSheet')), 'the i button and the menu share the same information');
     await page.click('#howClose'); ok(!(await page.isVisible('#howSheet.open')), 'how to play closes');
+    ok(await page.isVisible('#view-mill #demoBtn') && await page.isVisible('#view-mill #fixBtn'), 'alphabet run and millwright sit on the mill itself');
+    await page.click('#fixBtn'); await page.waitForTimeout(80);
     await page.click('#burger'); await page.click('#facBtn');
     ok(await page.isVisible('#view-floor.on'), 'menu opens the factory floor');
     await page.click('#facClose');
@@ -147,7 +149,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.click('#checkBtn'); await page.waitForTimeout(100);
     ok(/rejected|passes/.test(await txt(page, '#status')), 'inspection gives a verdict', await txt(page, '#status'));
     await page.$eval('#rngRpm', e => { e.value = 0; e.dispatchEvent(new Event('input')); });
-    await page.click('#burger'); await page.click('#fixBtn');
+    await page.click('#fixBtn');
     await page.click('summary:text-is("the part")');
     await page.click('#bagBtn'); await page.waitForTimeout(100);
     ok(/bagged/.test(await txt(page, '#status')), 'the part can be bagged', await txt(page, '#status'));
@@ -185,7 +187,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
   {
     const { ctx, page, errors } = await open(browser, { clock: true });
     await closeHow(page);
-    await page.click('#burger'); await page.click('#demoBtn');
+    await page.click('#demoBtn');
     await page.clock.runFor(240000);
     await tab(page, 'orders'); await page.clock.runFor(300);
     const loose = await page.$$eval('#tray .chip', n => n.length);
@@ -245,9 +247,9 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
   {
     const { ctx, page, errors } = await open(browser, { clock: true });
     await closeHow(page);
-    await page.click('#burger'); await page.click('#demoBtn');
+    await page.click('#demoBtn');
     await page.clock.runFor(150000);
-    await page.click('#burger'); await page.click('#demoBtn');
+    await page.click('#demoBtn');
     await tab(page, 'orders'); await page.clock.runFor(300);
     const n1 = await page.$$eval('#tray .chip', n => n.length);
     await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
