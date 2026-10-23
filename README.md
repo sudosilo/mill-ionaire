@@ -1,0 +1,23 @@
+Mill-ionaire is a letter shop tycoon built around a simulated vertical knee mill, the kind of manual machine a Bridgeport is. You cut metal letters, fill customer word orders, buy new finishes and more mills, and grow one machine into a factory floor. It is made by Mohave Technology Group.
+
+Play it in a browser at mill-ionaire.vercel.app. Nothing installs. A downloaded copy runs the same way: unzip it and open index.html in any web browser, with or without internet.
+
+How to play. Customers post word orders on the orders tab. Each word has to be made from letters cut in one finish, like brass or blue anodize, and shipping it pays cash. On the mill tab, tap run the order program under the machine. The mill loads a blank in the right finish, cuts whatever letter the orders are missing, and drops it straight into the bins. Tap it again to stop it. Next to it, cut the whole alphabet runs the mill through every letter in order, and call the millwright repairs a wrecked machine. You can also cut by hand with the wheels and sliders, then bag the part and stow it in its bin. A flashing marker shows a new player what to tap next until the first floor mill is running.
+
+The orders tab is the shipping room. Ship an order when every tile has a blue corner. Loose parts in the tray only count once they are stowed, and the stow button puts them all away at once. The empty the bins button asks before it scraps anything.
+
+Spend your cash in the shop. New finishes and textures pay more per letter but are harder metal, so they cut slower. Floor mills run on their own on the floor tab, and your own mill sits in the first bay so you can see how much room is left. Tap a floor mill to set its letter and finish, switch it between auto and manual, or stop it on its own. When a light turns amber the mill needs a hand, so tap it to send an operator. The foreman sends operators without being told. A rush shift puts a timed quota on the board for a cash bonus.
+
+Once you own a floor mill, your operators draw wages every minute, and every mill draws power while it cuts. The shop shows what the business costs to run each minute. If the cash runs dry the power gets cut and the crew goes home until you ship an order. The chip conveyor, better coolant, better cutters and better software make every mill run harder for the same bills, and the high speed head makes your own mill cut faster.
+
+The market cools off the longer you run the shop, so every letter pays a little less as the hours go by. Early money is the easiest money you will ever make.
+
+The shop makes sound. Each running mill hums, chatters while it cuts, and squeals once in a while, and a full floor sounds like a whole shop. The blue note button turns sound on and off, and the menu has the shop volume. The menu also holds how to play and starting the whole business over, which asks before it throws anything away. The blue i button opens the same how to play and information panel.
+
+The machine. X traverses the table left and right, Y moves the saddle in and out, and Z raises and lowers the whole knee so the work comes up to the cutter. A tilts the head over for angled work. The big view is a cutaway taken straight through the part at whatever Y the saddle is sitting at, and the stock panel shows the same part from above.
+
+What is real and what is rough. The part is solid material, so you can machine one face, unclamp it, turn it over and machine another. Cut past the bottom of the work and you eat the table, and cut right through and you part the leadscrew until the millwright rebuilds it. The feed rate a cutter will take depends on spindle speed and on how hard the finish is. Prices, wages and the market are a game economy, not real shop rates.
+
+How it is built. The whole game is mill-ionaire-v2.html, a single file with canvas drawing, plain JavaScript and sound made in the browser, with no downloads and no server. Progress saves in the browser on the device that plays it. The vercel.json file serves the game at the site root. Every push to GitHub runs mill-ionaire-v2-test.js, which plays the whole game in a headless browser, and when every check passes it builds the itch zip and posts it on the itch-latest release.
+
+The thinking behind it. Every item is a letter, every machine turns blanks into letters, every finish changes what a letter is worth, and every order asks for a set of them. Grow the shop the way a real one grows, one more machine at a time.
