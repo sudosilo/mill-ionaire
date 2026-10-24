@@ -339,6 +339,49 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await ctx.close();
   }
 
+  // ---- numbers, emoji, matching sets, spelling bee and the finishing line ----
+  {
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 30000, mills: 4, ops: 2 });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await tab(page, 'shop'); await page.clock.runFor(300);
+    const buy = async name => { await page.locator('#upgList .upg', { hasText: name }).locator('button').click(); await page.clock.runFor(200); };
+    await buy('number dies'); await buy('emoji dies'); await buy('stamping press'); await buy('powder coat booth'); await buy('LED wiring bench');
+    let g = await save(page);
+    ok(g.dies === 2 && g.stamper && g.booth && g.ledbench, 'number dies, emoji dies and every finishing station can be bought');
+    await tab(page, 'orders'); await page.clock.runFor(300);
+    const bins = await page.$$eval('#bins .bin', n => n.length);
+    ok(bins === 26 + 10 + 12, 'bins appear for every letter, number and emoji once unlocked', bins + ' bins');
+    const kinds = new Set(); const procs = new Set();
+    for (let i = 0; i < 60; i++) {
+      g = await save(page);
+      g.orders.forEach(o => { kinds.add(o.kind); if (o.proc) procs.add(o.proc); });
+      const p = await page.$('#orderList .pass:not([disabled])'); if (p) await p.click().catch(() => {});
+      await page.clock.runFor(21000);
+    }
+    ok(kinds.has('emoji') && kinds.has('num') && kinds.has('spell') && kinds.has('word'), 'word, spelling bee, house number and emoji orders all show up', [...kinds].join(','));
+    ok(procs.size >= 2, 'orders ask for the finishing stations', [...procs].join(','));
+    const masks = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 60; c.height = 60; const x = c.getContext('2d'); x.font = '50px "Noto Color Emoji",sans-serif'; x.fillText('\u{1F335}', 5, 50); const d = x.getImageData(0, 0, 60, 60).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 110) n++; return n; });
+    ok(masks > 100, 'emoji draw a solid shape the mill can cut', masks + ' pixels');
+    ok(errors.length === 0, 'no script errors with numbers, emoji and stations', errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    const order = { id: 7, word: 'CAT', fin: 'alu', who: 'a sign shop', kind: 'word', proc: 'led', color: '' };
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 0, ledbench: true, orders: [order], inv: { 'C|alu': 1, 'A|alu': 1, 'T|alu': 1 } });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await tab(page, 'orders'); await page.clock.runFor(300);
+    const ship = page.locator('#orderList .ocard[data-id="7"] .ship');
+    await ship.click(); await page.clock.runFor(500);
+    let g = await save(page);
+    ok(g.line.length === 1 && g.cash === 0, 'an LED order goes down the finishing line before it pays', JSON.stringify({line:g.line,cash:g.cash,orders:g.orders.map(o=>o.id+o.word+o.proc)}));
+    ok(await page.isVisible('#lineBox'), 'the finishing line shows on the orders tab');
+    await page.clock.runFor(20000);
+    g = await save(page);
+    ok(g.line.length === 0 && g.cash > 0, 'the order pays when it comes off the line', 'cash ' + g.cash);
+    ok(errors.length === 0, 'no script errors on the finishing line', errors.join(' | '));
+    await ctx.close();
+  }
+
   // ---- saving survives a reload ----
   {
     const { ctx, page, errors } = await open(browser, { save: JSON.stringify({ cash: 4321, seenHow: true, owned: ['alu', 'brass'], curFin: 'brass', mills: 2 }) });

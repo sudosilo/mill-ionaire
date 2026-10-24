@@ -167,6 +167,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 .bin s{display:flex;justify-content:center;gap:2px;height:6px;margin-top:3px;text-decoration:none;}
 .bin s u{width:6px;height:6px;border:1px solid var(--charcoal);}
 .mtg-seal{margin-top:24px;}
+.tile.emo{font-size:20px;text-shadow:none;}
+.ljob{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;}
+.ljob span{flex:1;}
+.ljob .bar{flex:0 0 35%;height:12px;}
 @keyframes beaconPulse{0%,100%{outline-color:var(--blue);box-shadow:0 0 0 0 rgba(46,74,99,.85);}50%{outline-color:var(--amber);box-shadow:0 0 0 10px rgba(181,118,13,0);}}
 @keyframes beaconBob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,-4px);}}
 .beacon{outline:4px solid var(--blue);outline-offset:3px;animation:beaconPulse .9s infinite;position:relative;z-index:6;}
@@ -235,6 +239,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <h3>how to play</h3>
     <p>Customers post word orders on the orders tab. Each word has to be made from letters cut in one finish, like brass or blue anodize, and shipping it pays cash.</p>
     <p>On the mill tab, tap run the order program under the machine. The mill loads a blank in the right finish, cuts whatever letter the orders are missing, and drops it straight into the bins. You can also cut by hand with the wheels and sliders, then bag the part and drag it into its bin.</p>
+    <p>Words get longer as your shop grows, and longer words pay more for every letter. Once you run several mills the spelling bee sends in long words at a premium, and now and then a collector wants a whole matching set, which pays double. Number dies and emoji dies in the shop unlock house numbers and emoji, and emoji are the best paying parts there are.</p>
+    <p>The stamping press, the powder coat booth and the LED wiring bench open orders that need a finishing step. Those orders go down the finishing line on the orders tab after you ship them, and the customer pays more when they come off.</p>
     <p>Spend your cash in the shop. New finishes pay more per letter but are harder metal, so they cut slower. Floor mills run on their own on the floor tab, and operators keep them going when a light turns amber.</p>
     <p>Once you own a floor mill, your operators draw wages every minute, and every running mill draws power. If the cash runs dry the power gets cut and the crew goes home until you ship an order. Chip conveyors, better coolant, better cutters and better software in the shop make every mill run harder for the same bills.</p>
     <p>The market cools off the longer you run the shop, so every letter pays a little less as the hours go by. Early money is the easiest money you will ever make.</p>
@@ -269,6 +275,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 <div class="view" id="view-orders">
   <div class="panel">
     <div class="panel-label">customer orders</div>
+    <div class="selbox" id="lineBox" style="display:none;margin:0 0 12px"><b style="font-size:14px">finishing line</b><div id="lineList"></div></div>
     <div class="orders" id="orderList"></div>
     <p class="hint">A blue corner on a tile means that letter is in the bins in the right finish. Letters sitting loose in the tray do not count until they are stowed.</p>
   </div>
@@ -520,6 +527,13 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var wheel={x:0,y:0,z:0}, spin=0;
 
   var ALPHA='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var DIGITS='0123456789';
+  var EMOJI=['\u{1F525}','\u{1F335}','\u{1F680}','\u{1F355}','\u{1F3B8}','\u{1F44D}','\u{1F48E}','\u{1F40D}','\u{1F319}','\u{1F340}','\u{1F511}','\u{1F996}'];
+  var ALLCH=ALPHA.split('').concat(DIGITS.split('')).concat(EMOJI);
+  // letters first, numbers once the number dies are bought, emoji once the emoji dies are bought
+  function charset(){ var a=ALPHA.split(''); if(G.dies>=1) a=a.concat(DIGITS.split('')); if(G.dies>=2) a=a.concat(EMOJI); return a; }
+  function isEmoji(ch){ return EMOJI.indexOf(ch)>=0; }
+  function toks(o){ return Array.from(o.word); }
   var demo={on:false,mode:'alpha',phase:'idle',letter:0,mask:null,i:0,j:0,dir:1,shelf:[],eject:0,pass:1,stage:'rough',ch:'A',fin:'alu',wait:0};
 
   // ---------- finishes and textures ----------
@@ -599,7 +613,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var SAVEKEY='mill-ionaire-v2-save';
   function freshSave(){
     return {cash:0,played:0,owned:['alu'],curFin:'alu',inv:{},orders:[],mills:0,ops:1,foreman:false,
-            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0};
+            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[]};
   }
   var G=freshSave();
   // reads the save and throws away anything that is the wrong shape, so a damaged save never breaks the game
@@ -617,7 +631,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
     function int(n,a,b){ n=Math.floor(Number(n)||0); return n<a?a:(n>b?b:n); }
     G.cash=Math.max(0,G.cash); G.played=Math.max(0,G.played); G.earned=Math.max(0,G.earned);
-    G.mills=int(G.mills,0,12); G.ops=int(G.ops,1,6); G.head=int(G.head,0,3); G.chipConv=G.chipConv===true; G.lube=int(G.lube,0,2); G.bits=int(G.bits,0,2); G.soft=int(G.soft,0,2); G.broke=G.broke===true; G.passCd=Math.max(0,Math.min(20,G.passCd));
+    G.mills=int(G.mills,0,12); G.ops=int(G.ops,1,6); G.head=int(G.head,0,3); G.chipConv=G.chipConv===true; G.lube=int(G.lube,0,2); G.bits=int(G.bits,0,2); G.soft=int(G.soft,0,2); G.broke=G.broke===true; G.dies=int(G.dies,0,2); G.stamper=G.stamper===true; G.booth=G.booth===true; G.ledbench=G.ledbench===true; G.passCd=Math.max(0,Math.min(20,G.passCd));
     G.made=Math.max(0,G.made); G.shipped=Math.max(0,G.shipped); G.foreman=G.foreman===true; G.sound=G.sound!==false; G.vol=Math.max(0,Math.min(1,G.vol));
     var own=['alu'];
     G.owned.forEach(function(id){ if(typeof id==='string'&&FINBY[id]&&own.indexOf(id)<0) own.push(id); });
@@ -626,22 +640,28 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(own.indexOf(G.curFin)<0) G.curFin='alu';
     var inv={};
     for(k in G.inv){
-      var m=/^([A-Z])\|([a-z]+)$/.exec(k), n=Math.floor(Number(G.inv[k]));
-      if(m&&FINBY[m[2]]&&n>0) inv[k]=Math.min(100,n);
+      var m=/^(.+)\|([a-z]+)$/.exec(k), n=Math.floor(Number(G.inv[k]));
+      if(m&&ALLCH.indexOf(m[1])>=0&&FINBY[m[2]]&&n>0) inv[k]=Math.min(100,n);
     }
     G.inv=inv;
     var maxId=0;
+    function goodWord(w){ if(typeof w!=='string') return false; var t=Array.from(w); return t.length>=1&&t.length<=40&&t.every(function(c){ return ALLCH.indexOf(c)>=0; }); }
     G.orders=G.orders.filter(function(q){
-      return q&&typeof q.word==='string'&&/^[A-Z]{1,12}$/.test(q.word)&&own.indexOf(q.fin)>=0;
+      return q&&goodWord(q.word)&&own.indexOf(q.fin)>=0;
     }).slice(0,9).map(function(q){
       var id=Math.floor(Number(q.id))||0; if(id>maxId) maxId=id;
-      return {id:id,word:q.word,fin:q.fin,who:CLIENTS.indexOf(q.who)>=0?q.who:CLIENTS[0]};
+      return {id:id,word:q.word,fin:q.fin,who:CLIENTS.indexOf(q.who)>=0?q.who:CLIENTS[0],
+        kind:KINDS.indexOf(q.kind)>=0?q.kind:'word',proc:PROCS[q.proc]?q.proc:'',color:PCOLORS.indexOf(q.color)>=0?q.color:''};
+    });
+    G.line=G.line.filter(function(j){ return j&&j.order&&goodWord(j.order.word)&&FINBY[j.order.fin]&&PROCS[j.order.proc]; }).slice(0,30).map(function(j){
+      var o=j.order;
+      return {order:{id:Math.floor(Number(o.id))||0,word:o.word,fin:o.fin,who:CLIENTS.indexOf(o.who)>=0?o.who:CLIENTS[0],kind:KINDS.indexOf(o.kind)>=0?o.kind:'word',proc:o.proc,color:PCOLORS.indexOf(o.color)>=0?o.color:'',pay:Math.max(0,Math.min(1e9,Number(o.pay)||0))},left:Math.max(0,Number(j.left)||0),total:Math.max(1,Number(j.total)||1)};
     });
     G.nextId=Math.max(int(G.nextId,1,1e9),maxId+1);
-    G.floor=G.floor.filter(function(c){ return c&&typeof c.ch==='string'&&/^[A-Z]$/.test(c.ch)&&FINBY[c.fin]; })
+    G.floor=G.floor.filter(function(c){ return c&&typeof c.ch==='string'&&ALLCH.indexOf(c.ch)>=0&&FINBY[c.fin]; })
       .slice(0,12).map(function(c){ return {ch:c.ch,fin:own.indexOf(c.fin)>=0?c.fin:'alu',auto:c.auto!==false,stopped:c.stopped===true}; });
     G.done=G.done.filter(function(j){ return typeof j==='number'&&j>=0&&j<JOBS.length; });
-    G.tray=G.tray.filter(function(t){ return t&&typeof t.ch==='string'&&/^[A-Z]?$/.test(t.ch)&&FINBY[t.fin]; }).slice(-24);
+    G.tray=G.tray.filter(function(t){ return t&&typeof t.ch==='string'&&(t.ch===''||ALLCH.indexOf(t.ch)>=0)&&FINBY[t.fin]; }).slice(-24);
   }
   function writeSave(){ try{ localStorage.setItem(SAVEKEY,JSON.stringify(G)); }catch(e){} }
 
@@ -649,7 +669,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function market(){ var h=G.played/3600; return 0.2+0.8*Math.exp(-h/4); }
   function money(v){ return '$'+Math.floor(v).toLocaleString('en-US'); }
   var LETTERPTS={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10};
-  function letterBase(ch){ return 10+4*(LETTERPTS[ch]||1); }
+  function letterBase(ch){ if(isEmoji(ch)) return 70; if(DIGITS.indexOf(ch)>=0) return 14; return 10+4*(LETTERPTS[ch]||1); }
 
   function toast(msg,warn){
     var box=document.getElementById('toasts'), t=document.createElement('div');
@@ -663,18 +683,26 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     G.cash+=v; G.earned+=v; toast('+'+money(v)+' '+why); writeSave();
   }
 
+  var MASKC={};
   function demoMask(ch){
+    if(MASKC[ch]) return MASKC[ch];
     var c=document.createElement('canvas'); c.width=B.nx; c.height=B.ny;
     var x=c.getContext('2d');
-    x.fillStyle='#000'; x.fillRect(0,0,B.nx,B.ny);
+    x.clearRect(0,0,B.nx,B.ny);
     x.fillStyle='#fff'; x.textAlign='center'; x.textBaseline='middle';
-    x.font='bold '+(B.ny-6)+'px Arial';
-    x.lineJoin='round'; x.lineCap='round';
-    x.lineWidth=14; x.strokeStyle='#fff';
-    x.strokeText(ch,B.nx/2,B.ny/2+2);
-    x.fillText(ch,B.nx/2,B.ny/2+2);
+    if(isEmoji(ch)){
+      x.font=(B.ny-10)+'px "Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif';
+      x.fillText(ch,B.nx/2,B.ny/2+4);
+    } else {
+      x.font='bold '+(B.ny-6)+'px Arial';
+      x.lineJoin='round'; x.lineCap='round';
+      x.lineWidth=14; x.strokeStyle='#fff';
+      x.strokeText(ch,B.nx/2,B.ny/2+2);
+      x.fillText(ch,B.nx/2,B.ny/2+2);
+    }
     var d=x.getImageData(0,0,B.nx,B.ny).data, m=new Uint8Array(B.nx*B.ny);
-    for(var k=0;k<m.length;k++) m[k]=d[k*4]>128?1:0;
+    for(var k=0;k<m.length;k++) m[k]=d[k*4+3]>110?1:0;
+    MASKC[ch]=m;
     return m;
   }
 
@@ -759,7 +787,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       var T=TOOLS[tool];
       var stepover=(demo.stage==='rough')?12:4;
       var margin=T.r+2;
-      var budget=dt*8*(1+0.35*G.head)*(1+0.2*G.bits)*(1+0.25*G.soft)/fin(part.fin).hard;
+      var budget=dt*16*(1+0.35*G.head)*(1+0.2*G.bits)*(1+0.25*G.soft)/fin(part.fin).hard;
       while(budget>0){
         var cutting=materialUnder(demo.i,demo.j,T.r+1);
         var rate=cutting?((demo.stage==='rough')?26:38):260;
@@ -839,8 +867,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     binsDirty=false;
     var el=document.getElementById('bins');
     el.innerHTML='';
-    for(var i=0;i<26;i++){
-      var ch=ALPHA[i], tot=invTotal(ch);
+    var cs=charset();
+    for(var i=0;i<cs.length;i++){
+      var ch=cs[i], tot=invTotal(ch);
       var d=document.createElement('div');
       d.className='bin'+(tot>0?' has':'');
       d.dataset.ch=ch;
@@ -866,15 +895,16 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   // compare the finished part against every letter to work out what it is
   function identify(){
     var best='', bestScore=0;
-    for(var i=0;i<26;i++){
-      var m=demoMask(ALPHA[i]), hit=0, miss=0, tot=0;
+    var cs=charset();
+    for(var i=0;i<cs.length;i++){
+      var m=demoMask(cs[i]), hit=0, miss=0, tot=0;
       for(var y=0;y<part.ny;y++) for(var x=0;x<part.nx;x++){
         var solid=part.hmap[y*part.nx+x]>=0?1:0, want=m[y*B.nx+x];
         if(want){ tot++; if(solid) hit++; }
         else if(solid) miss++;
       }
       var sc=tot?(hit/tot)-(miss/(part.nx*part.ny)):0;
-      if(sc>bestScore){ bestScore=sc; best=ALPHA[i]; }
+      if(sc>bestScore){ bestScore=sc; best=cs[i]; }
     }
     return bestScore>0.55?best:'';
   }
@@ -1617,7 +1647,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     hudT-=dt;
     if(hudT<=0){ hudT=0.25; drawHud(); guideTick();
       if(view==='floor') facBoard();
-      if(view==='orders'){ if(binsDirty) buildBins(); renderOrders(); }
+      if(view==='orders'){ if(binsDirty) buildBins(); renderOrders(); renderLine(); }
       if(view==='shop') renderShop();
       saveT-=0.25; if(saveT<=0){ saveT=5; writeSave(); }
     }
@@ -1706,10 +1736,11 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function missingList(){
     var tmp={}, out=[];
     G.orders.forEach(function(o){
-      for(var i=0;i<o.word.length;i++){
-        var k=ikey(o.word[i],o.fin);
+      var tk=toks(o);
+      for(var i=0;i<tk.length;i++){
+        var k=ikey(tk[i],o.fin);
         if(tmp[k]===undefined) tmp[k]=G.inv[k]||0;
-        if(tmp[k]>0) tmp[k]--; else out.push({ch:o.word[i],fin:o.fin});
+        if(tmp[k]>0) tmp[k]--; else out.push({ch:tk[i],fin:o.fin});
       }
     });
     return out;
@@ -1777,7 +1808,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
         m.idle=false;
       }
       var hard=fin(m.fin).hard;
-      var rate=(1-0.35*m.wear)*(1+0.25*G.bits)*(1+0.1*G.soft)/(13*hard);      // a part takes about thirteen seconds fresh in aluminum
+      var rate=(1-0.35*m.wear)*(1+0.25*G.bits)*(1+0.1*G.soft)/(9*hard);      // a part takes about nine seconds fresh in aluminum
       m.prog+=dt*rate;
       m.sweep+=dt*m.dir*1.6;
       if(m.sweep>1){m.sweep=1;m.dir=-1;} if(m.sweep<0){m.sweep=0;m.dir=1;}
@@ -1944,7 +1975,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     box.style.display='block';
     box.innerHTML='<div class="feed"><span>mill '+(fac.sel+2)+'</span>'+
       '<button class="switch'+(m.auto?' on':'')+'" id="selAuto" style="'+(m.auto?'background:var(--blue)':'')+'">'+(m.auto?'auto, cutting for orders':'manual, tap for auto')+'</button></div>'+
-      '<div class="feed"><span>letter '+m.ch+'</span><button id="selPrev">&#8592;</button><button id="selNext">&#8594;</button></div>'+
+      '<div class="feed"><span>part '+m.ch+'</span><button id="selPrev">&#8592;</button><button id="selNext">&#8594;</button></div>'+
       '<div class="finrow" id="selFin"><span>finish</span></div>'+
       '<button class="wide" id="selStop" style="background:'+(m.stopped?'var(--blue)':'var(--rust)')+'">'+(m.stopped?'start this mill':'stop this mill')+'</button>'+
       '<button class="wide" id="selDone">done</button>';
@@ -1955,7 +1986,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       b.addEventListener('click',function(){ m.fin=id; m.auto=false; m.prog=0; facStore(fac.sel); renderSel(); });
       fr.appendChild(b);
     });
-    function shift(n){ m.ch=ALPHA[(ALPHA.indexOf(m.ch)+n+26)%26]; m.auto=false; m.prog=0; m.idle=false; facStore(fac.sel); renderSel(); }
+    function shift(n){ var cs=charset(), at=Math.max(0,cs.indexOf(m.ch)); m.ch=cs[(at+n+cs.length)%cs.length]; m.auto=false; m.prog=0; m.idle=false; facStore(fac.sel); renderSel(); }
     box.querySelector('#selPrev').addEventListener('click',function(){ shift(-1); });
     box.querySelector('#selNext').addEventListener('click',function(){ shift(1); });
     box.querySelector('#selAuto').addEventListener('click',function(){ m.auto=!m.auto; m.prog=0; facStore(fac.sel); renderSel(); });
@@ -2003,23 +2034,68 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     'SUN','DUST','ROAD','MILE','RIG','TRUCK','PARTS','SALE','DELI','PIZZA','TACO','QUIZ','JAZZ','ZONE','KEY','LOCK','DOCK',
     'YARD','GATE','BARN','HAY','COOP','EGGS','MAPLE','OAK','PINE','LAKE','RIVER','CABIN','CAMP','FIRE','STAR','MOON','NORTH',
     'WEST','EAST','SOUTH','HOTEL','POST','MAIL','STOP','SLOW','YIELD','PARK','ZOO','ART','MUSIC','BAND','STAGE','ARENA','TEAM',
-    'WIN','GOAL','KICK','PRIDE','HOPE','LOVE','LUCK','GOLD','MINE','OASIS','CANYON','DESERT','GARAGE','SALOON','JUNCTION'];
+    'WIN','GOAL','KICK','PRIDE','HOPE','LOVE','LUCK','GOLD','MINE','OASIS','CANYON','DESERT','GARAGE','SALOON','JUNCTION',
+    'MACHINE','CUTTER','SPINDLE','SADDLE','QUILL','TURRET','FACTORY','WORKSHOP','HARDWARE','CAMPFIRE','HIGHWAY','JUKEBOX',
+    'MOUNTAIN','STARLIGHT','BACKYARD','SUNFLOWER','BUTTERFLY','MILLWRIGHT','MACHINIST','HOMESTEAD','WILDERNESS','TUMBLEWEED',
+    'ROADRUNNER','JACKRABBIT','SAGEBRUSH','BLACKSMITH','LIGHTHOUSE','WATERFALL','PLAYGROUND','WONDERFUL','THUNDERBIRD',
+    'HANDCRAFTED','CHAMPIONSHIP','ENCYCLOPEDIA','UNBELIEVABLE','EXTRAORDINARY','SPECTACULAR','MAGNIFICENT','CONSTELLATION'];
+  var KINDS=['word','spell','set','num','emoji'];
+  var PCOLORS=['red','blue','black','white','orange','teal','yellow','green'];
+  // finishing processes a shipped order can need, each run by its own station
+  var PROCS={stamp:{name:'stamped with a maker\'s mark',station:'stamper',mult:1.3,secs:1.5},
+             pc:{name:'powder coated',station:'booth',mult:1.7,secs:3},
+             led:{name:'lit with LEDs',station:'ledbench',mult:2.4,secs:5}};
+  var STATIONCOST={stamper:1800,booth:4000,ledbench:8000};
+  function ownedProcs(){ return Object.keys(PROCS).filter(function(k){ return G[PROCS[k].station]; }); }
   var CLIENTS=['a sign shop','a mailbox maker','a diner owner','a hardware store','a print shop','a ranch gate builder',
     'a roadside motel','a ball team','a wedding planner','a museum','a gift shop','a trucking yard','a theater','a coffee stand','a campground'];
   var ordersDirty=true, ordersSig='', orderT=0;
   function maxOrders(){ return Math.min(9,3+Math.ceil(G.mills/2)); }
-  function orderValue(o){ var v=0; for(var i=0;i<o.word.length;i++) v+=letterBase(o.word[i]); return v*1.25*fin(o.fin).pay*market(); }
+  function orderValue(o){
+    var tk=toks(o), v=0;
+    for(var i=0;i<tk.length;i++) v+=letterBase(tk[i]);
+    var bonus=1+0.18*Math.max(0,tk.length-3);       // longer words pay more for every letter
+    if(o.kind==='spell') bonus*=1.5;                 // spelling bee words pay a premium on top
+    if(o.kind==='set') bonus*=2;                     // a matching set pays double
+    if(o.proc&&PROCS[o.proc]) bonus*=PROCS[o.proc].mult;
+    return v*1.25*bonus*fin(o.fin).pay*market();
+  }
+  function orderTitle(o){
+    var f=fin(o.fin).name, t;
+    if(o.kind==='set') t='a matching '+(o.word===ALPHA?'alphabet':(o.word===DIGITS?'number':'emoji'))+' set in '+f;
+    else if(o.kind==='spell') t='spelling bee word '+o.word+' in '+f;
+    else if(o.kind==='num') t='house number '+o.word+' in '+f;
+    else t=o.word+' in '+f;
+    if(o.proc==='pc') t+=', powder coated '+(o.color||'red');
+    else if(o.proc) t+=', '+PROCS[o.proc].name;
+    return t;
+  }
+  function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
   function newOrder(){
-    var maxLen=Math.min(8,3+Math.floor(G.mills/2)+(G.owned.length>3?1:0)+(G.owned.length>7?1:0));
-    var pool=WORDS.filter(function(w){ return w.length<=maxLen; });
-    var w=pool[Math.floor(Math.random()*pool.length)];
-    var f=(Math.random()<0.45)?G.owned[G.owned.length-1]:G.owned[Math.floor(Math.random()*G.owned.length)];
-    return {id:G.nextId++,word:w,fin:f,who:CLIENTS[Math.floor(Math.random()*CLIENTS.length)]};
+    var mills=1+G.mills;
+    // words grow with the shop: three letters on one mill, longer for every mill after
+    var maxLen=Math.min(14,1+2*mills+(G.owned.length>3?1:0));
+    var f=(Math.random()<0.45)?G.owned[G.owned.length-1]:pick(G.owned);
+    var o={id:G.nextId++,fin:f,who:pick(CLIENTS),kind:'word',proc:'',color:''};
+    var r=Math.random();
+    if(mills>=3&&r<0.06) { o.kind='set'; o.word=ALPHA; o.who='a sign collector'; }
+    else if(G.dies>=1&&mills>=3&&r<0.09) { o.kind='set'; o.word=DIGITS; o.who='an address plate maker'; }
+    else if(G.dies>=2&&mills>=4&&r<0.11) { o.kind='set'; o.word=EMOJI.join(''); o.who='a novelty shop'; }
+    else if(G.dies>=2&&r<0.3) { o.kind='emoji'; var n=1+Math.floor(Math.random()*Math.min(3,mills)); o.word=''; for(var e=0;e<n;e++) o.word+=pick(EMOJI); }
+    else if(G.dies>=1&&r<0.45) { o.kind='num'; var len=2+Math.floor(Math.random()*Math.min(4,mills)); o.word=String(1+Math.floor(Math.random()*9)); while(o.word.length<len) o.word+=DIGITS[Math.floor(Math.random()*10)]; }
+    else if(mills>=3&&r<0.62) {
+      var bee=WORDS.filter(function(w){ return w.length>=7&&w.length<=maxLen; });
+      if(bee.length){ o.kind='spell'; o.word=pick(bee); o.who='the spelling bee'; }
+    }
+    if(!o.word){ var pool=WORDS.filter(function(w){ return w.length<=maxLen; }); o.word=pick(pool); }
+    var pr=ownedProcs();
+    if(pr.length&&o.kind!=='set'&&Math.random()<0.4){ o.proc=pick(pr); if(o.proc==='pc') o.color=pick(PCOLORS); }
+    return o;
   }
   function haveFlags(o){
-    var used={}, out=[];
-    for(var i=0;i<o.word.length;i++){
-      var ch=o.word[i]; used[ch]=(used[ch]||0)+1;
+    var used={}, out=[], tk=toks(o);
+    for(var i=0;i<tk.length;i++){
+      var ch=tk[i]; used[ch]=(used[ch]||0)+1;
       out.push(invGet(ch,o.fin)>=used[ch]);
     }
     return out;
@@ -2030,9 +2106,19 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       var o=G.orders[i];
       if(o.id!==id) continue;
       if(!canShip(o)) return;
-      for(var k=0;k<o.word.length;k++) invAdd(o.word[k],o.fin,-1);
-      G.orders.splice(i,1); G.shipped=(G.shipped||0)+1;
-      earn(orderValue(o),'for '+o.word+' to '+o.who); sndDing();
+      var tk=toks(o);
+      for(var k=0;k<tk.length;k++) invAdd(tk[k],o.fin,-1);
+      G.orders.splice(i,1);
+      if(o.proc&&PROCS[o.proc]){
+        // the letters go down the finishing line first, and the customer pays when they come out
+        o.pay=orderValue(o);
+        var secs=PROCS[o.proc].secs*tk.length;
+        G.line.push({order:o,left:secs,total:secs}); writeSave();
+        toast(o.word.length>12?'the order went to the finishing line':o.word+' went to the finishing line');
+      } else {
+        G.shipped=(G.shipped||0)+1;
+        earn(orderValue(o),'for '+(o.kind==='set'?'a matching set':o.word)+' to '+o.who); sndDing();
+      }
       orderT=2.5; binsDirty=true; ordersDirty=true; buildBins();
       return;
     }
@@ -2042,7 +2128,36 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     G.orders=G.orders.filter(function(o){ return o.id!==id; });
     G.passCd=20; orderT=1; ordersDirty=true; writeSave();
   }
+  // each station works its own queue, one order at a time
+  function lineTick(dt){
+    if(!G.line.length) return;
+    var busy={};
+    for(var i=0;i<G.line.length;i++){
+      var j=G.line[i], st=PROCS[j.order.proc].station;
+      if(busy[st]) continue;
+      busy[st]=true;
+      j.left-=dt*(1+0.25*G.soft);
+      if(j.left<=0){
+        G.line.splice(i,1); i--;
+        G.shipped=(G.shipped||0)+1;
+        earn(j.order.pay,'for '+(j.order.kind==='set'?'a matching set':j.order.word)+', '+(j.order.proc==='pc'?'powder coated '+j.order.color:PROCS[j.order.proc].name)); sndDing();
+      }
+    }
+  }
+  function renderLine(){
+    var box=document.getElementById('lineBox'), el=document.getElementById('lineList');
+    if(!G.line.length){ box.style.display='none'; return; }
+    box.style.display='block';
+    var busy={}, html='';
+    G.line.forEach(function(j){
+      var st=PROCS[j.order.proc].station, on=!busy[st]; busy[st]=true;
+      var pct=on?Math.round(100*(1-j.left/j.total)):0;
+      html+='<div class="ljob"><span>'+(j.order.kind==='set'?'matching set':j.order.word)+' '+(j.order.proc==='pc'?'powder coated '+j.order.color:PROCS[j.order.proc].name)+(on?'':', waiting')+'</span><div class="bar"><i style="width:'+pct+'%;background:var(--blue)"></i></div></div>';
+    });
+    el.innerHTML=html;
+  }
   function ordersTick(dt){
+    lineTick(dt);
     if(G.passCd>0) G.passCd=Math.max(0,G.passCd-dt);
     if(G.orders.length<maxOrders()){
       orderT-=dt;
@@ -2069,10 +2184,11 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     G.orders.forEach(function(o){
       var d=document.createElement('div'); d.className='ocard'; d.dataset.id=o.id;
       var flags=haveFlags(o), tiles='';
-      for(var i=0;i<o.word.length;i++)
-        tiles+='<div class="tile '+(flags[i]?'ok':'miss')+'" style="background-image:url('+swatchURL(o.fin)+')">'+o.word[i]+'</div>';
+      var tk=toks(o);
+      for(var i=0;i<tk.length;i++)
+        tiles+='<div class="tile '+(flags[i]?'ok':'miss')+(isEmoji(tk[i])?' emo':'')+'" style="background-image:url('+swatchURL(o.fin)+')">'+tk[i]+'</div>';
       var ok=canShip(o);
-      d.innerHTML='<h4>'+o.word+' in '+fin(o.fin).name+'</h4><p>for '+o.who+'</p><div class="tiles">'+tiles+'</div>'+
+      d.innerHTML='<h4>'+orderTitle(o)+'</h4><p>for '+o.who+'</p><div class="tiles">'+tiles+'</div>'+
         '<div class="row"><b>'+money(orderValue(o))+'</b>'+
         '<button class="pass"'+(G.passCd>0?' disabled':'')+'>pass</button>'+
         '<button class="ship"'+(ok?'':' disabled')+'>ship it</button></div>';
@@ -2086,7 +2202,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var shopSig='';
   function millCost(){ return Math.round(250*Math.pow(1.7,G.mills)); }
   function opCost(){ return Math.round(350*Math.pow(1.6,G.ops-1)); }
-  var HEADCOST=[800,2500,7000], CHIPCOST=2500, LUBECOST=[900,3200], BITCOST=[1500,5000], SOFTCOST=[1200,4500];
+  var DIECOST=[2000,9000], HEADCOST=[800,2500,7000], CHIPCOST=2500, LUBECOST=[900,3200], BITCOST=[1500,5000], SOFTCOST=[1200,4500];
   // running costs: operators draw wages once the floor has a mill, and every running mill draws power
   var WAGE=3.75, FLOORPOWER=2, MILLPOWER=0.75, billT=0, warnedBroke=false;
   function runningMills(){ var n=0; fac.m.forEach(function(m){ if(fac.running&&!m.idle&&!m.need&&!m.stopped) n++; }); return n; }
@@ -2111,7 +2227,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   }
   function renderShop(){
     if(view!=='shop') return;
-    var sig=[Math.floor(G.cash),G.mills,G.ops,G.foreman,G.head,G.chipConv,G.lube,G.bits,G.soft,G.owned.join(','),G.curFin,Math.round(costPerMin())].join('/');
+    var sig=[Math.floor(G.cash),G.mills,G.ops,G.foreman,G.head,G.chipConv,G.lube,G.bits,G.soft,G.dies,G.stamper,G.booth,G.ledbench,G.owned.join(','),G.curFin,Math.round(costPerMin())].join('/');
     if(sig===shopSig) return;
     shopSig=sig;
     var U=[
@@ -2119,6 +2235,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       {k:'op',name:'hire an operator',verb:'hire',txt:G.ops>=6?'the crew is full, six operators':'a person, not a mill, who clears chips, changes tools and loads stock, you have '+G.ops+' of six',cost:G.ops>=6?0:opCost(),max:G.ops>=6},
       {k:'fore',name:'foreman',verb:'hire',txt:G.foreman?'on duty, operators go where they are needed without being told':'sends operators to stopped mills without you tapping',cost:G.foreman?0:3000,max:G.foreman},
       {k:'head',name:'high speed head',verb:'upgrade',txt:G.head>=3?'fully upgraded, the order program cuts at top speed':'makes the order program on your main mill cut faster, level '+G.head+' of three',cost:G.head>=3?0:HEADCOST[G.head],max:G.head>=3},
+      {k:'dies',name:G.dies>=1?'emoji dies':'number dies',verb:'unlock',txt:G.dies>=2?'letters, numbers and emoji all unlocked':(G.dies===1?'cut emoji, the best paying parts there are, and take emoji orders':'cut the numbers zero through nine and take house number orders'),cost:G.dies>=2?0:DIECOST[G.dies],max:G.dies>=2},
+      {k:'stamper',name:'stamping press',verb:'install',txt:G.stamper?'installed, orders can ask for a maker\'s mark':'stamps a maker\'s mark on finished letters, opens stamped orders that pay more',cost:G.stamper?0:STATIONCOST.stamper,max:G.stamper},
+      {k:'booth',name:'powder coat booth',verb:'install',txt:G.booth?'installed, orders can ask for a powder coat color':'coats letters in color, opens powder coat orders that pay well',cost:G.booth?0:STATIONCOST.booth,max:G.booth},
+      {k:'ledbench',name:'LED wiring bench',verb:'install',txt:G.ledbench?'installed, orders can ask for lit letters':'wires LEDs into letters, opens lit sign orders that pay the most',cost:G.ledbench?0:STATIONCOST.ledbench,max:G.ledbench},
       {k:'chip',name:'chip conveyor',verb:'install',txt:G.chipConv?'installed, floor mills never stop to have chips cleared':'carries chips away so floor mills never stop for a chip clearing',cost:G.chipConv?0:CHIPCOST,max:G.chipConv},
       {k:'lube',name:'better coolant',verb:'upgrade',txt:G.lube>=2?'synthetic coolant, tools wear slowest and squeal least':'tools wear slower and the cutters squeal less, level '+G.lube+' of two',cost:G.lube>=2?0:LUBECOST[G.lube],max:G.lube>=2},
       {k:'bits',name:'better cutters',verb:'upgrade',txt:G.bits>=2?'coated carbide, every mill cuts at its fastest':'carbide cutters cut faster and last longer on every mill, level '+G.bits+' of two',cost:G.bits>=2?0:BITCOST[G.bits],max:G.bits>=2},
@@ -2171,6 +2291,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(k==='chip'){ if(G.chipConv) return; c=CHIPCOST; if(G.cash<c) return; G.cash-=c; G.chipConv=true; toast('chip conveyors are running, no more chip stops'); }
     if(k==='lube'){ if(G.lube>=2) return; c=LUBECOST[G.lube]; if(G.cash<c) return; G.cash-=c; G.lube++; toast(G.lube===1?'flood coolant is on':'synthetic coolant is on'); }
     if(k==='bits'){ if(G.bits>=2) return; c=BITCOST[G.bits]; if(G.cash<c) return; G.cash-=c; G.bits++; toast(G.bits===1?'carbide cutters loaded':'coated carbide cutters loaded'); }
+    if(k==='dies'){ if(G.dies>=2) return; c=DIECOST[G.dies]; if(G.cash<c) return; G.cash-=c; G.dies++; binsDirty=true; toast(G.dies===1?'number dies unlocked, house number orders are coming':'emoji dies unlocked, emoji orders pay big'); }
+    if(k==='stamper'||k==='booth'||k==='ledbench'){ if(G[k]) return; c=STATIONCOST[k]; if(G.cash<c) return; G.cash-=c; G[k]=true; toast(k==='stamper'?'the stamping press is bolted down':(k==='booth'?'the powder coat booth is ready':'the LED bench is wired up')); }
     if(k==='soft'){ if(G.soft>=2) return; c=SOFTCOST[G.soft]; if(G.cash<c) return; G.cash-=c; G.soft++; toast(G.soft===1?'new CAM software installed':'nesting software installed'); }
     shopSig=''; ordersDirty=true; writeSave(); renderShop();
   }
