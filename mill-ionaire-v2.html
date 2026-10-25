@@ -168,6 +168,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 .bin s u{width:6px;height:6px;border:1px solid var(--charcoal);}
 .mtg-seal{margin-top:24px;}
 .tile.emo{font-size:20px;text-shadow:none;}
+.tile.turned{background-color:var(--face);background-size:contain;background-repeat:no-repeat;background-position:center;}
+.tabs button{min-width:0;}
+@media (max-width:420px){.tabs button{font-size:12px;}}
 .ljob{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;}
 .ljob span{flex:1;}
 .ljob .bar{flex:0 0 35%;height:12px;}
@@ -201,6 +204,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   <button data-view="mill" class="on">the mill</button>
   <button data-view="orders">orders<em id="badgeOrders"></em></button>
   <button data-view="floor">floor<em id="badgeFloor"></em></button>
+  <button data-view="lathe" id="latheTab" style="display:none">lathe</button>
   <button data-view="shop">shop</button>
 </nav>
 
@@ -240,6 +244,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <p>Customers post word orders on the orders tab. Each word has to be made from letters cut in one finish, like brass or blue anodize, and shipping it pays cash.</p>
     <p>On the mill tab, tap run the order program under the machine. The mill loads a blank in the right finish, cuts whatever letter the orders are missing, and drops it straight into the bins. You can also cut by hand with the wheels and sliders, then bag the part and drag it into its bin.</p>
     <p>Words get longer as your shop grows, and longer words pay more for every letter. Once you run several mills the spelling bee sends in long words at a premium, and now and then a collector wants a whole matching set, which pays double. Number dies and emoji dies in the shop unlock house numbers and emoji, and emoji are the best paying parts there are.</p>
+    <p>The engine lathe in the shop costs half the price of your next mill. It turns round parts: sign standoffs, threaded studs, sign posts, bushings, flanges, lazy susan plates, knobs and fixture pins. Once you own it, customers order batches of turned parts, words mounted on standoffs and signs on posts. Run the lathe program on the lathe tab and it turns whatever the orders need.</p>
     <p>The stamping press, the powder coat booth and the LED wiring bench open orders that need a finishing step. Those orders go down the finishing line on the orders tab after you ship them, and the customer pays more when they come off.</p>
     <p>Spend your cash in the shop. New finishes pay more per letter but are harder metal, so they cut slower. Floor mills run on their own on the floor tab, and operators keep them going when a light turns amber.</p>
     <p>Once you own a floor mill, your operators draw wages every minute, and every running mill draws power. If the cash runs dry the power gets cut and the crew goes home until you ship an order. Chip conveyors, better coolant, better cutters and better software in the shop make every mill run harder for the same bills.</p>
@@ -284,8 +289,25 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <div class="tray" id="tray"></div>
     <button class="wide" id="stowBtn2">stow every loose part into the bins</button>
     <div class="bins" id="bins"></div>
+    <div class="bins" id="lbins" style="display:none"></div>
     <button class="wide" id="emptyBtn" style="background:var(--rust);margin-top:12px">empty the inventory bins</button>
     <p class="hint">Loose parts pile up in the tray at the top. Drag one down onto its matching letter bin to stow it. Each bin holds a hundred of each finish, and a part will not go into the wrong letter. The colored marks under a bin show which finishes are in it.</p>
+  </div>
+</div>
+
+<div class="view" id="view-lathe">
+  <div class="panel">
+    <div class="panel-label">engine lathe, cutaway through the spindle</div>
+    <canvas id="latheCv" width="680" height="420" style="border:1px solid var(--steel)"></canvas>
+    <div class="feed" style="margin:10px 0 0"><button class="switch" id="lProgBtn" style="flex:1;background:var(--blue)">run the lathe program</button></div>
+    <div class="status" id="lStatus">load a bar, then cut by hand or run the lathe program</div>
+    <div class="jog" style="margin-top:12px">
+      <div class="jog-row"><div class="jog-name">carriage, along the bar</div><input type="range" id="lZ" min="0" max="210" step="0.5" value="210"></div>
+      <div class="jog-row"><div class="jog-name">cross slide, into the bar</div><input type="range" id="lX" min="0" max="48" step="0.5" value="48" style="direction:rtl"></div>
+      <div class="jog-row"><div class="jog-name">spindle rpm</div><input type="range" id="lRpm" min="0" max="2000" step="50" value="0"></div>
+    </div>
+    <div class="feed millbtns"><button class="switch" id="lLoadBtn">load a fresh bar</button><button class="switch" id="lPartBtn">part it off and bag it</button></div>
+    <p class="hint">The lathe spins the bar and the tool cuts it from the side. Run the lathe program and it turns whatever the orders need: sign standoffs, threaded studs, sign posts, bushings, flanges, lazy susan plates, knobs and fixture pins, straight into the bins. To cut by hand, load a bar, start the spindle, slide the cross slide in to take a cut and run the carriage along the bar. Stop the spindle with the carriage where the part should end and part it off. If the shape matches a part on the catalog it goes to the tray, and if it does not it goes in the scrap bin.</p>
   </div>
 </div>
 
@@ -529,11 +551,24 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var ALPHA='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   var DIGITS='0123456789';
   var EMOJI=['\u{1F525}','\u{1F335}','\u{1F680}','\u{1F355}','\u{1F3B8}','\u{1F44D}','\u{1F48E}','\u{1F40D}','\u{1F319}','\u{1F340}','\u{1F511}','\u{1F996}'];
-  var ALLCH=ALPHA.split('').concat(DIGITS.split('')).concat(EMOJI);
+  // turned parts from the lathe, kept in the same inventory as letters under their own keys
+  var LPARTS={
+    standoff:{name:'sign standoff',plural:'sign standoffs',short:'stand',len:0.3,val:16,f:function(t){ return (t<0.08||t>0.92)?0.38:0.45; }},
+    stud:{name:'threaded stud',plural:'threaded studs',short:'stud',len:0.45,val:22,thread:true,f:function(){ return 0.32; }},
+    signpost:{name:'sign post',plural:'sign posts',short:'post',len:0.9,val:40,f:function(t){ return t<0.1?0.5:0.28; }},
+    bushing:{name:'bushing',plural:'bushings',short:'bush',len:0.22,val:20,f:function(){ return 0.7; }},
+    flange:{name:'flange',plural:'flanges',short:'flng',len:0.28,val:38,f:function(t){ return t>0.7?0.98:0.45; }},
+    lazysusan:{name:'lazy susan plate',plural:'lazy susan plates',short:'susan',len:0.16,val:50,f:function(t){ return (t>0.4&&t<0.6)?0.82:0.98; }},
+    knob:{name:'knob',plural:'knobs',short:'knob',len:0.32,val:28,f:function(t){ return t<0.6?Math.max(0.3,0.85*Math.sqrt(Math.max(0,1-Math.pow((t-0.3)/0.3,2)))):0.3; }},
+    pin:{name:'fixture pin',plural:'fixture pins',short:'pin',len:0.4,val:14,f:function(t){ return t<0.15?0.1+t/0.15*0.15:0.25; }}
+  };
+  function isTurned(t){ return typeof t==='string'&&t.indexOf('L:')===0; }
+  var ALLCH=ALPHA.split('').concat(DIGITS.split('')).concat(EMOJI).concat(Object.keys(LPARTS).map(function(k){ return 'L:'+k; }));
   // letters first, numbers once the number dies are bought, emoji once the emoji dies are bought
   function charset(){ var a=ALPHA.split(''); if(G.dies>=1) a=a.concat(DIGITS.split('')); if(G.dies>=2) a=a.concat(EMOJI); return a; }
   function isEmoji(ch){ return EMOJI.indexOf(ch)>=0; }
-  function toks(o){ return Array.from(o.word); }
+  function toks(o){ return Array.from(o.word||'').concat(o.parts||[]); }
+  function oname(o){ if(o.kind==='turned') return LPARTS[o.parts[0].slice(2)].plural; if(o.kind==='set') return 'a matching set'; return o.word; }
   var demo={on:false,mode:'alpha',phase:'idle',letter:0,mask:null,i:0,j:0,dir:1,shelf:[],eject:0,pass:1,stage:'rough',ch:'A',fin:'alu',wait:0};
 
   // ---------- finishes and textures ----------
@@ -613,7 +648,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var SAVEKEY='mill-ionaire-v2-save';
   function freshSave(){
     return {cash:0,played:0,owned:['alu'],curFin:'alu',inv:{},orders:[],mills:0,ops:1,foreman:false,
-            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[]};
+            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[],lathe:false};
   }
   var G=freshSave();
   // reads the save and throws away anything that is the wrong shape, so a damaged save never breaks the game
@@ -631,7 +666,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
     function int(n,a,b){ n=Math.floor(Number(n)||0); return n<a?a:(n>b?b:n); }
     G.cash=Math.max(0,G.cash); G.played=Math.max(0,G.played); G.earned=Math.max(0,G.earned);
-    G.mills=int(G.mills,0,12); G.ops=int(G.ops,1,6); G.head=int(G.head,0,3); G.chipConv=G.chipConv===true; G.lube=int(G.lube,0,2); G.bits=int(G.bits,0,2); G.soft=int(G.soft,0,2); G.broke=G.broke===true; G.dies=int(G.dies,0,2); G.stamper=G.stamper===true; G.booth=G.booth===true; G.ledbench=G.ledbench===true; G.passCd=Math.max(0,Math.min(20,G.passCd));
+    G.mills=int(G.mills,0,12); G.ops=int(G.ops,1,6); G.head=int(G.head,0,3); G.chipConv=G.chipConv===true; G.lube=int(G.lube,0,2); G.bits=int(G.bits,0,2); G.soft=int(G.soft,0,2); G.broke=G.broke===true; G.dies=int(G.dies,0,2); G.stamper=G.stamper===true; G.booth=G.booth===true; G.ledbench=G.ledbench===true; G.lathe=G.lathe===true; G.passCd=Math.max(0,Math.min(20,G.passCd));
     G.made=Math.max(0,G.made); G.shipped=Math.max(0,G.shipped); G.foreman=G.foreman===true; G.sound=G.sound!==false; G.vol=Math.max(0,Math.min(1,G.vol));
     var own=['alu'];
     G.owned.forEach(function(id){ if(typeof id==='string'&&FINBY[id]&&own.indexOf(id)<0) own.push(id); });
@@ -645,17 +680,18 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
     G.inv=inv;
     var maxId=0;
-    function goodWord(w){ if(typeof w!=='string') return false; var t=Array.from(w); return t.length>=1&&t.length<=40&&t.every(function(c){ return ALLCH.indexOf(c)>=0; }); }
+    function goodWord(w){ if(typeof w!=='string') return false; var t=Array.from(w); return t.length<=40&&t.every(function(c){ return ALLCH.indexOf(c)>=0; }); }
+    function goodParts(p){ return p===undefined||(Array.isArray(p)&&p.length<=40&&p.every(function(c){ return isTurned(c)&&ALLCH.indexOf(c)>=0; })); }
     G.orders=G.orders.filter(function(q){
-      return q&&goodWord(q.word)&&own.indexOf(q.fin)>=0;
+      return q&&goodWord(q.word)&&goodParts(q.parts)&&(q.word.length||(q.parts&&q.parts.length))&&own.indexOf(q.fin)>=0;
     }).slice(0,9).map(function(q){
       var id=Math.floor(Number(q.id))||0; if(id>maxId) maxId=id;
-      return {id:id,word:q.word,fin:q.fin,who:CLIENTS.indexOf(q.who)>=0?q.who:CLIENTS[0],
+      return {id:id,word:q.word,parts:q.parts?q.parts.slice():undefined,fin:q.fin,who:CLIENTS.indexOf(q.who)>=0?q.who:CLIENTS[0],
         kind:KINDS.indexOf(q.kind)>=0?q.kind:'word',proc:PROCS[q.proc]?q.proc:'',color:PCOLORS.indexOf(q.color)>=0?q.color:''};
     });
-    G.line=G.line.filter(function(j){ return j&&j.order&&goodWord(j.order.word)&&FINBY[j.order.fin]&&PROCS[j.order.proc]; }).slice(0,30).map(function(j){
+    G.line=G.line.filter(function(j){ return j&&j.order&&goodWord(j.order.word)&&goodParts(j.order.parts)&&FINBY[j.order.fin]&&PROCS[j.order.proc]; }).slice(0,30).map(function(j){
       var o=j.order;
-      return {order:{id:Math.floor(Number(o.id))||0,word:o.word,fin:o.fin,who:CLIENTS.indexOf(o.who)>=0?o.who:CLIENTS[0],kind:KINDS.indexOf(o.kind)>=0?o.kind:'word',proc:o.proc,color:PCOLORS.indexOf(o.color)>=0?o.color:'',pay:Math.max(0,Math.min(1e9,Number(o.pay)||0))},left:Math.max(0,Number(j.left)||0),total:Math.max(1,Number(j.total)||1)};
+      return {order:{id:Math.floor(Number(o.id))||0,word:o.word,parts:o.parts?o.parts.slice():undefined,fin:o.fin,who:CLIENTS.indexOf(o.who)>=0?o.who:CLIENTS[0],kind:KINDS.indexOf(o.kind)>=0?o.kind:'word',proc:o.proc,color:PCOLORS.indexOf(o.color)>=0?o.color:'',pay:Math.max(0,Math.min(1e9,Number(o.pay)||0))},left:Math.max(0,Number(j.left)||0),total:Math.max(1,Number(j.total)||1)};
     });
     G.nextId=Math.max(int(G.nextId,1,1e9),maxId+1);
     G.floor=G.floor.filter(function(c){ return c&&typeof c.ch==='string'&&ALLCH.indexOf(c.ch)>=0&&FINBY[c.fin]; })
@@ -669,7 +705,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function market(){ var h=G.played/3600; return 0.2+0.8*Math.exp(-h/4); }
   function money(v){ return '$'+Math.floor(v).toLocaleString('en-US'); }
   var LETTERPTS={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10};
-  function letterBase(ch){ if(isEmoji(ch)) return 70; if(DIGITS.indexOf(ch)>=0) return 14; return 10+4*(LETTERPTS[ch]||1); }
+  function letterBase(ch){ if(isTurned(ch)) return LPARTS[ch.slice(2)].val; if(isEmoji(ch)) return 70; if(DIGITS.indexOf(ch)>=0) return 14; return 10+4*(LETTERPTS[ch]||1); }
 
   function toast(msg,warn){
     var box=document.getElementById('toasts'), t=document.createElement('div');
@@ -868,6 +904,14 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var el=document.getElementById('bins');
     el.innerHTML='';
     var cs=charset();
+    var lb=document.getElementById('lbins');
+    lb.innerHTML=''; lb.style.display=G.lathe?'grid':'none';
+    if(G.lathe) Object.keys(LPARTS).forEach(function(id){
+      var tok='L:'+id, tot=invTotal(tok), d=document.createElement('div');
+      d.className='bin'+(tot>0?' has':''); d.dataset.ch=tok;
+      d.innerHTML='<em style="font-size:12px">'+LPARTS[id].short+'</em><i>'+tot+'</i>';
+      lb.appendChild(d);
+    });
     for(var i=0;i<cs.length;i++){
       var ch=cs[i], tot=invTotal(ch);
       var d=document.createElement('div');
@@ -916,6 +960,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   }
   // redraws a saved loose part, since only its letter and finish are kept
   function letterThumb(ch,f){
+    if(isTurned(ch)) return lIcon(ch.slice(2),f);
     var c=document.createElement('canvas'); c.width=B.nx; c.height=B.ny;
     var x=c.getContext('2d'), im=x.createImageData(B.nx,B.ny), d=im.data;
     var m=ch?demoMask(ch):null;
@@ -941,7 +986,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       var c=document.createElement('canvas'); c.width=t.c.width; c.height=t.c.height;
       c.getContext('2d').drawImage(t.c,0,0);
       d.appendChild(c);
-      var b=document.createElement('b'); b.textContent=t.ch||'?';
+      var b=document.createElement('b'); b.textContent=isTurned(t.ch)?LPARTS[t.ch.slice(2)].short:(t.ch||'?');
       d.appendChild(b);
       el.appendChild(d);
     });
@@ -1649,9 +1694,11 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       if(view==='floor') facBoard();
       if(view==='orders'){ if(binsDirty) buildBins(); renderOrders(); renderLine(); }
       if(view==='shop') renderShop();
+      if(view==='lathe'){ lStatus(); lSyncSliders(); }
       saveT-=0.25; if(saveT<=0){ saveT=5; writeSave(); }
     }
     if(view==='floor') facDraw();
+    lTick(dt);
     if(demo.on) demoStep(dt);
     tickAllow(dt);
     if(feed.on&&!machine.xDead){
@@ -1733,14 +1780,15 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function facStore(i){ var m=fac.m[i]; G.floor[i]={ch:m.ch,fin:m.fin,auto:m.auto,stopped:m.stopped}; writeSave(); }
 
   // every letter the open orders still need, one entry per missing letter
-  function missingList(){
+  function missingList(want){
+    want=want||function(t){ return !isTurned(t); };
     var tmp={}, out=[];
     G.orders.forEach(function(o){
       var tk=toks(o);
       for(var i=0;i<tk.length;i++){
         var k=ikey(tk[i],o.fin);
         if(tmp[k]===undefined) tmp[k]=G.inv[k]||0;
-        if(tmp[k]>0) tmp[k]--; else out.push({ch:tk[i],fin:o.fin});
+        if(tmp[k]>0) tmp[k]--; else if(want(tk[i])) out.push({ch:tk[i],fin:o.fin});
       }
     });
     return out;
@@ -2039,7 +2087,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     'MOUNTAIN','STARLIGHT','BACKYARD','SUNFLOWER','BUTTERFLY','MILLWRIGHT','MACHINIST','HOMESTEAD','WILDERNESS','TUMBLEWEED',
     'ROADRUNNER','JACKRABBIT','SAGEBRUSH','BLACKSMITH','LIGHTHOUSE','WATERFALL','PLAYGROUND','WONDERFUL','THUNDERBIRD',
     'HANDCRAFTED','CHAMPIONSHIP','ENCYCLOPEDIA','UNBELIEVABLE','EXTRAORDINARY','SPECTACULAR','MAGNIFICENT','CONSTELLATION'];
-  var KINDS=['word','spell','set','num','emoji'];
+  var KINDS=['word','spell','set','num','emoji','turned','mounted','post'];
   var PCOLORS=['red','blue','black','white','orange','teal','yellow','green'];
   // finishing processes a shipped order can need, each run by its own station
   var PROCS={stamp:{name:'stamped with a maker\'s mark',station:'stamper',mult:1.3,secs:1.5},
@@ -2054,7 +2102,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function orderValue(o){
     var tk=toks(o), v=0;
     for(var i=0;i<tk.length;i++) v+=letterBase(tk[i]);
-    var bonus=1+0.18*Math.max(0,tk.length-3);       // longer words pay more for every letter
+    var bonus=1+0.18*Math.max(0,tk.filter(function(t){ return !isTurned(t); }).length-3);       // longer words pay more for every letter
     if(o.kind==='spell') bonus*=1.5;                 // spelling bee words pay a premium on top
     if(o.kind==='set') bonus*=2;                     // a matching set pays double
     if(o.proc&&PROCS[o.proc]) bonus*=PROCS[o.proc].mult;
@@ -2065,6 +2113,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(o.kind==='set') t='a matching '+(o.word===ALPHA?'alphabet':(o.word===DIGITS?'number':'emoji'))+' set in '+f;
     else if(o.kind==='spell') t='spelling bee word '+o.word+' in '+f;
     else if(o.kind==='num') t='house number '+o.word+' in '+f;
+    else if(o.kind==='turned') t=o.parts.length+' '+LPARTS[o.parts[0].slice(2)].plural+' in '+f;
+    else if(o.kind==='mounted') t=o.word+' in '+f+', mounted on standoffs';
+    else if(o.kind==='post') t=o.word+' sign on a post, in '+f;
     else t=o.word+' in '+f;
     if(o.proc==='pc') t+=', powder coated '+(o.color||'red');
     else if(o.proc) t+=', '+PROCS[o.proc].name;
@@ -2087,7 +2138,13 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       var bee=WORDS.filter(function(w){ return w.length>=7&&w.length<=maxLen; });
       if(bee.length){ o.kind='spell'; o.word=pick(bee); o.who='the spelling bee'; }
     }
-    if(!o.word){ var pool=WORDS.filter(function(w){ return w.length<=maxLen; }); o.word=pick(pool); }
+    if(!o.word&&G.lathe&&Math.random()<0.4){
+      var r2=Math.random(), short=WORDS.filter(function(w){ return w.length<=Math.min(maxLen,7); });
+      if(r2<0.45){ o.kind='turned'; o.word=''; var pid=pick(Object.keys(LPARTS)), pn=2+Math.floor(Math.random()*(1+mills)); o.parts=[]; for(var q=0;q<pn;q++) o.parts.push('L:'+pid); o.who=pick(['a machine builder','a furniture maker','a sign shop','a hardware store','a fixture shop']); }
+      else if(r2<0.8){ o.kind='mounted'; o.word=pick(short); o.parts=[]; for(var q2=0;q2<o.word.length;q2++) o.parts.push('L:standoff'); }
+      else { o.kind='post'; o.word=pick(short); o.parts=['L:signpost']; }
+    }
+    if(!o.word&&o.kind!=='turned'){ var pool=WORDS.filter(function(w){ return w.length<=maxLen; }); o.word=pick(pool); }
     var pr=ownedProcs();
     if(pr.length&&o.kind!=='set'&&Math.random()<0.4){ o.proc=pick(pr); if(o.proc==='pc') o.color=pick(PCOLORS); }
     return o;
@@ -2114,10 +2171,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
         o.pay=orderValue(o);
         var secs=PROCS[o.proc].secs*tk.length;
         G.line.push({order:o,left:secs,total:secs}); writeSave();
-        toast(o.word.length>12?'the order went to the finishing line':o.word+' went to the finishing line');
+        toast(oname(o).length>14?'the order went to the finishing line':oname(o)+' went to the finishing line');
       } else {
         G.shipped=(G.shipped||0)+1;
-        earn(orderValue(o),'for '+(o.kind==='set'?'a matching set':o.word)+' to '+o.who); sndDing();
+        earn(orderValue(o),'for '+oname(o)+' to '+o.who); sndDing();
       }
       orderT=2.5; binsDirty=true; ordersDirty=true; buildBins();
       return;
@@ -2140,7 +2197,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       if(j.left<=0){
         G.line.splice(i,1); i--;
         G.shipped=(G.shipped||0)+1;
-        earn(j.order.pay,'for '+(j.order.kind==='set'?'a matching set':j.order.word)+', '+(j.order.proc==='pc'?'powder coated '+j.order.color:PROCS[j.order.proc].name)); sndDing();
+        earn(j.order.pay,'for '+oname(j.order)+', '+(j.order.proc==='pc'?'powder coated '+j.order.color:PROCS[j.order.proc].name)); sndDing();
       }
     }
   }
@@ -2152,7 +2209,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     G.line.forEach(function(j){
       var st=PROCS[j.order.proc].station, on=!busy[st]; busy[st]=true;
       var pct=on?Math.round(100*(1-j.left/j.total)):0;
-      html+='<div class="ljob"><span>'+(j.order.kind==='set'?'matching set':j.order.word)+' '+(j.order.proc==='pc'?'powder coated '+j.order.color:PROCS[j.order.proc].name)+(on?'':', waiting')+'</span><div class="bar"><i style="width:'+pct+'%;background:var(--blue)"></i></div></div>';
+      html+='<div class="ljob"><span>'+oname(j.order)+' '+(j.order.proc==='pc'?'powder coated '+j.order.color:PROCS[j.order.proc].name)+(on?'':', waiting')+'</span><div class="bar"><i style="width:'+pct+'%;background:var(--blue)"></i></div></div>';
     });
     el.innerHTML=html;
   }
@@ -2186,7 +2243,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       var flags=haveFlags(o), tiles='';
       var tk=toks(o);
       for(var i=0;i<tk.length;i++)
-        tiles+='<div class="tile '+(flags[i]?'ok':'miss')+(isEmoji(tk[i])?' emo':'')+'" style="background-image:url('+swatchURL(o.fin)+')">'+tk[i]+'</div>';
+        tiles+=isTurned(tk[i])?'<div class="tile turned '+(flags[i]?'ok':'miss')+'" style="background-image:url('+lIconURL(tk[i].slice(2),o.fin)+')"></div>'
+          :'<div class="tile '+(flags[i]?'ok':'miss')+(isEmoji(tk[i])?' emo':'')+'" style="background-image:url('+swatchURL(o.fin)+')">'+tk[i]+'</div>';
       var ok=canShip(o);
       d.innerHTML='<h4>'+orderTitle(o)+'</h4><p>for '+o.who+'</p><div class="tiles">'+tiles+'</div>'+
         '<div class="row"><b>'+money(orderValue(o))+'</b>'+
@@ -2208,12 +2266,12 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function runningMills(){ var n=0; fac.m.forEach(function(m){ if(fac.running&&!m.idle&&!m.need&&!m.stopped) n++; }); return n; }
   function costPerMin(){
     var wages=G.mills>0?G.ops*WAGE:0;
-    var power=(G.broke?0:runningMills()*FLOORPOWER)+(s.rpm>0?MILLPOWER:0);
+    var power=(G.broke?0:runningMills()*FLOORPOWER)+(s.rpm>0?MILLPOWER:0)+(lathe.rpm>0?MILLPOWER:0);
     return wages+power;
   }
   function payBills(dt){
     billT+=dt; if(billT<1) return; billT-=1;
-    var wages=(G.mills>0?G.ops*WAGE:0)/60, power=((G.broke?0:runningMills()*FLOORPOWER)+(s.rpm>0?MILLPOWER:0))/60;
+    var wages=(G.mills>0?G.ops*WAGE:0)/60, power=((G.broke?0:runningMills()*FLOORPOWER)+(s.rpm>0?MILLPOWER:0)+(lathe.rpm>0?MILLPOWER:0))/60;
     var bill=wages+power;
     if(bill<=0) return;
     if(G.cash>=bill){
@@ -2227,11 +2285,12 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   }
   function renderShop(){
     if(view!=='shop') return;
-    var sig=[Math.floor(G.cash),G.mills,G.ops,G.foreman,G.head,G.chipConv,G.lube,G.bits,G.soft,G.dies,G.stamper,G.booth,G.ledbench,G.owned.join(','),G.curFin,Math.round(costPerMin())].join('/');
+    var sig=[Math.floor(G.cash),G.lathe,G.mills,G.ops,G.foreman,G.head,G.chipConv,G.lube,G.bits,G.soft,G.dies,G.stamper,G.booth,G.ledbench,G.owned.join(','),G.curFin,Math.round(costPerMin())].join('/');
     if(sig===shopSig) return;
     shopSig=sig;
     var U=[
       {k:'mill',name:'floor mill',verb:'buy a mill',txt:G.mills>=12?'the floor is full, twelve mills':'a mill that runs on its own on the floor tab, you own '+G.mills+' of twelve',cost:G.mills>=12?0:millCost(),max:G.mills>=12},
+      {k:'lathe',name:'engine lathe',verb:'buy the lathe',txt:G.lathe?'on the shop floor, open it on the lathe tab':'a second kind of machine that turns standoffs, sign posts, threaded studs, flanges and more, at half the price of your next mill',cost:G.lathe?0:Math.round(millCost()/2),max:G.lathe},
       {k:'op',name:'hire an operator',verb:'hire',txt:G.ops>=6?'the crew is full, six operators':'a person, not a mill, who clears chips, changes tools and loads stock, you have '+G.ops+' of six',cost:G.ops>=6?0:opCost(),max:G.ops>=6},
       {k:'fore',name:'foreman',verb:'hire',txt:G.foreman?'on duty, operators go where they are needed without being told':'sends operators to stopped mills without you tapping',cost:G.foreman?0:3000,max:G.foreman},
       {k:'head',name:'high speed head',verb:'upgrade',txt:G.head>=3?'fully upgraded, the order program cuts at top speed':'makes the order program on your main mill cut faster, level '+G.head+' of three',cost:G.head>=3?0:HEADCOST[G.head],max:G.head>=3},
@@ -2249,7 +2308,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     cl.className='status'+(G.broke?' warn':'');
     var ul=document.getElementById('upgList'); ul.innerHTML='';
     U.forEach(function(u){
-      var d=document.createElement('div'); d.className='upg';
+      var d=document.createElement('div'); d.className='upg'; d.dataset.k=u.k;
       d.innerHTML='<div><b>'+u.name+'</b>'+u.txt+'</div><button'+((u.max||G.cash<u.cost)?' disabled':'')+'>'+(u.max?'owned':u.verb+'<br>'+money(u.cost))+'</button>';
       d.querySelector('button').addEventListener('click',function(){ buyUpg(u.k); });
       ul.appendChild(d);
@@ -2291,6 +2350,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(k==='chip'){ if(G.chipConv) return; c=CHIPCOST; if(G.cash<c) return; G.cash-=c; G.chipConv=true; toast('chip conveyors are running, no more chip stops'); }
     if(k==='lube'){ if(G.lube>=2) return; c=LUBECOST[G.lube]; if(G.cash<c) return; G.cash-=c; G.lube++; toast(G.lube===1?'flood coolant is on':'synthetic coolant is on'); }
     if(k==='bits'){ if(G.bits>=2) return; c=BITCOST[G.bits]; if(G.cash<c) return; G.cash-=c; G.bits++; toast(G.bits===1?'carbide cutters loaded':'coated carbide cutters loaded'); }
+    if(k==='lathe'){ if(G.lathe) return; c=Math.round(millCost()/2); if(G.cash<c) return; G.cash-=c; G.lathe=true; syncLatheTab(); binsDirty=true; toast('the lathe is on the floor, find it on the lathe tab'); }
     if(k==='dies'){ if(G.dies>=2) return; c=DIECOST[G.dies]; if(G.cash<c) return; G.cash-=c; G.dies++; binsDirty=true; toast(G.dies===1?'number dies unlocked, house number orders are coming':'emoji dies unlocked, emoji orders pay big'); }
     if(k==='stamper'||k==='booth'||k==='ledbench'){ if(G[k]) return; c=STATIONCOST[k]; if(G.cash<c) return; G.cash-=c; G[k]=true; toast(k==='stamper'?'the stamping press is bolted down':(k==='booth'?'the powder coat booth is ready':'the LED bench is wired up')); }
     if(k==='soft'){ if(G.soft>=2) return; c=SOFTCOST[G.soft]; if(G.cash<c) return; G.cash-=c; G.soft++; toast(G.soft===1?'new CAM software installed':'nesting software installed'); }
@@ -2469,6 +2529,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var mainCut=Math.min(1,SND.mainCut);
     sndSet(SND.main,view==='mill'?1:(view==='floor'?0.55:0.3),s.rpm,mainCut,T.flute>20?2:(T.r>15?6:3));
     if(s.rpm>0&&mainCut>0.2&&Math.random()<0.002*hard*mainCut*(1-0.35*G.lube)) sndSqueal(SND.main,mainCut);
+    if(G.lathe){
+      if(!SND.lathe) SND.lathe=sndVoice(0.45,40);
+      sndSet(SND.lathe,view==='lathe'?1:0.3,lathe.rpm,Math.min(1,lathe.cutLevel),1);
+    }
     // the floor, softer per mill so a full shop swells instead of getting loud
     while(SND.floor.length<fac.m.length){
       var i=SND.floor.length, col=(i+1)%4;
@@ -2509,6 +2573,261 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     G.vol=Math.max(0,Math.min(1,Number(this.value)/100)); writeSave();
   });
 
+
+  // ---- the engine lathe: turned parts cut from round bar ----
+  var LZ=200, LR=40;                       // bar length and radius in lathe units
+  var LX0=150, LY=170, LSC=1.9;           // where the bar sits on the lathe canvas
+  var lcv=document.getElementById('latheCv'), lx=lcv.getContext('2d');
+  var lathe={r:new Float32Array(LZ+1),loaded:false,fin:'alu',rpm:0,z:LZ+10,x:LR+8,spin:0,
+    prog:{on:false,phase:'idle',part:null,fin:'alu',pass:0,z:0,dir:-1,wait:0,eject:0},cutLevel:0,shelf:[]};
+  function lpart(id){ return LPARTS[id]; }
+  // target radius of a catalog part at distance d from the tail end, in lathe units, or -1 past the part
+  function ltarget(id,d){
+    var P=LPARTS[id], len=P.len*LZ;
+    if(d>len) return -1;
+    return Math.max(0,P.f(d/len))*LR;
+  }
+  function lLoad(f){
+    for(var i=0;i<=LZ;i++) lathe.r[i]=LR;
+    lathe.loaded=true; lathe.fin=f||G.curFin;
+  }
+  // cut at the tool point: the bar can never be bigger than where the tool sits
+  function lCut(z,x){
+    if(!lathe.loaded) return 0;
+    var removed=0, w=2;
+    for(var i=Math.max(0,Math.floor(z-w));i<=Math.min(LZ,Math.ceil(z+w));i++){
+      var reach=x+Math.abs(i-z)*0.6;
+      if(lathe.r[i]>reach){ removed+=lathe.r[i]-reach; lathe.r[i]=Math.max(0,reach); }
+    }
+    if(removed>0) lathe.cutLevel=Math.min(1.5,lathe.cutLevel+0.3);
+    return removed;
+  }
+
+  // the lathe program cuts whatever turned parts the orders are missing
+  function lNextNeeded(){
+    var miss=missingList(isTurned);
+    return miss.length?miss[0]:null;
+  }
+  function lProgStart(){
+    var nd=lNextNeeded();
+    var P=lathe.prog;
+    if(!nd){ P.phase='wait'; P.wait=1; lathe.rpm=0; return; }
+    P.part=nd.ch.slice(2); P.fin=nd.fin; P.pass=0; P.z=LZ+6; P.dir=-1;
+    lLoad(P.fin);
+    lathe.rpm=900; P.phase='rough';
+  }
+  function lProgStep(dt){
+    var P=lathe.prog;
+    if(P.phase==='wait'){ P.wait-=dt; if(P.wait<=0) lProgStart(); return; }
+    if(P.phase==='idle'){ lProgStart(); return; }
+    var len=lpart(P.part).len*LZ;
+    var speed=30*(1+0.2*G.bits)*(1+0.25*G.soft)/fin(P.fin).hard;
+    var budget=dt*speed;
+    while(budget>0&&P.phase!=='eject'){
+      var stepz=Math.min(budget,1.5); budget-=stepz;
+      if(P.phase==='rough'){
+        var level=LR-6*(P.pass+1);
+        P.z-=stepz;
+        var t=ltarget(P.part,LZ-P.z);
+        var want=Math.max(level,(t<0?LR:t)+1.2);
+        lathe.z=P.z; lathe.x=want; lCut(P.z,want);
+        if(P.z<LZ-len-2){
+          P.pass++; P.z=LZ+6;
+          if(LR-6*(P.pass+1)<0) { P.phase='finish'; P.z=LZ+6; }
+        }
+      } else if(P.phase==='finish'){
+        P.z-=stepz*0.6;
+        var t2=ltarget(P.part,LZ-P.z);
+        var want2=t2<0?LR+8:t2;
+        lathe.z=P.z; lathe.x=want2; lCut(P.z,want2);
+        if(P.z<LZ-len-2){ P.phase=lpart(P.part).thread?'thread':'partoff'; P.z=LZ+6; }
+      } else if(P.phase==='thread'){
+        P.z-=stepz*0.8;
+        lathe.z=P.z; lathe.x=LR+8;
+        if(P.z<LZ-len*0.75) P.phase='partoff';
+      } else if(P.phase==='partoff'){
+        lathe.z=LZ-len; lathe.x=Math.max(0,lathe.x-stepz*2);
+        if(lathe.x>LR) lathe.x=LR;
+        lCut(LZ-len,lathe.x);
+        if(lathe.x<=0){ P.phase='eject'; P.eject=0; }
+      }
+    }
+    if(P.phase==='eject'){
+      if(P.eject===0) lFinish(P.part,P.fin,true);
+      P.eject+=dt;
+      lathe.x=LR+8; lathe.z=LZ+10;
+      if(P.eject>0.8){ P.phase='idle'; }
+    }
+  }
+  // a finished turned part goes to the bins when the program made it, the tray when cut by hand
+  function lFinish(id,f,toBins){
+    G.made=(G.made||0)+1;
+    var tok='L:'+id;
+    lathe.shelf.push({id:id,fin:f}); if(lathe.shelf.length>6) lathe.shelf.shift();
+    if(toBins&&invGet(tok,f)<CAP){
+      invAdd(tok,f,1); binsDirty=true; ordersDirty=true; writeSave();
+      toast(lpart(id).name+' in '+fin(f).name+' went to the bins');
+    } else addToTray(tok,lIcon(id,f),f);
+    lathe.loaded=false;
+  }
+  function lRun(on){
+    var P=lathe.prog;
+    if(on===undefined) on=!P.on;
+    P.on=on;
+    if(on){ P.phase='idle'; toast('lathe program running, turned parts go straight to the bins'); }
+    else { P.phase='idle'; lathe.rpm=0; document.getElementById('lRpm').value=0; }
+    syncLatheBtns();
+  }
+  function syncLatheBtns(){
+    var b=document.getElementById('lProgBtn');
+    b.textContent=lathe.prog.on?'stop the lathe program':'run the lathe program';
+    b.style.background=lathe.prog.on?'var(--rust)':'var(--blue)';
+  }
+  // compare a hand cut piece against the catalog
+  function lIdentify(cutAt){
+    var pieceLen=LZ-cutAt, best='', bestErr=1e9;
+    Object.keys(LPARTS).forEach(function(id){
+      var len=LPARTS[id].len*LZ;
+      if(Math.abs(pieceLen-len)>len*0.12+3) return;
+      var err=0, n=0;
+      for(var d=0;d<=pieceLen;d+=2){
+        var t=ltarget(id,Math.min(len,d*len/pieceLen));
+        err+=Math.abs(lathe.r[Math.round(LZ-d)]-t); n++;
+      }
+      err/=Math.max(1,n);
+      if(err<bestErr){ bestErr=err; best=id; }
+    });
+    return bestErr<3.2?best:'';
+  }
+  var LICON={};
+  function lIcon(id,f){
+    var key=id+'|'+f;
+    if(LICON[key]) return LICON[key];
+    var c=document.createElement('canvas'); c.width=B.nx; c.height=B.ny;
+    var x=c.getContext('2d'), im=x.createImageData(B.nx,B.ny), d=im.data;
+    var len=LPARTS[id].len*LZ, sc=Math.min((B.nx-8)/len,(B.ny-8)/(2*LR));
+    var cx=B.nx/2, cy=B.ny/2;
+    for(var py=0;py<B.ny;py++) for(var px=0;px<B.nx;px++){
+      var dz=(px-cx)/sc+len/2, o=(py*B.nx+px)*4;
+      if(dz<0||dz>len){ d[o+3]=0; continue; }
+      var r=ltarget(id,dz), dy=Math.abs(py-cy)/sc;
+      if(dy<=r) finPx(d,o,f,px,py,0.75+0.35*(1-dy/Math.max(1,r)),255); else d[o+3]=0;
+    }
+    x.putImageData(im,0,0);
+    LICON[key]=c;
+    return c;
+  }
+  var LICONURL={};
+  function lIconURL(id,f){ var k=id+'|'+f; if(!LICONURL[k]) LICONURL[k]=lIcon(id,f).toDataURL(); return LICONURL[k]; }
+
+  function drawLathe(){
+    var W=lcv.width, H=lcv.height;
+    lx.clearRect(0,0,W,H);
+    lx.fillStyle='#F0EDE4'; lx.fillRect(0,0,W,H);
+    // bed and ways
+    lx.fillStyle='#57694B'; lx.fillRect(30,H-120,W-60,40);
+    lx.fillStyle='#3E4C37'; lx.fillRect(30,H-120,W-60,8);
+    lx.fillStyle='#65675F'; lx.fillRect(50,H-80,40,60); lx.fillRect(W-90,H-80,40,60);
+    // headstock and chuck
+    lx.fillStyle='#57694B'; lx.fillRect(30,LY-90,LX0-50,H-120-(LY-90));
+    lx.fillStyle='#3E4C37'; lx.fillRect(30,LY-90,LX0-50,14);
+    lx.fillStyle='#65675F'; lx.fillRect(LX0-24,LY-LR*LSC*0.62-14,24,LR*LSC*1.24+28);
+    var jaw=(lathe.spin%120)/120;
+    lx.fillStyle='#2B2924';
+    [0,1].forEach(function(k){ var yy=LY+(k?1:-1)*(LR*LSC*0.55+4)*Math.cos((jaw+k*0.5)*Math.PI*2); lx.fillRect(LX0-30,yy-6,30,12); });
+    // tailstock
+    lx.fillStyle='#57694B'; lx.fillRect(W-120,LY-40,90,H-120-(LY-40));
+    lx.fillStyle='#9A9C97'; lx.fillRect(LX0+LZ*LSC,LY-8,W-120-(LX0+LZ*LSC),16);
+    // bar profile, mirrored about the spindle axis
+    if(lathe.loaded){
+      var im=lx.createImageData(Math.ceil(LZ*LSC),Math.ceil(2*LR*LSC)+2), d=im.data, iw=im.width, ih=im.height;
+      for(var px=0;px<iw;px++){
+        var zi=Math.min(LZ,Math.floor(px/LSC)), r=lathe.r[zi]*LSC;
+        for(var py=0;py<ih;py++){
+          var dy=Math.abs(py-ih/2), o=(py*iw+px)*4;
+          if(dy<=r){
+            var band=Math.cos((dy/Math.max(1,r))*Math.PI/2);
+            finPx(d,o,lathe.fin,px,Math.floor(py+lathe.spin*0.2),0.55+0.55*band,255);
+          } else d[o+3]=0;
+        }
+      }
+      lx.putImageData(im,LX0,LY-ih/2);
+      if(lathe.prog.on&&lathe.prog.part&&lpart(lathe.prog.part).thread&&(lathe.prog.phase==='partoff'||lathe.prog.phase==='eject'||lathe.prog.phase==='thread')){
+        lx.strokeStyle='rgba(43,41,36,.55)'; lx.lineWidth=1;
+        var len=lpart(lathe.prog.part).len*LZ;
+        for(var tz=LZ-len*0.75;tz<LZ;tz+=3){ var xx=LX0+tz*LSC, rr=lathe.r[Math.round(tz)]*LSC; lx.beginPath(); lx.moveTo(xx,LY-rr); lx.lineTo(xx+3*LSC,LY+rr); lx.stroke(); }
+      }
+    } else {
+      lx.fillStyle='#65675F'; lx.font='15px Trebuchet MS';
+      lx.fillText('no bar in the chuck, load one below',LX0+40,LY+4);
+    }
+    // carriage, cross slide and tool
+    var tx=LX0+lathe.z*LSC, ty=LY+lathe.x*LSC;
+    lx.fillStyle='#65675F'; lx.fillRect(tx-40,H-150,80,30);
+    lx.fillStyle='#9A9C97'; lx.fillRect(tx-16,ty+10,32,H-150-(ty+10));
+    lx.fillStyle=lathe.cutLevel>0.2?'#A84A2A':'#2B2924';
+    lx.beginPath(); lx.moveTo(tx,ty); lx.lineTo(tx-8,ty+14); lx.lineTo(tx+8,ty+14); lx.closePath(); lx.fill();
+    // axis line
+    lx.strokeStyle='rgba(46,74,99,.5)'; lx.setLineDash([6,6]); lx.beginPath(); lx.moveTo(LX0-30,LY); lx.lineTo(W-120,LY); lx.stroke(); lx.setLineDash([]);
+    // finished parts shelf
+    lx.fillStyle='#D3CEC0'; lx.fillRect(20,H-70,W-40,58);
+    lx.fillStyle='#65675F'; lx.font='12px Trebuchet MS'; lx.fillText('finished turned parts',30,H-54);
+    lathe.shelf.forEach(function(sp,i){ lx.drawImage(lIcon(sp.id,sp.fin),30+i*70,H-48,60,32); });
+  }
+
+  function lTick(dt){
+    if(!G.lathe) return;
+    if(lathe.prog.on) lProgStep(dt);
+    if(lathe.rpm>0){
+      lathe.spin=(lathe.spin+lathe.rpm*0.05)%360;
+      if(!lathe.prog.on) lCut(lathe.z,lathe.x);
+    }
+    lathe.cutLevel=Math.max(0,lathe.cutLevel-dt*2.5);
+    if(view==='lathe') drawLathe();
+  }
+
+  function lStatus(){
+    var el=document.getElementById('lStatus'), P=lathe.prog;
+    if(P.on){
+      if(P.phase==='wait') el.textContent='lathe program running, every open order has its turned parts, waiting for new work';
+      else if(P.part) el.textContent='lathe program, turning a '+lpart(P.part).name+' in '+fin(P.fin).name+', '+({rough:'roughing',finish:'finish pass',thread:'cutting the thread',partoff:'parting off',eject:'part done'}[P.phase]||'loading');
+      el.className='status cutting'; return;
+    }
+    el.className='status';
+    if(!lathe.loaded){ el.textContent='load a bar, then cut by hand or run the lathe program'; return; }
+    el.textContent=lathe.rpm>0?(lathe.cutLevel>0.2?'cutting at '+lathe.rpm+' rpm':'spindle turning at '+lathe.rpm+' rpm'):'spindle stopped';
+  }
+
+  document.getElementById('lProgBtn').addEventListener('click',function(){ lRun(); });
+  document.getElementById('lLoadBtn').addEventListener('click',function(){
+    if(lathe.prog.on){ toast('stop the lathe program first',true); return; }
+    lLoad(G.curFin); toast('a '+fin(G.curFin).name+' bar is in the chuck');
+  });
+  document.getElementById('lPartBtn').addEventListener('click',function(){
+    if(lathe.prog.on){ toast('stop the lathe program first',true); return; }
+    if(!lathe.loaded){ toast('there is no bar in the chuck',true); return; }
+    if(lathe.rpm>0){ toast('stop the spindle before you take the part',true); return; }
+    var id=lIdentify(Math.max(0,Math.min(LZ,Math.round(lathe.z))));
+    if(id){ lFinish(id,lathe.fin,false); toast('that is a '+lpart(id).name+', it went to the tray'); }
+    else { lathe.loaded=false; toast('that piece does not match any part on the catalog, it went in the scrap bin',true); }
+  });
+  [['lZ','z'],['lX','x']].forEach(function(p){
+    document.getElementById(p[0]).addEventListener('input',function(){
+      var v=Number(this.value);
+      if(lathe.prog.on){ this.value=lathe[p[1]]; return; }
+      lathe[p[1]]=v;
+    });
+  });
+  document.getElementById('lRpm').addEventListener('input',function(){
+    if(lathe.prog.on){ this.value=lathe.rpm; return; }
+    lathe.rpm=Number(this.value);
+  });
+
+  function syncLatheTab(){ document.getElementById('latheTab').style.display=G.lathe?'':'none'; }
+  function lSyncSliders(){
+    document.getElementById('lZ').value=lathe.z; document.getElementById('lX').value=lathe.x;
+    if(lathe.prog.on) document.getElementById('lRpm').value=lathe.rpm;
+  }
   // ---- hud and views ----
   var view='mill', hudT=0, saveT=5;
   function drawHud(){
@@ -2527,6 +2846,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     document.querySelectorAll('#tabs button').forEach(function(b){ b.classList.toggle('on',b.dataset.view===v); });
     ordersSig=''; shopSig=''; ordersDirty=true;
     if(v==='orders'){ buildBins(); renderTray(); renderOrders(); }
+    if(v==='lathe'){ drawLathe(); lStatus(); }
     if(v==='shop') renderShop();
     if(v==='floor'){ facSync(); renderSel(); facBoard(); }
     if(v==='mill') printDirty=true;
@@ -2686,7 +3006,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   done=(G.done||[]).slice();
   while(G.orders.length<maxOrders()) G.orders.push(newOrder());
   facSync();
-  buildTarget(); buildJobList(); syncFeed(); buildBins(); renderTray(); renderFinPick(); syncDemoBtns(); syncSoundBtn(); drawHud();
+  buildTarget(); buildJobList(); syncFeed(); buildBins(); renderTray(); renderFinPick(); syncDemoBtns(); syncSoundBtn(); syncLatheTab(); drawHud();
   writeSave();
   if(!G.seenHow) sheet('howSheet',true);
   requestAnimationFrame(frame);

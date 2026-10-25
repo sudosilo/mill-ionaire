@@ -208,15 +208,15 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
     await tab(page, 'shop'); await page.clock.runFor(300);
     const before = (await save(page)).cash;
-    await page.click('#upgList .upg:nth-child(1) button'); await page.clock.runFor(300);
+    await page.locator('#upgList .upg[data-k="mill"] button').click({ timeout: 2000 }); await page.clock.runFor(300);
     let g = await save(page);
     ok(g.mills === 1 && g.cash === before - 250, 'buying a floor mill costs its price', 'cash ' + g.cash);
-    for (let i = 0; i < 20; i++) { await page.click('#upgList .upg:nth-child(1) button').catch(() => {}); await page.clock.runFor(100); }
+    for (let i = 0; i < 20; i++) { await page.locator('#upgList .upg[data-k="mill"] button').click({ timeout: 300 }).catch(() => {}); await page.clock.runFor(100); }
     g = await save(page);
     ok(g.mills <= 12, 'the floor stops at twelve mills', 'mills ' + g.mills);
     ok(g.cash >= 0, 'cash never goes negative', 'cash ' + g.cash);
-    await page.click('#upgList .upg:nth-child(3) button').catch(() => {});
-    await page.click('#upgList .upg:nth-child(2) button').catch(() => {});
+    await page.locator('#upgList .upg[data-k="fore"] button').click({ timeout: 2000 }).catch(() => {});
+    await page.locator('#upgList .upg[data-k="op"] button').click({ timeout: 2000 }).catch(() => {});
     await page.clock.runFor(300);
     const cards = await page.$$('#finList .fcard button:not([disabled])');
     for (const c of cards) { await c.click().catch(() => {}); await page.clock.runFor(100); }
@@ -317,9 +317,8 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
     let g = await save(page);
     ok(g.paidWages > 5 && g.paidPower > 1, 'a minute of running pays wages and the power bill', 'wages ' + g.paidWages.toFixed(1) + ' power ' + g.paidPower.toFixed(1));
-    for (const name of ['chip conveyor', 'better coolant', 'better cutters', 'better software']) {
-      const card = page.locator('#upgList .upg', { hasText: name });
-      await card.locator('button').click(); await page.clock.runFor(200);
+    for (const k of ['chip', 'lube', 'bits', 'soft']) {
+      await page.locator('#upgList .upg[data-k="' + k + '"] button').click(); await page.clock.runFor(200);
     }
     g = await save(page);
     ok(g.chipConv === true && g.lube === 1 && g.bits === 1 && g.soft === 1, 'chip conveyor, coolant, cutters and software can be bought');
@@ -344,7 +343,8 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 30000, mills: 4, ops: 2 });
     const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
     await tab(page, 'shop'); await page.clock.runFor(300);
-    const buy = async name => { await page.locator('#upgList .upg', { hasText: name }).locator('button').click(); await page.clock.runFor(200); };
+    const K = { 'number dies': 'dies', 'emoji dies': 'dies', 'stamping press': 'stamper', 'powder coat booth': 'booth', 'LED wiring bench': 'ledbench' };
+    const buy = async name => { await page.locator('#upgList .upg[data-k="' + K[name] + '"] button').click(); await page.clock.runFor(200); };
     await buy('number dies'); await buy('emoji dies'); await buy('stamping press'); await buy('powder coat booth'); await buy('LED wiring bench');
     let g = await save(page);
     ok(g.dies === 2 && g.stamper && g.booth && g.ledbench, 'number dies, emoji dies and every finishing station can be bought');
@@ -379,6 +379,41 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     g = await save(page);
     ok(g.line.length === 0 && g.cash > 0, 'the order pays when it comes off the line', 'cash ' + g.cash);
     ok(errors.length === 0, 'no script errors on the finishing line', errors.join(' | '));
+    await ctx.close();
+  }
+
+  // ---- the engine lathe ----
+  {
+    const orders = [{ id: 1, word: '', parts: ['L:flange', 'L:flange'], fin: 'alu', who: 'a sign shop', kind: 'turned' },
+      { id: 2, word: 'OAK', parts: ['L:standoff', 'L:standoff', 'L:standoff'], fin: 'alu', who: 'a sign shop', kind: 'mounted' }];
+    const seed = JSON.stringify({ cash: 3000, seenHow: true, guideDone: true, mills: 2, ops: 2, orders });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    ok(!(await page.isVisible('#latheTab')), 'the lathe tab stays hidden until the lathe is bought');
+    await tab(page, 'shop'); await page.clock.runFor(300);
+    const c0 = (await save(page)).cash;
+    await page.locator('#upgList .upg[data-k="lathe"] button').click(); await page.clock.runFor(300);
+    let g = await save(page);
+    ok(g.lathe === true && Math.abs((c0 - g.cash) - Math.round(250 * Math.pow(1.7, 2) / 2)) < 2, 'the lathe costs half the price of the next mill', (c0 - g.cash) + '');
+    ok(await page.isVisible('#latheTab'), 'buying the lathe opens the lathe tab');
+    await page.click('#latheTab'); await page.click('#lProgBtn');
+    let t = 0;
+    while (t < 400) { await page.clock.runFor(10000); t += 10; await page.evaluate(() => window.dispatchEvent(new Event('pagehide'))); g = await save(page); if ((g.inv['L:flange|alu'] || 0) >= 2 && (g.inv['L:standoff|alu'] || 0) >= 3) break; }
+    ok((g.inv['L:flange|alu'] || 0) >= 2 && (g.inv['L:standoff|alu'] || 0) >= 3, 'the lathe program turns the flanges and standoffs the orders need', JSON.stringify(g.inv) + ' after ' + t + ' game seconds');
+    await tab(page, 'orders'); await page.clock.runFor(300);
+    ok(await page.$$eval('#lbins .bin', n => n.length) === 8, 'turned parts get their own bins');
+    const ship = page.locator('#orderList .ocard[data-id="1"] .ship');
+    await ship.click(); await page.clock.runFor(300);
+    g = await save(page);
+    ok(g.orders.every(o => o.id !== 1), 'a batch of turned parts ships');
+    await page.click('#latheTab'); await page.click('#lProgBtn'); await page.clock.runFor(500);
+    await page.click('#lLoadBtn');
+    await page.$eval('#lRpm', e => { e.value = 900; e.dispatchEvent(new Event('input')); });
+    await page.$eval('#lX', e => { e.value = 14; e.dispatchEvent(new Event('input')); });
+    for (let z = 200; z >= 120; z -= 2) { await page.$eval('#lZ', (e, v) => { e.value = v; e.dispatchEvent(new Event('input')); }, z); await page.clock.runFor(30); }
+    await page.$eval('#lRpm', e => { e.value = 0; e.dispatchEvent(new Event('input')); });
+    await page.click('#lPartBtn'); await page.clock.runFor(300);
+    ok(errors.length === 0, 'no script errors running the lathe by program and by hand', errors.join(' | '));
+    if (SHOTS) { await (await page.$('#view-lathe')).screenshot({ path: SHOTS + '/lathe.png' }); }
     await ctx.close();
   }
 
@@ -473,8 +508,8 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     const seed = JSON.stringify({ cash: 20000, seenHow: true });
     const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
     await tab(page, 'shop'); await page.clock.runFor(200);
-    for (let i = 0; i < 4; i++) { await page.click('#upgList .upg:nth-child(1) button').catch(() => {}); await page.clock.runFor(100); }
-    await page.click('#upgList .upg:nth-child(3) button').catch(() => {});
+    for (let i = 0; i < 4; i++) { await page.locator('#upgList .upg[data-k="mill"] button').click({ timeout: 2000 }).catch(() => {}); await page.clock.runFor(100); }
+    await page.locator('#upgList .upg[data-k="fore"] button').click({ timeout: 2000 }).catch(() => {});
     await tab(page, 'orders');
     const t0 = Date.now();
     let shipped = 0;
