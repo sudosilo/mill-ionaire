@@ -264,6 +264,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <p>Words get longer as your shop grows, and longer words pay more for every letter. Once you run several mills the spelling bee sends in long words at a premium, and now and then a collector wants a whole matching set, which pays double. Number dies and emoji dies in the shop unlock house numbers and emoji, and emoji are the best paying parts there are.</p>
     <p>The engine lathe in the shop costs half the price of your next mill. It turns round parts: sign standoffs, threaded studs, sign posts, bushings, flanges, lazy susan plates, knobs and fixture pins. Once you own it, customers order batches of turned parts, words mounted on standoffs and signs on posts. Run the lathe program on the lathe tab and it turns whatever the orders need, and when nothing is on order it makes the part you picked to stock. Standoffs and studs come first, and every turned part you make counts toward unlocking the next part on the catalog.</p>
     <p>The press brake in the shop takes a floor bay and folds sheet into brackets, channel and sign box frames, and later giant chips, tacos, donuts and the muffler man. With the brake running, customers order big storefront signs that need letters, a box frame, brackets, standoffs from the lathe and sometimes a giant shape on top, and those pay the most of anything.</p>
+    <p>The five axis CNC is the expensive shortcut. A CNC takes a floor bay and cuts letters, numbers, emoji and turned parts, all in one machine. It runs faster than a knee mill with no chip stops, half the tool wear and a smaller power bill, on stock that costs a little more per part. You can also make your own mill a five axis CNC, which still runs free when the cash is gone, and swap the lathe for a CNC in the same bay.</p>
     <p>Raw stock costs money. Every mill blank and every lathe bar is bought in the finish you cut, and harder finishes cost more. The shop shows each finish's blank and bar price. If the cash runs out, your own mill keeps running on scrap rack stock and free power, so a shop left running over lunch keeps working while the floor waits for the bills to be paid.</p>
     <p>The stamping press, the powder coat booth and the LED wiring bench open orders that need a finishing step. Those orders go down the finishing line on the orders tab after you ship them, and the customer pays more when they come off.</p>
     <p>Spend your cash in the shop. New finishes pay more per letter but are harder metal, so they cut slower. Floor mills run on their own on the floor tab, and operators keep them going when a light turns amber.</p>
@@ -310,7 +311,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <button class="wide" id="stowBtn2">stow every loose part into the bins</button>
     <p class="binlab">letters, numbers and emoji, tap a bin to see every finish in it</p>
     <div class="bins" id="bins"></div>
-    <p class="binlab" id="lbinsLab" style="display:none">turned parts from the lathe</p>
+    <p class="binlab" id="lbinsLab" style="display:none">turned parts</p>
     <div class="bins" id="lbins" style="display:none"></div>
     <p class="binlab" id="bbinsLab" style="display:none">formed parts from the press brake</p>
     <div class="bins" id="bbins" style="display:none"></div>
@@ -366,7 +367,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 
   <div>
     <div class="panel">
-      <div class="panel-label">machine, cutaway at the saddle plane</div>
+      <div class="panel-label" id="millLabel">machine, cutaway at the saddle plane</div>
       <canvas id="machine" width="680" height="580"></canvas>
 
       <div class="dro">
@@ -613,6 +614,13 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     donut:{name:'giant donut',plural:'giant donuts',short:'donut',val:150,size:5,pts:(function(){ var a=[]; for(var i=0;i<=16;i++){ var t=2*Math.PI*i/16-Math.PI/2; a.push([30*Math.cos(t),30*Math.sin(t)]); } return a; })()},
     mufflerman:{name:'muffler man',plural:'muffler men',short:'man',val:220,size:6,pts:[[0,0],[10,0],[10,22],[14,22],[14,0],[24,0],[24,40],[32,30],[36,33],[26,48],[22,48],[22,52],[26,52],[26,62],[-2,62],[-2,52],[2,52],[2,48],[-2,48],[-12,33],[-8,30],[0,40],[0,3]]}
   };
+  // five axis CNC machines cut everything a mill cuts plus the turned parts, but not formed sheet parts
+  function cncCount(){ return G.floor.filter(function(c){ return c&&c.kind==='cnc'; }).length; }
+  function canTurn(){ return G.lathe||G.homeCnc||cncCount()>0; }
+  function cncWants(t){ return !isFormed(t); }
+  function tokShort(t){ return isPart(t)?partInfo(t).short:t; }
+  function tokName(t){ return isPart(t)?partInfo(t).name:t; }
+  var CNCSTOCK=1.2, CNCPOWER=0.6, CNCSPEED=1.3, CNCWEAR=0.5, CNCCOST=15000;
   function isFormed(t){ return typeof t==='string'&&t.indexOf('B:')===0; }
   function isPart(t){ return isTurned(t)||isFormed(t); }
   function partInfo(t){ return isTurned(t)?LPARTS[t.slice(2)]:BPARTS[t.slice(2)]; }
@@ -701,7 +709,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var SAVEKEY='mill-ionaire-v2-save';
   function freshSave(){
     return {cash:40,played:0,owned:['alu'],curFin:'alu',inv:{},orders:[],mills:0,ops:1,foreman:false,
-            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[],lathe:false,stockPart:'standoff',turned:0,paidStock:0,brake:false,brakePart:'angle',formed:0};
+            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[],lathe:false,stockPart:'standoff',turned:0,paidStock:0,brake:false,brakePart:'angle',formed:0,homeCnc:false};
   }
   var G=freshSave();
   // reads the save and throws away anything that is the wrong shape, so a damaged save never breaks the game
@@ -720,7 +728,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     function int(n,a,b){ n=Math.floor(Number(n)||0); return n<a?a:(n>b?b:n); }
     G.cash=Math.max(0,G.cash); G.played=Math.max(0,G.played); G.earned=Math.max(0,G.earned);
     G.mills=int(G.mills,0,12-(G.lathe===true?1:0)-(G.brake===true?1:0)); G.ops=int(G.ops,1,6); G.head=int(G.head,0,3); G.chipConv=G.chipConv===true; G.lube=int(G.lube,0,2); G.bits=int(G.bits,0,2); G.soft=int(G.soft,0,2); G.broke=G.broke===true; G.dies=int(G.dies,0,2); G.stamper=G.stamper===true; G.booth=G.booth===true; G.ledbench=G.ledbench===true; G.lathe=G.lathe===true; G.passCd=Math.max(0,Math.min(20,G.passCd));
-    G.made=Math.max(0,G.made); G.turned=Math.max(0,Math.floor(Number(G.turned)||0)); G.formed=Math.max(0,Math.floor(Number(G.formed)||0)); G.brake=G.brake===true; if(!BPARTS[G.brakePart]) G.brakePart='angle'; G.paidStock=Math.max(0,Number(G.paidStock)||0); if(!LPARTS[G.stockPart]) G.stockPart='standoff'; G.shipped=Math.max(0,G.shipped); G.foreman=G.foreman===true; G.sound=G.sound!==false; G.vol=Math.max(0,Math.min(1,G.vol));
+    G.made=Math.max(0,G.made); G.turned=Math.max(0,Math.floor(Number(G.turned)||0)); G.formed=Math.max(0,Math.floor(Number(G.formed)||0)); G.brake=G.brake===true; G.homeCnc=G.homeCnc===true; if(!BPARTS[G.brakePart]) G.brakePart='angle'; G.paidStock=Math.max(0,Number(G.paidStock)||0); if(!LPARTS[G.stockPart]) G.stockPart='standoff'; G.shipped=Math.max(0,G.shipped); G.foreman=G.foreman===true; G.sound=G.sound!==false; G.vol=Math.max(0,Math.min(1,G.vol));
     var own=['alu'];
     G.owned.forEach(function(id){ if(typeof id==='string'&&FINBY[id]&&own.indexOf(id)<0) own.push(id); });
     own.sort(function(a,b){ return FIN.indexOf(FINBY[a])-FIN.indexOf(FINBY[b]); });
@@ -748,7 +756,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     });
     G.nextId=Math.max(int(G.nextId,1,1e9),maxId+1);
     G.floor=G.floor.filter(function(c){ return c&&typeof c.ch==='string'&&ALLCH.indexOf(c.ch)>=0&&FINBY[c.fin]; })
-      .slice(0,12).map(function(c){ return {ch:c.ch,fin:own.indexOf(c.fin)>=0?c.fin:'alu',auto:c.auto!==false,stopped:c.stopped===true}; });
+      .slice(0,12).map(function(c){ return {ch:c.ch,fin:own.indexOf(c.fin)>=0?c.fin:'alu',auto:c.auto!==false,stopped:c.stopped===true,kind:c.kind==='cnc'?'cnc':'mill'}; });
     G.done=G.done.filter(function(j){ return typeof j==='number'&&j>=0&&j<JOBS.length; });
     G.tray=G.tray.filter(function(t){ return t&&typeof t.ch==='string'&&(t.ch===''||ALLCH.indexOf(t.ch)>=0)&&FINBY[t.fin]; }).slice(-24);
   }
@@ -771,8 +779,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function stockCost(f,kind){ return Math.max(1,Math.round((kind==='bar'?3:(kind==='sheet'?4:2.5))*fin(f).pay)); }
   var warnedStock=0;
   var warnedFree=0;
-  function payStock(f,kind,own){
-    var c=stockCost(f,kind);
+  function payStock(f,kind,own,mult){
+    var c=Math.max(1,Math.round(stockCost(f,kind)*(mult||1)));
     if(G.cash>=c){ G.cash-=c; G.paidStock+=c; writeSave(); return true; }
     // your own mill never stops: when the cash is gone it cuts on scrap rack stock and free power, so a shop left running keeps working
     if(own){ if(Date.now()-warnedFree>30000){ warnedFree=Date.now(); toast('out of cash, your mill keeps running on scrap rack stock and free power'); } return true; }
@@ -789,6 +797,12 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var MASKC={};
   function demoMask(ch){
     if(MASKC[ch]) return MASKC[ch];
+    if(isTurned(ch)){
+      // a turned part on a five axis machine: cut its silhouette
+      var ic=lIcon(ch.slice(2),'alu'), id2=ic.getContext('2d').getImageData(0,0,B.nx,B.ny).data, mm=new Uint8Array(B.nx*B.ny);
+      for(var q=0;q<mm.length;q++) mm[q]=id2[q*4+3]>110?1:0;
+      MASKC[ch]=mm; return mm;
+    }
     var c=document.createElement('canvas'); c.width=B.nx; c.height=B.ny;
     var x=c.getContext('2d');
     x.clearRect(0,0,B.nx,B.ny);
@@ -820,11 +834,11 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 
   function demoLoad(){
     if(demo.mode==='orders'){
-      var nd=nextNeeded(-1);
+      var nd=nextNeeded(-1,G.homeCnc?cncWants:null);
       if(!nd){ demo.phase='wait'; demo.wait=1; s.rpm=0; return; }
       demo.ch=nd.ch; demo.fin=nd.fin;
     } else { demo.ch=ALPHA[demo.letter%26]; demo.fin=G.curFin; }
-    if(!payStock(demo.fin,'blank',true)){ demo.phase='wait'; demo.wait=3; s.rpm=0; return; }
+    if(!payStock(demo.fin,isTurned(demo.ch)?'bar':'blank',true,G.homeCnc?CNCSTOCK:1)){ demo.phase='wait'; demo.wait=3; s.rpm=0; return; }
     makePart('square',demo.fin);
     part.placed=true; part.offset=119; part.fall=0;
     demo.mask=demoMask(demo.ch);
@@ -891,7 +905,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       var T=TOOLS[tool];
       var stepover=(demo.stage==='rough')?12:4;
       var margin=T.r+2;
-      var budget=dt*16*(1+0.35*G.head)*(1+0.2*G.bits)*(1+0.25*G.soft)/fin(part.fin).hard;
+      var budget=dt*16*(G.homeCnc?1.5:1)*(1+0.35*G.head)*(1+0.2*G.bits)*(1+0.25*G.soft)/fin(part.fin).hard;
       while(budget>0){
         var cutting=materialUnder(demo.i,demo.j,T.r+1);
         var rate=cutting?((demo.stage==='rough')?26:38):260;
@@ -941,8 +955,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(demo.shelf.length>9) demo.shelf.shift();
     G.made=(G.made||0)+1;
     if(demo.mode==='orders'&&invGet(demo.ch,demo.fin)<CAP){
-      invAdd(demo.ch,demo.fin,1); binsDirty=true; ordersDirty=true; writeSave();
-      toast(demo.ch+' in '+fin(demo.fin).name+' went to the bins');
+      invAdd(demo.ch,demo.fin,1); binsDirty=true; ordersDirty=true;
+      if(isTurned(demo.ch)) countTurned();
+      writeSave();
+      toast(tokName(demo.ch)+' in '+fin(demo.fin).name+' went to the bins');
     } else addToTray(demo.ch,c,demo.fin);
   }
 
@@ -982,7 +998,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var el=document.getElementById('bins');
     el.innerHTML='';
     var cs=charset();
-    [['lbins','lbinsLab',G.lathe,LPARTS,'L:'],['bbins','bbinsLab',G.brake,BPARTS,'B:']].forEach(function(r){
+    [['lbins','lbinsLab',canTurn(),LPARTS,'L:'],['bbins','bbinsLab',G.brake,BPARTS,'B:']].forEach(function(r){
       var box=document.getElementById(r[0]);
       box.innerHTML=''; box.style.display=r[2]?'grid':'none';
       document.getElementById(r[1]).style.display=r[2]?'block':'none';
@@ -1755,7 +1771,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     statusEl.className='status';
     if(demo.on&&demo.mode==='orders'){
       if(demo.phase==='wait') statusEl.textContent='order program running, every open order is covered, waiting for new work';
-      else statusEl.textContent='order program, cutting '+demo.ch+' in '+fin(demo.fin).name+', '+demo.stage+' pass '+demo.pass+
+      else statusEl.textContent=(G.homeCnc?'five axis program, cutting ':'order program, cutting ')+tokName(demo.ch)+' in '+fin(demo.fin).name+', '+demo.stage+' pass '+demo.pass+
         (demo.phase==='eject'?', part going to the bins':'');
       statusEl.className='status cutting'; return;
     }
@@ -1881,14 +1897,14 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     while(G.floor.length<G.mills) G.floor.push({ch:ALPHA[G.floor.length%26],fin:'alu',auto:true});
     while(fac.m.length<G.mills){
       var c=G.floor[fac.m.length];
-      fac.m.push({ch:c.ch,fin:c.fin,auto:c.auto!==false,stopped:c.stopped===true,prog:0,wear:0,stock:5,need:'',sweep:0,dir:1,made:0,flash:0,idle:false});
+      fac.m.push({ch:c.ch,fin:c.fin,auto:c.auto!==false,stopped:c.stopped===true,cnc:c.kind==='cnc',prog:0,wear:0,stock:5,need:'',sweep:0,dir:1,made:0,flash:0,idle:false});
     }
     while(fac.ops.length<G.ops){
       var k=fac.ops.length;
       fac.ops.push({x:30+k*56,y:OPY(),tx:30+k*56,ty:OPY(),busy:-1,work:0});
     }
   }
-  function facStore(i){ var m=fac.m[i]; G.floor[i]={ch:m.ch,fin:m.fin,auto:m.auto,stopped:m.stopped}; writeSave(); }
+  function facStore(i){ var m=fac.m[i]; G.floor[i]={ch:m.ch,fin:m.fin,auto:m.auto,stopped:m.stopped,kind:m.cnc?'cnc':'mill'}; writeSave(); }
 
   // every letter the open orders still need, one entry per missing letter
   function missingList(want){
@@ -1916,8 +1932,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     return p;
   }
   // what to cut next, skipping letters some other machine is already on
-  function nextNeeded(who){
-    var miss=missingList(), p=pendingKeys(who);
+  function nextNeeded(who,want){
+    var miss=missingList(want), p=pendingKeys(who);
     for(var i=0;i<miss.length;i++){
       var k=ikey(miss[i].ch,miss[i].fin);
       if(p[k]>0){ p[k]--; continue; }
@@ -1964,24 +1980,25 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       if(m.need||m.stopped) continue;
       if(m.prog<=0){
         if(m.auto){
-          var nd=nextNeeded(i);
+          var nd=nextNeeded(i,m.cnc?cncWants:null);
           if(!nd){ m.idle=true; continue; }
           m.ch=nd.ch; m.fin=nd.fin;
         }
-        if(!payStock(m.fin,'blank')){ m.idle=true; continue; }
+        if(!payStock(m.fin,isTurned(m.ch)?'bar':'blank',false,m.cnc?CNCSTOCK:1)){ m.idle=true; continue; }
         m.idle=false;
       }
       var hard=fin(m.fin).hard;
-      var rate=(1-0.35*m.wear)*(1+0.25*G.bits)*(1+0.1*G.soft)/(9*hard);      // a part takes about nine seconds fresh in aluminum
+      var rate=(1-0.35*m.wear)*(1+0.25*G.bits)*(1+0.1*G.soft)*(m.cnc?CNCSPEED:1)/(9*hard);      // a part takes about nine seconds fresh in aluminum
       m.prog+=dt*rate;
       m.sweep+=dt*m.dir*1.6;
       if(m.sweep>1){m.sweep=1;m.dir=-1;} if(m.sweep<0){m.sweep=0;m.dir=1;}
-      m.wear+=dt*0.016*hard*(1-0.3*G.lube)*(1-0.15*G.bits);
-      if(!G.chipConv&&Math.random()<dt*0.012){ m.need='chips'; m.flash=1; }
+      m.wear+=dt*0.016*hard*(1-0.3*G.lube)*(1-0.15*G.bits)*(m.cnc?CNCWEAR:1);
+      if(!G.chipConv&&!m.cnc&&Math.random()<dt*0.012){ m.need='chips'; m.flash=1; }
       if(m.wear>=1){ m.need='tool'; m.flash=1; }
       if(m.prog>=1){
         m.prog=0; m.made++; m.stock--; G.made=(G.made||0)+1;
         if(invGet(m.ch,m.fin)<CAP) invAdd(m.ch,m.fin,1);
+        if(isTurned(m.ch)) countTurned();
         binsDirty=true; ordersDirty=true;
         if(fac.rush&&!fac.rush.over) fac.rush.order.forEach(function(o){ if(o.ch===m.ch&&o.got<o.need) o.got++; });
         if(m.stock<=0){ m.need='stock'; m.flash=1; }
@@ -2045,13 +2062,20 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       fx.strokeRect(bx+bw*0.30,by+mc.h*0.075,bw*0.42*(1-o.prog*0.55),mc.h*0.055);
     }
     fx.fillStyle='#65675F'; fx.fillRect(bx+bw*0.10,by+mc.h*0.18,bw*0.9,mc.h*0.06);
+    if(o.cnc){
+      var ey0=by-mc.h*0.2, ey=Math.max(ey0,c.y+HH+2), ex=bx-4, ew=bw+8, eh=mc.h*0.48-(ey-ey0);
+      fx.fillStyle='rgba(154,156,151,.55)'; fx.fillRect(ex,ey,ew,eh);
+      fx.fillStyle='rgba(46,74,99,.35)'; fx.fillRect(ex+ew*0.25,ey+eh*0.18,ew*0.55,eh*0.5);
+      fx.strokeStyle='#2B2924'; fx.lineWidth=2; fx.strokeRect(ex,ey,ew,eh); fx.strokeRect(ex+ew*0.25,ey+eh*0.18,ew*0.55,eh*0.5);
+      fx.fillStyle='#2E4A63'; fx.fillRect(ex+ew*0.86,ey+eh*0.2,ew*0.08,eh*0.3);
+    }
 
     fx.fillStyle=o.need?( (Math.floor(Date.now()/300)%2)?'#A84A2A':'#E0912B' ):(o.busy?'#57694B':'#9A9C97');
     fx.beginPath(); fx.arc(c.x+c.w-12-7*FS,c.y+8+7*FS,7*FS,0,Math.PI*2); fx.fill();
     fx.strokeStyle='#2B2924'; fx.lineWidth=1.5; fx.stroke();
 
     fx.fillStyle='#2B2924'; fx.font='bold '+Math.round(22*FS)+'px Trebuchet MS';
-    fx.fillText(o.busy?o.ch:'-',c.x+12,c.y+28*FS);
+    fx.fillText(o.busy?tokShort(o.ch):'-',c.x+12,c.y+28*FS);
     var sq=16*FS;
     fx.fillStyle=finCSS(o.fin); fx.fillRect(c.x+18+20*FS,c.y+11*FS,sq,sq);
     fx.strokeStyle='#2B2924'; fx.lineWidth=1.5; fx.strokeRect(c.x+18+20*FS,c.y+11*FS,sq,sq);
@@ -2125,19 +2149,20 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var pr=on?Math.min(1,((demo.pass-1)+(demo.stage==='finish'?0.5:0)+Math.max(0,Math.min(1,demo.j/part.ny))*0.5)/Math.ceil(B.nz/12)):0;
     drawBay(cells[0],{mine:true,busy:on,ch:demo.ch,fin:on?demo.fin:G.curFin,prog:demo.phase==='eject'?1:pr,
       sweep:on?Math.max(0,Math.min(1,demo.i/part.nx)):0.5,need:machine.xDead||machine.yDead,
-      tag:'your mill',tagBlue:true,
+      tag:G.homeCnc?'your CNC':'your mill',tagBlue:true,cnc:G.homeCnc,
       line:(machine.xDead||machine.yDead)?'wrecked, call the millwright':(on?'mill 1, '+(demo.mode==='orders'?'order program':'alphabet run'):'mill 1, tap to run it')});
     if(G.lathe) drawLatheBay(cells[1]);
     if(G.brake) drawBrakeBay(cells[brakeBay()]);
     var L0=lead();
     for(i=0;i<fac.m.length;i++){
       var m=fac.m[i];
-      var line='mill '+(i+2)+', made '+m.made;
-      if(m.stopped) line='mill '+(i+2)+', stopped';
+      var nm=(m.cnc?'CNC ':'mill ')+(i+2);
+      var line=nm+', made '+m.made;
+      if(m.stopped) line=nm+', stopped';
       else if(m.need) line='needs '+(m.need==='tool'?'a tool change':(m.need==='stock'?'more stock':'chips cleared'));
       else if(m.idle) line='idle, nothing needed';
       drawBay(cells[i+L0],{sel:i===fac.sel,busy:!m.idle&&!m.stopped,ch:m.ch,fin:m.fin,prog:m.prog,sweep:m.sweep,need:!!m.need,
-        tag:m.auto?'auto':'manual',tagBlue:m.auto,line:line,wear:m.wear});
+        tag:(m.cnc?'CNC ':'')+(m.auto?'auto':'manual'),tagBlue:m.auto,line:line,wear:m.wear,cnc:m.cnc});
     }
     for(i=fac.m.length+L0;i<BAYS;i++) drawOpenBay(cells[i],i===fac.m.length+L0);
     for(i=0;i<fac.ops.length;i++){
@@ -2173,9 +2198,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(fac.sel<0||fac.sel>=fac.m.length){ box.style.display='none'; return; }
     var m=fac.m[fac.sel];
     box.style.display='block';
-    box.innerHTML='<div class="feed"><span>mill '+(fac.sel+2)+'</span>'+
+    box.innerHTML='<div class="feed"><span>'+(m.cnc?'CNC ':'mill ')+(fac.sel+2)+'</span>'+
       '<button class="switch'+(m.auto?' on':'')+'" id="selAuto" style="'+(m.auto?'background:var(--blue)':'')+'">'+(m.auto?'auto, cutting for orders':'manual, tap for auto')+'</button></div>'+
-      '<div class="feed"><span>part '+m.ch+'</span><button id="selPrev">&#8592;</button><button id="selNext">&#8594;</button></div>'+
+      '<div class="feed"><span>part '+tokShort(m.ch)+'</span><button id="selPrev">&#8592;</button><button id="selNext">&#8594;</button></div>'+
       '<div class="finrow" id="selFin"><span>finish</span></div>'+
       '<button class="wide" id="selStop" style="background:'+(m.stopped?'var(--blue)':'var(--rust)')+'">'+(m.stopped?'start this mill':'stop this mill')+'</button>'+
       '<button class="wide" id="selDone">done</button>';
@@ -2186,7 +2211,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       b.addEventListener('click',function(){ m.fin=id; m.auto=false; m.prog=0; facStore(fac.sel); renderSel(); });
       fr.appendChild(b);
     });
-    function shift(n){ var cs=charset(), at=Math.max(0,cs.indexOf(m.ch)); m.ch=cs[(at+n+cs.length)%cs.length]; m.auto=false; m.prog=0; m.idle=false; facStore(fac.sel); renderSel(); }
+    function shift(n){ var cs=charset().concat(m.cnc?unlockedParts().map(function(k){ return 'L:'+k; }):[]), at=Math.max(0,cs.indexOf(m.ch)); m.ch=cs[(at+n+cs.length)%cs.length]; m.auto=false; m.prog=0; m.idle=false; facStore(fac.sel); renderSel(); }
     box.querySelector('#selPrev').addEventListener('click',function(){ shift(-1); });
     box.querySelector('#selNext').addEventListener('click',function(){ shift(1); });
     box.querySelector('#selAuto').addEventListener('click',function(){ m.auto=!m.auto; m.prog=0; facStore(fac.sel); renderSel(); });
@@ -2295,7 +2320,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       var bee=WORDS.filter(function(w){ return w.length>=7&&w.length<=maxLen; });
       if(bee.length){ o.kind='spell'; o.word=pick(bee); o.who='the spelling bee'; }
     }
-    if(!o.word&&G.lathe&&Math.random()<0.4){
+    if(!o.word&&canTurn()&&Math.random()<0.4){
       var r2=Math.random(), short=WORDS.filter(function(w){ return w.length<=Math.min(maxLen,7); });
       if(r2<0.45){ o.kind='turned'; o.word=''; var pid=pick(unlockedParts()), pn=2+Math.floor(Math.random()*(1+mills)); o.parts=[]; for(var q=0;q<pn;q++) o.parts.push('L:'+pid); o.who=pick(['a machine builder','a furniture maker','a sign shop','a hardware store','a fixture shop']); }
       else if(r2<0.8){ o.kind='mounted'; o.word=pick(short); o.parts=[]; for(var q2=0;q2<o.word.length;q2++) o.parts.push('L:standoff'); }
@@ -2311,7 +2336,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
         var sh=pick(shops);
         o.kind='bigsign'; o.word=pick(shortB); o.who=sh[0]; o.parts=['B:boxframe'];
         for(var q5=0;q5<2+Math.floor(o.word.length/3);q5++) o.parts.push('B:bracket');
-        if(G.lathe) for(var q6=0;q6<o.word.length;q6++) o.parts.push('L:standoff');
+        if(canTurn()) for(var q6=0;q6<o.word.length;q6++) o.parts.push('L:standoff');
         if(sh[1]&&bUnlocked(sh[1])) o.parts.push('B:'+sh[1]);
       }
     }
@@ -2435,15 +2460,17 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var DIECOST=[2000,9000], HEADCOST=[800,2500,7000], CHIPCOST=2500, LUBECOST=[900,3200], BITCOST=[1500,5000], SOFTCOST=[1200,4500];
   // running costs: operators draw wages once the floor has a mill, and every running mill draws power
   var WAGE=3.75, FLOORPOWER=2, MILLPOWER=0.75, billT=0, warnedBroke=false;
-  function runningMills(){ var n=0; fac.m.forEach(function(m){ if(fac.running&&!m.idle&&!m.need&&!m.stopped) n++; }); return n; }
+  // power units drawn by the floor: a five axis CNC draws less than a knee mill
+  function floorPower(){ var n=0; fac.m.forEach(function(m){ if(fac.running&&!m.idle&&!m.need&&!m.stopped) n+=m.cnc?CNCPOWER:1; }); return n*FLOORPOWER; }
+  function myPower(){ return MILLPOWER*(G.homeCnc?CNCPOWER:1); }
   function costPerMin(){
     var wages=G.mills>0?G.ops*WAGE:0;
-    var power=(G.broke?0:runningMills()*FLOORPOWER)+(s.rpm>0&&!G.broke?MILLPOWER:0)+(lathe.rpm>0?MILLPOWER:0)+(brake.loaded?MILLPOWER:0);
+    var power=(G.broke?0:floorPower())+(s.rpm>0&&!G.broke?myPower():0)+(lathe.rpm>0?MILLPOWER:0)+(brake.loaded?MILLPOWER:0);
     return wages+power;
   }
   function payBills(dt){
     billT+=dt; if(billT<1) return; billT-=1;
-    var wages=(G.mills>0?G.ops*WAGE:0)/60, power=((G.broke?0:runningMills()*FLOORPOWER)+(s.rpm>0&&!G.broke?MILLPOWER:0)+(lathe.rpm>0?MILLPOWER:0)+(brake.loaded?MILLPOWER:0))/60;
+    var wages=(G.mills>0?G.ops*WAGE:0)/60, power=((G.broke?0:floorPower())+(s.rpm>0&&!G.broke?myPower():0)+(lathe.rpm>0?MILLPOWER:0)+(brake.loaded?MILLPOWER:0))/60;
     var bill=wages+power;
     if(bill<=0) return;
     if(G.cash>=bill){
@@ -2460,7 +2487,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var U=[
       {k:'mill',name:'floor mill',verb:'buy a mill',txt:G.mills>=maxMills()?'the floor is full, every bay has a machine':'a mill that runs on its own on the floor tab, you own '+G.mills+' and there is room for '+maxMills(),cost:G.mills>=maxMills()?0:millCost(),max:G.mills>=maxMills()},
       {k:'lathe',name:'engine lathe',verb:'buy the lathe',txt:G.lathe?'on the shop floor in the bay next to your mill, open it on the lathe tab':(G.mills>=maxMills()?'the floor is full, the lathe needs an open bay':'a second kind of machine that takes a floor bay and turns standoffs, sign posts, threaded studs, flanges and more, at half the price of your next mill'),cost:G.lathe?0:Math.round(millCost()/2),max:G.lathe||G.mills>=maxMills()},
+      {k:'lathecnc',name:'swap the lathe for a five axis CNC',verb:'swap it',txt:G.lathe?'takes the lathe off the floor and puts a five axis CNC in its bay, which turns the same parts and cuts letters too':'no lathe on the floor to swap',cost:G.lathe?CNCCOST:0,max:!G.lathe},
       {k:'brake',name:'press brake',verb:'buy the brake',txt:G.brake?'on the shop floor, open it on the brake tab':(G.mills>=maxMills()?'the floor is full, the brake needs an open bay':'takes a floor bay and folds sheet into brackets, channel, sign box frames and giant sign shapes for storefront signs'),cost:G.brake?0:Math.round(millCost()*0.6),max:G.brake||G.mills>=maxMills()},
+      {k:'cnc',name:'five axis CNC',verb:'buy a CNC',txt:G.mills>=maxMills()?'the floor is full, a CNC needs an open bay':'a small five axis machine for a floor bay that cuts letters, numbers, emoji and turned parts, faster than a knee mill, with no chip stops, half the tool wear and a smaller power bill, on stock that costs a little more per part',cost:G.mills>=maxMills()?0:CNCCOST,max:G.mills>=maxMills()},
+      {k:'homecnc',name:'make your mill a five axis CNC',verb:'upgrade',txt:G.homeCnc?'done, your own machine is a five axis CNC and still runs free when the cash is gone':'swaps your own mill for a five axis CNC: the order program runs faster, also cuts turned parts, draws less power, and keeps running free when the cash is gone',cost:G.homeCnc?0:CNCCOST,max:G.homeCnc},
       {k:'op',name:'hire an operator',verb:'hire',txt:G.ops>=6?'the crew is full, six operators':'a person, not a mill, who clears chips, changes tools and loads stock, you have '+G.ops+' of six',cost:G.ops>=6?0:opCost(),max:G.ops>=6},
       {k:'fore',name:'foreman',verb:'hire',txt:G.foreman?'on duty, operators go where they are needed without being told':'sends operators to stopped mills without you tapping',cost:G.foreman?0:3000,max:G.foreman},
       {k:'head',name:'high speed head',verb:'upgrade',txt:G.head>=3?'fully upgraded, the order program cuts at top speed':'makes the order program on your main mill cut faster, level '+G.head+' of three',cost:G.head>=3?0:HEADCOST[G.head],max:G.head>=3},
@@ -2474,7 +2504,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       {k:'soft',name:'better software',verb:'upgrade',txt:G.soft>=2?'nesting software, fastest programs and the most parts per stock load':'faster toolpaths and more parts out of every stock load, level '+G.soft+' of two',cost:G.soft>=2?0:SOFTCOST[G.soft],max:G.soft>=2}
     ];
     var cl=document.getElementById('costLine');
-    var costTxt='running costs '+money(costPerMin())+' a minute, wages '+money(G.mills>0?G.ops*WAGE:0)+' for '+G.ops+(G.ops===1?' operator':' operators')+(G.mills>0?'':' (unpaid until you own a floor mill)')+', power '+money(runningMills()*FLOORPOWER+(s.rpm>0&&!G.broke?MILLPOWER:0))+' for the machines running now, and '+money(G.paidStock)+' spent on blanks, bars and sheet so far';
+    var costTxt='running costs '+money(costPerMin())+' a minute, wages '+money(G.mills>0?G.ops*WAGE:0)+' for '+G.ops+(G.ops===1?' operator':' operators')+(G.mills>0?'':' (unpaid until you own a floor mill)')+', power '+money(floorPower()+(s.rpm>0&&!G.broke?myPower():0))+' for the machines running now, and '+money(G.paidStock)+' spent on blanks, bars and sheet so far';
     if(cl.textContent!==costTxt) cl.textContent=costTxt;
     cl.className='status'+(G.broke?' warn':'');
     // rebuild the buttons only when something you can buy changes, never just because cash ticked
@@ -2525,6 +2555,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(k==='chip'){ if(G.chipConv) return; c=CHIPCOST; if(G.cash<c) return; G.cash-=c; G.chipConv=true; toast('chip conveyors are running, no more chip stops'); }
     if(k==='lube'){ if(G.lube>=2) return; c=LUBECOST[G.lube]; if(G.cash<c) return; G.cash-=c; G.lube++; toast(G.lube===1?'flood coolant is on':'synthetic coolant is on'); }
     if(k==='bits'){ if(G.bits>=2) return; c=BITCOST[G.bits]; if(G.cash<c) return; G.cash-=c; G.bits++; toast(G.bits===1?'carbide cutters loaded':'coated carbide cutters loaded'); }
+    if(k==='cnc'){ if(G.mills>=maxMills()) return; c=CNCCOST; if(G.cash<c) return; G.cash-=c; G.floor.length=G.mills; G.floor.push({ch:'A',fin:'alu',auto:true,kind:'cnc'}); G.mills++; facSync(); binsDirty=true; toast('five axis CNC '+(G.mills+1)+' is on the floor'); }
+    if(k==='homecnc'){ if(G.homeCnc) return; c=CNCCOST; if(G.cash<c) return; G.cash-=c; G.homeCnc=true; binsDirty=true; syncDemoBtns(); toast('your own mill is now a five axis CNC'); }
+    if(k==='lathecnc'){ if(!G.lathe) return; c=CNCCOST; if(G.cash<c) return; G.cash-=c; lathe.prog.on=false; lathe.rpm=0; G.lathe=false; G.floor.length=G.mills; G.floor.push({ch:'A',fin:'alu',auto:true,kind:'cnc'}); G.mills++; facSync(); syncLatheTab(); binsDirty=true; if(view==='lathe') setView('floor'); toast('the lathe is gone and a five axis CNC took its bay'); }
     if(k==='brake'){ if(G.brake||G.mills>=maxMills()) return; c=Math.round(millCost()*0.6); if(G.cash<c) return; G.cash-=c; G.brake=true; syncBrakeTab(); binsDirty=true; toast('the press brake is on the floor, find it on the brake tab'); }
     if(k==='lathe'){ if(G.lathe||G.mills>=maxMills()) return; c=Math.round(millCost()/2); if(G.cash<c) return; G.cash-=c; G.lathe=true; syncLatheTab(); binsDirty=true; toast('the lathe is on the floor, find it on the lathe tab'); }
     if(k==='dies'){ if(G.dies>=2) return; c=DIECOST[G.dies]; if(G.cash<c) return; G.cash-=c; G.dies++; binsDirty=true; toast(G.dies===1?'number dies unlocked, house number orders are coming':'emoji dies unlocked, emoji orders pay big'); }
@@ -2845,15 +2878,18 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
   }
   // a finished turned part goes to the bins when the program made it, the tray when cut by hand
-  function lFinish(id,f,toBins){
-    G.made=(G.made||0)+1;
+  function countTurned(){
     var before=unlockedParts().length;
     G.turned=(G.turned||0)+1;
     if(unlockedParts().length>before){
       var fresh=unlockedParts()[unlockedParts().length-1];
-      setTimeout(function(){ toast('the lathe can now turn '+LPARTS[fresh].plural); },600);
+      setTimeout(function(){ toast('your shop can now turn '+LPARTS[fresh].plural); },600);
       lPickSig='';
     }
+  }
+  function lFinish(id,f,toBins){
+    G.made=(G.made||0)+1;
+    countTurned();
     var tok='L:'+id;
     lathe.shelf.push({id:id,fin:f}); if(lathe.shelf.length>6) lathe.shelf.shift();
     if(toBins&&invGet(tok,f)<CAP){
@@ -3304,6 +3340,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   });
 
   function syncDemoBtns(){
+    document.getElementById('millLabel').textContent=G.homeCnc?'your five axis CNC, cutaway at the saddle plane':'machine, cutaway at the saddle plane';
     var alpha=demo.on&&demo.mode==='alpha', ord=demo.on&&demo.mode==='orders';
     document.getElementById('demoBtn').textContent=alpha?'stop the alphabet run':'cut the whole alphabet';
     document.getElementById('demoBtn').classList.toggle('on',alpha);

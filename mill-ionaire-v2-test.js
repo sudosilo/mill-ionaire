@@ -280,7 +280,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
   // ---- emptying the bins asks first, and one floor mill can be stopped ----
   {
     const floor = [{ ch: 'E', fin: 'alu', auto: false }, { ch: 'T', fin: 'alu', auto: false }];
-    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 5000, mills: 2, ops: 2, floor, inv: { 'A|alu': 5 } });
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 5000, mills: 2, ops: 2, foreman: true, chipConv: true, floor, inv: { 'A|alu': 5 } });
     const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
     await tab(page, 'orders'); await page.clock.runFor(300);
     await page.click('#emptyBtn'); await page.clock.runFor(100);
@@ -538,6 +538,32 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     ok(g.made >= 2, 'with no cash your own mill still cuts brass letters for the orders', 'made ' + g.made);
     ok(g.cash >= 0, 'the broke shop never goes below zero', 'cash ' + g.cash);
     ok(errors.length === 0, 'no script errors running broke', errors.join(' | '));
+    await ctx.close();
+  }
+
+  // ---- five axis CNC machines ----
+  {
+    const orders = [{ id: 1, word: '', parts: ['L:standoff', 'L:standoff'], fin: 'alu', who: 'a sign shop', kind: 'turned' }];
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 60000, mills: 1, ops: 2, foreman: true, lathe: true, orders });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await tab(page, 'shop'); await page.clock.runFor(300);
+    await page.click('#upgList .upg[data-k="lathecnc"] button'); await page.clock.runFor(300);
+    let g = await save(page);
+    ok(g.lathe === false && g.mills === 2 && g.floor[1].kind === 'cnc', 'the lathe swaps for a five axis CNC in its bay');
+    ok(!(await page.isVisible('#latheTab')), 'the lathe tab goes away after the swap');
+    await page.click('#upgList .upg[data-k="cnc"] button'); await page.clock.runFor(300);
+    await page.click('#upgList .upg[data-k="homecnc"] button'); await page.clock.runFor(300);
+    g = await save(page);
+    ok(g.mills === 3 && g.floor[2].kind === 'cnc' && g.homeCnc === true, 'a CNC can be bought for the floor and your own mill can be upgraded');
+    await tab(page, 'floor'); await page.clock.runFor(60000);
+    await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    g = await save(page);
+    ok((g.inv['L:standoff|alu'] || 0) >= 2 || g.orders.every(o => o.id !== 1), 'floor CNCs turn the parts the orders need with no lathe', JSON.stringify(g.inv));
+    ok(/CNC/.test(await page.evaluate(() => document.getElementById('factory').toDataURL().length > 0 ? 'CNC' : '')), 'the floor draws the CNC bays');
+    await tab(page, 'mill'); await page.click('#progBtn2'); await page.clock.runFor(2000);
+    ok(/five axis program/.test(await txt(page, '#status')) || /covered/.test(await txt(page, '#status')), 'your own mill runs the five axis program', await txt(page, '#status'));
+    ok(errors.length === 0, 'no script errors with five axis CNCs', errors.join(' | '));
+    if (SHOTS) { await tab(page, 'floor'); await page.clock.runFor(500); await (await page.$('#factory')).screenshot({ path: SHOTS + '/cnc.png' }); }
     await ctx.close();
   }
 
