@@ -169,6 +169,21 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 .mtg-seal{margin-top:24px;}
 .sw.lp{background-color:var(--face);background-size:contain;background-repeat:no-repeat;background-position:center;font-size:12px;}
 .sw.lp:disabled{background:var(--putty-dark);color:var(--steel-dark);}
+.binlab{font-size:12px;color:var(--steel-dark);margin:12px 0 4px;letter-spacing:.04em;}
+.bin{cursor:pointer;}
+.bin.sel{outline:3px solid var(--blue);outline-offset:1px;}
+.pbin .pic{display:block;height:26px;background-size:contain;background-repeat:no-repeat;background-position:center;}
+.dhead{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.dhead b{flex:1;font-size:14px;}
+.dhead button{font-size:13px;min-height:36px;padding:0 12px;}
+.drow{display:grid;grid-template-columns:48px 1fr 40px 28%;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--putty-dark);}
+.drow span{font-size:13px;line-height:1.3;}
+.drow small{color:var(--blue);}
+.drow em{font-style:normal;font-family:"Courier New",monospace;font-size:18px;font-weight:bold;text-align:right;}
+.drow .bar{height:10px;}
+.dpic{width:48px;height:40px;border:2px solid var(--charcoal);background-size:contain;background-repeat:no-repeat;background-position:center;background-color:var(--face);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;text-shadow:0 1px 0 #000,0 0 3px #000;}
+.dpic.tilepic{background-size:cover;}
+.dpic.emo{text-shadow:none;}
 .tile.emo{font-size:20px;text-shadow:none;}
 .tile.turned{background-color:var(--face);background-size:contain;background-repeat:no-repeat;background-position:center;}
 .tabs button{min-width:0;padding:0 2px;}
@@ -293,9 +308,13 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <div class="panel-label">finished parts and inventory</div>
     <div class="tray" id="tray"></div>
     <button class="wide" id="stowBtn2">stow every loose part into the bins</button>
+    <p class="binlab">letters, numbers and emoji, tap a bin to see every finish in it</p>
     <div class="bins" id="bins"></div>
+    <p class="binlab" id="lbinsLab" style="display:none">turned parts from the lathe</p>
     <div class="bins" id="lbins" style="display:none"></div>
+    <p class="binlab" id="bbinsLab" style="display:none">formed parts from the press brake</p>
     <div class="bins" id="bbins" style="display:none"></div>
+    <div class="selbox" id="binDetail" style="display:none"></div>
     <button class="wide" id="emptyBtn" style="background:var(--rust);margin-top:12px">empty the inventory bins</button>
     <p class="hint">Loose parts pile up in the tray at the top. Drag one down onto its matching letter bin to stow it. Each bin holds a hundred of each finish, and a part will not go into the wrong letter. The colored marks under a bin show which finishes are in it.</p>
   </div>
@@ -945,38 +964,70 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function invTotal(ch){ var t=0; for(var i=0;i<FIN.length;i++) t+=invGet(ch,FIN[i].id); return t; }
   var binsDirty=true;
 
+  var binSel='';
+  function dotsFor(tok){ var d=''; FIN.forEach(function(f){ if(invGet(tok,f.id)>0) d+='<u style="background:'+finCSS(f.id)+'"></u>'; }); return d; }
+  function partBin(tok){
+    var tot=invTotal(tok), d=document.createElement('div'), id=tok.slice(2);
+    var best=G.curFin, bn=-1; FIN.forEach(function(f){ var n=invGet(tok,f.id); if(n>bn){ bn=n; best=f.id; } });
+    var url=isTurned(tok)?lIconURL(id,best):bIconURL(id,best);
+    d.className='bin pbin'+(tot>0?' has':'')+(binSel===tok?' sel':''); d.dataset.ch=tok;
+    d.innerHTML='<b class="pic" style="background-image:url('+url+')"></b><i>'+tot+'</i><s>'+dotsFor(tok)+'</s>';
+    return d;
+  }
   function buildBins(){
     binsDirty=false;
     var el=document.getElementById('bins');
     el.innerHTML='';
     var cs=charset();
-    var lb=document.getElementById('lbins');
-    lb.innerHTML=''; lb.style.display=G.lathe?'grid':'none';
-    if(G.lathe) Object.keys(LPARTS).forEach(function(id){
-      var tok='L:'+id, tot=invTotal(tok), d=document.createElement('div');
-      d.className='bin'+(tot>0?' has':''); d.dataset.ch=tok;
-      d.innerHTML='<em style="font-size:12px">'+LPARTS[id].short+'</em><i>'+tot+'</i>';
-      lb.appendChild(d);
-    });
-    var bb=document.getElementById('bbins');
-    bb.innerHTML=''; bb.style.display=G.brake?'grid':'none';
-    if(G.brake) Object.keys(BPARTS).forEach(function(id){
-      var tok='B:'+id, tot=invTotal(tok), d=document.createElement('div');
-      d.className='bin'+(tot>0?' has':''); d.dataset.ch=tok;
-      d.innerHTML='<em style="font-size:12px">'+BPARTS[id].short+'</em><i>'+tot+'</i>';
-      bb.appendChild(d);
+    [['lbins','lbinsLab',G.lathe,LPARTS,'L:'],['bbins','bbinsLab',G.brake,BPARTS,'B:']].forEach(function(r){
+      var box=document.getElementById(r[0]);
+      box.innerHTML=''; box.style.display=r[2]?'grid':'none';
+      document.getElementById(r[1]).style.display=r[2]?'block':'none';
+      if(r[2]) Object.keys(r[3]).forEach(function(id){ box.appendChild(partBin(r[4]+id)); });
     });
     for(var i=0;i<cs.length;i++){
       var ch=cs[i], tot=invTotal(ch);
       var d=document.createElement('div');
-      d.className='bin'+(tot>0?' has':'');
+      d.className='bin'+(tot>0?' has':'')+(binSel===ch?' sel':'');
       d.dataset.ch=ch;
-      var dots='';
-      FIN.forEach(function(f){ if(invGet(ch,f.id)>0) dots+='<u style="background:'+finCSS(f.id)+'"></u>'; });
-      d.innerHTML='<em>'+ch+'</em><i>'+tot+'</i><s>'+dots+'</s>';
+      d.innerHTML='<em>'+ch+'</em><i>'+tot+'</i><s>'+dotsFor(ch)+'</s>';
       el.appendChild(d);
     }
+    renderBinDetail();
   }
+  // how many of a part every open order still wants, finish by finish
+  function wantedBy(tok){
+    var w={};
+    G.orders.forEach(function(o){ toks(o).forEach(function(t){ if(t===tok) w[o.fin]=(w[o.fin]||0)+1; }); });
+    return w;
+  }
+  function renderBinDetail(){
+    var box=document.getElementById('binDetail');
+    if(!binSel){ box.style.display='none'; return; }
+    box.style.display='block';
+    var tok=binSel, part=isPart(tok), info=part?partInfo(tok):null, want=wantedBy(tok);
+    var title=part?info.name:(isEmoji(tok)?'emoji '+tok:(DIGITS.indexOf(tok)>=0?'number '+tok:'letter '+tok));
+    var rows='', any=false;
+    FIN.forEach(function(f){
+      var n=invGet(tok,f.id), w=want[f.id]||0;
+      if(!n&&!w) return;
+      any=true;
+      var pic=part?'<b class="dpic" style="background-image:url('+(isTurned(tok)?lIconURL(tok.slice(2),f.id):bIconURL(tok.slice(2),f.id))+')"></b>'
+        :'<b class="dpic tilepic'+(isEmoji(tok)?' emo':'')+'" style="background-image:url('+swatchURL(f.id)+')">'+tok+'</b>';
+      rows+='<div class="drow">'+pic+'<span>'+f.name+(w?'<br><small>open orders want '+w+'</small>':'')+'</span><em>'+n+'</em><div class="bar"><i style="width:'+Math.min(100,n)+'%;background:var(--blue)"></i></div></div>';
+    });
+    box.innerHTML='<div class="dhead"><b>'+title+', '+invTotal(tok)+' in the bins</b><button id="binClose">close</button></div>'+
+      (any?rows:'<p class="spec">this bin is empty in every finish</p>');
+    box.querySelector('#binClose').addEventListener('click',function(){ binSel=''; buildBins(); });
+  }
+  ['bins','lbins','bbins'].forEach(function(id){
+    document.getElementById(id).addEventListener('click',function(e){
+      var b=e.target.closest('.bin'); if(!b) return;
+      binSel=(binSel===b.dataset.ch)?'':b.dataset.ch;
+      buildBins();
+      if(binSel) document.getElementById('binDetail').scrollIntoView({block:'nearest',behavior:'smooth'});
+    });
+  });
 
   function partThumb(){
     var c=document.createElement('canvas'); c.width=part.nx; c.height=part.ny;

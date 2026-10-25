@@ -509,6 +509,28 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await ctx.close();
   }
 
+  // ---- tapping a bin shows every finish in it ----
+  {
+    const inv = { 'A|alu': 4, 'A|brass': 2, 'L:flange|copper': 3, 'B:donut|blueano': 1 };
+    const orders = [{ id: 3, word: 'AA', fin: 'brass', who: 'a sign shop', kind: 'word' }];
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 100, lathe: true, brake: true, owned: ['alu', 'brass', 'copper', 'blueano'], inv, orders });
+    const { ctx, page, errors } = await open(browser, { save: seed });
+    await tab(page, 'orders'); await page.waitForTimeout(300);
+    await page.click('#bins .bin[data-ch="A"]'); await page.waitForTimeout(200);
+    const d = await txt(page, '#binDetail');
+    ok(/letter A, 6 in the bins/.test(d) && /raw aluminum/.test(d) && /brass/.test(d), 'tapping a letter bin lists how many of each finish it holds', d.slice(0, 120));
+    ok(/open orders want [2-9]/.test(d), 'the bin detail shows what open orders still want');
+    await page.click('#lbins .bin[data-ch="L:flange"]'); await page.waitForTimeout(200);
+    ok(/flange, 3 in the bins/.test(await txt(page, '#binDetail')) && /copper/.test(await txt(page, '#binDetail')), 'turned part bins break down by finish too');
+    await page.click('#bbins .bin[data-ch="B:donut"]'); await page.waitForTimeout(200);
+    ok(/giant donut, 1 in the bins/.test(await txt(page, '#binDetail')), 'formed part bins break down by finish too');
+    if (SHOTS) await (await page.$('#binDetail')).screenshot({ path: SHOTS + '/bindetail.png' });
+    await page.click('#binClose'); await page.waitForTimeout(100);
+    ok(!(await page.isVisible('#binDetail')), 'the bin detail closes');
+    ok(errors.length === 0, 'no script errors opening bins', errors.join(' | '));
+    await ctx.close();
+  }
+
   // ---- saving survives a reload ----
   {
     const { ctx, page, errors } = await open(browser, { save: JSON.stringify({ cash: 4321, seenHow: true, owned: ['alu', 'brass'], curFin: 'brass', mills: 2 }) });
