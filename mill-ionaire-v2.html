@@ -167,6 +167,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 .bin s{display:flex;justify-content:center;gap:2px;height:6px;margin-top:3px;text-decoration:none;}
 .bin s u{width:6px;height:6px;border:1px solid var(--charcoal);}
 .mtg-seal{margin-top:24px;}
+.sw.lp{background-color:var(--face);background-size:contain;background-repeat:no-repeat;background-position:center;font-size:12px;}
+.sw.lp:disabled{background:var(--putty-dark);color:var(--steel-dark);}
 .tile.emo{font-size:20px;text-shadow:none;}
 .tile.turned{background-color:var(--face);background-size:contain;background-repeat:no-repeat;background-position:center;}
 .tabs button{min-width:0;}
@@ -244,7 +246,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <p>Customers post word orders on the orders tab. Each word has to be made from letters cut in one finish, like brass or blue anodize, and shipping it pays cash.</p>
     <p>On the mill tab, tap run the order program under the machine. The mill loads a blank in the right finish, cuts whatever letter the orders are missing, and drops it straight into the bins. You can also cut by hand with the wheels and sliders, then bag the part and drag it into its bin.</p>
     <p>Words get longer as your shop grows, and longer words pay more for every letter. Once you run several mills the spelling bee sends in long words at a premium, and now and then a collector wants a whole matching set, which pays double. Number dies and emoji dies in the shop unlock house numbers and emoji, and emoji are the best paying parts there are.</p>
-    <p>The engine lathe in the shop costs half the price of your next mill. It turns round parts: sign standoffs, threaded studs, sign posts, bushings, flanges, lazy susan plates, knobs and fixture pins. Once you own it, customers order batches of turned parts, words mounted on standoffs and signs on posts. Run the lathe program on the lathe tab and it turns whatever the orders need.</p>
+    <p>The engine lathe in the shop costs half the price of your next mill. It turns round parts: sign standoffs, threaded studs, sign posts, bushings, flanges, lazy susan plates, knobs and fixture pins. Once you own it, customers order batches of turned parts, words mounted on standoffs and signs on posts. Run the lathe program on the lathe tab and it turns whatever the orders need, and when nothing is on order it makes the part you picked to stock. Standoffs and studs come first, and every turned part you make counts toward unlocking the next part on the catalog.</p>
+    <p>Raw stock costs money. Every mill blank and every lathe bar is bought in the finish you cut, and harder finishes cost more. The shop shows each finish's blank and bar price. If the cash runs out, the scrap rack still has aluminum offcuts so the business never gets stuck.</p>
     <p>The stamping press, the powder coat booth and the LED wiring bench open orders that need a finishing step. Those orders go down the finishing line on the orders tab after you ship them, and the customer pays more when they come off.</p>
     <p>Spend your cash in the shop. New finishes pay more per letter but are harder metal, so they cut slower. Floor mills run on their own on the floor tab, and operators keep them going when a light turns amber.</p>
     <p>Once you own a floor mill, your operators draw wages every minute, and every running mill draws power. If the cash runs dry the power gets cut and the crew goes home until you ship an order. Chip conveyors, better coolant, better cutters and better software in the shop make every mill run harder for the same bills.</p>
@@ -300,6 +303,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <div class="panel-label">engine lathe, cutaway through the spindle</div>
     <canvas id="latheCv" width="680" height="420" style="border:1px solid var(--steel)"></canvas>
     <div class="feed" style="margin:10px 0 0"><button class="switch" id="lProgBtn" style="flex:1;background:var(--blue)">run the lathe program</button></div>
+    <div class="finrow" id="lPick" style="margin-top:10px"></div>
     <div class="status" id="lStatus">load a bar, then cut by hand or run the lathe program</div>
     <div class="jog" style="margin-top:12px">
       <div class="jog-row"><div class="jog-name">carriage, along the bar</div><input type="range" id="lZ" min="0" max="210" step="0.5" value="210"></div>
@@ -647,8 +651,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   // ---------- the business, saved in the browser ----------
   var SAVEKEY='mill-ionaire-v2-save';
   function freshSave(){
-    return {cash:0,played:0,owned:['alu'],curFin:'alu',inv:{},orders:[],mills:0,ops:1,foreman:false,
-            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[],lathe:false};
+    return {cash:40,played:0,owned:['alu'],curFin:'alu',inv:{},orders:[],mills:0,ops:1,foreman:false,
+            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[],lathe:false,stockPart:'standoff',turned:0,paidStock:0};
   }
   var G=freshSave();
   // reads the save and throws away anything that is the wrong shape, so a damaged save never breaks the game
@@ -667,7 +671,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     function int(n,a,b){ n=Math.floor(Number(n)||0); return n<a?a:(n>b?b:n); }
     G.cash=Math.max(0,G.cash); G.played=Math.max(0,G.played); G.earned=Math.max(0,G.earned);
     G.mills=int(G.mills,0,G.lathe===true?11:12); G.ops=int(G.ops,1,6); G.head=int(G.head,0,3); G.chipConv=G.chipConv===true; G.lube=int(G.lube,0,2); G.bits=int(G.bits,0,2); G.soft=int(G.soft,0,2); G.broke=G.broke===true; G.dies=int(G.dies,0,2); G.stamper=G.stamper===true; G.booth=G.booth===true; G.ledbench=G.ledbench===true; G.lathe=G.lathe===true; G.passCd=Math.max(0,Math.min(20,G.passCd));
-    G.made=Math.max(0,G.made); G.shipped=Math.max(0,G.shipped); G.foreman=G.foreman===true; G.sound=G.sound!==false; G.vol=Math.max(0,Math.min(1,G.vol));
+    G.made=Math.max(0,G.made); G.turned=Math.max(0,Math.floor(Number(G.turned)||0)); G.paidStock=Math.max(0,Number(G.paidStock)||0); if(!LPARTS[G.stockPart]) G.stockPart='standoff'; G.shipped=Math.max(0,G.shipped); G.foreman=G.foreman===true; G.sound=G.sound!==false; G.vol=Math.max(0,Math.min(1,G.vol));
     var own=['alu'];
     G.owned.forEach(function(id){ if(typeof id==='string'&&FINBY[id]&&own.indexOf(id)<0) own.push(id); });
     own.sort(function(a,b){ return FIN.indexOf(FINBY[a])-FIN.indexOf(FINBY[b]); });
@@ -714,6 +718,17 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     setTimeout(function(){ t.style.opacity='0'; },2200);
     setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); },2700);
   }
+  // raw stock is not free: every mill blank and every lathe bar is bought before it is cut
+  function stockCost(f,kind){ return Math.max(1,Math.round((kind==='bar'?3:2.5)*fin(f).pay)); }
+  var warnedStock=0;
+  function payStock(f,kind){
+    var c=stockCost(f,kind);
+    if(G.cash>=c){ G.cash-=c; G.paidStock+=c; writeSave(); return true; }
+    // when the shop is broke there is always an aluminum offcut in the scrap rack, so the business can never get stuck
+    if(f==='alu'&&G.cash<stockCost('alu','bar')) return true;
+    if(Date.now()-warnedStock>8000){ warnedStock=Date.now(); toast('not enough cash to buy a '+fin(f).name+' '+(kind==='bar'?'bar':'blank'),true); }
+    return false;
+  }
   function earn(v,why){
     v=Math.max(1,Math.round(v));
     G.cash+=v; G.earned+=v; toast('+'+money(v)+' '+why); writeSave();
@@ -757,6 +772,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       if(!nd){ demo.phase='wait'; demo.wait=1; s.rpm=0; return; }
       demo.ch=nd.ch; demo.fin=nd.fin;
     } else { demo.ch=ALPHA[demo.letter%26]; demo.fin=G.curFin; }
+    if(!payStock(demo.fin,'blank')){ demo.phase='wait'; demo.wait=3; s.rpm=0; return; }
     makePart('square',demo.fin);
     part.placed=true; part.offset=119; part.fall=0;
     demo.mask=demoMask(demo.ch);
@@ -1694,7 +1710,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       if(view==='floor') facBoard();
       if(view==='orders'){ if(binsDirty) buildBins(); renderOrders(); renderLine(); }
       if(view==='shop') renderShop();
-      if(view==='lathe'){ lStatus(); lSyncSliders(); }
+      if(view==='lathe'){ lStatus(); lSyncSliders(); renderLPick(); }
       saveT-=0.25; if(saveT<=0){ saveT=5; writeSave(); }
     }
     if(view==='floor') facDraw();
@@ -1856,6 +1872,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
           if(!nd){ m.idle=true; continue; }
           m.ch=nd.ch; m.fin=nd.fin;
         }
+        if(!payStock(m.fin,'blank')){ m.idle=true; continue; }
         m.idle=false;
       }
       var hard=fin(m.fin).hard;
@@ -2179,9 +2196,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
     if(!o.word&&G.lathe&&Math.random()<0.4){
       var r2=Math.random(), short=WORDS.filter(function(w){ return w.length<=Math.min(maxLen,7); });
-      if(r2<0.45){ o.kind='turned'; o.word=''; var pid=pick(Object.keys(LPARTS)), pn=2+Math.floor(Math.random()*(1+mills)); o.parts=[]; for(var q=0;q<pn;q++) o.parts.push('L:'+pid); o.who=pick(['a machine builder','a furniture maker','a sign shop','a hardware store','a fixture shop']); }
+      if(r2<0.45){ o.kind='turned'; o.word=''; var pid=pick(unlockedParts()), pn=2+Math.floor(Math.random()*(1+mills)); o.parts=[]; for(var q=0;q<pn;q++) o.parts.push('L:'+pid); o.who=pick(['a machine builder','a furniture maker','a sign shop','a hardware store','a fixture shop']); }
       else if(r2<0.8){ o.kind='mounted'; o.word=pick(short); o.parts=[]; for(var q2=0;q2<o.word.length;q2++) o.parts.push('L:standoff'); }
-      else { o.kind='post'; o.word=pick(short); o.parts=['L:signpost']; }
+      else if(lUnlocked('signpost')){ o.kind='post'; o.word=pick(short); o.parts=['L:signpost']; }
+      else { o.kind='mounted'; o.word=pick(short); o.parts=[]; for(var q3=0;q3<o.word.length;q3++) o.parts.push('L:standoff'); }
     }
     if(!o.word&&o.kind!=='turned'){ var pool=WORDS.filter(function(w){ return w.length<=maxLen; }); o.word=pick(pool); }
     var pr=ownedProcs();
@@ -2324,9 +2342,6 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   }
   function renderShop(){
     if(view!=='shop') return;
-    var sig=[Math.floor(G.cash),G.lathe,G.mills,G.ops,G.foreman,G.head,G.chipConv,G.lube,G.bits,G.soft,G.dies,G.stamper,G.booth,G.ledbench,G.owned.join(','),G.curFin,Math.round(costPerMin())].join('/');
-    if(sig===shopSig) return;
-    shopSig=sig;
     var U=[
       {k:'mill',name:'floor mill',verb:'buy a mill',txt:G.mills>=maxMills()?'the floor is full, every bay has a machine':'a mill that runs on its own on the floor tab, you own '+G.mills+' and there is room for '+maxMills(),cost:G.mills>=maxMills()?0:millCost(),max:G.mills>=maxMills()},
       {k:'lathe',name:'engine lathe',verb:'buy the lathe',txt:G.lathe?'on the shop floor in the bay next to your mill, open it on the lathe tab':(G.mills>=12?'the floor is full, the lathe needs an open bay':'a second kind of machine that takes a floor bay and turns standoffs, sign posts, threaded studs, flanges and more, at half the price of your next mill'),cost:G.lathe?0:Math.round(millCost()/2),max:G.lathe||G.mills>=12},
@@ -2343,8 +2358,13 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       {k:'soft',name:'better software',verb:'upgrade',txt:G.soft>=2?'nesting software, fastest programs and the most parts per stock load':'faster toolpaths and more parts out of every stock load, level '+G.soft+' of two',cost:G.soft>=2?0:SOFTCOST[G.soft],max:G.soft>=2}
     ];
     var cl=document.getElementById('costLine');
-    cl.textContent='running costs '+money(costPerMin())+' a minute, wages '+money(G.mills>0?G.ops*WAGE:0)+' for '+G.ops+(G.ops===1?' operator':' operators')+(G.mills>0?'':' (unpaid until you own a floor mill)')+', power '+money(runningMills()*FLOORPOWER+(s.rpm>0?MILLPOWER:0))+' for the mills running now';
+    var costTxt='running costs '+money(costPerMin())+' a minute, wages '+money(G.mills>0?G.ops*WAGE:0)+' for '+G.ops+(G.ops===1?' operator':' operators')+(G.mills>0?'':' (unpaid until you own a floor mill)')+', power '+money(runningMills()*FLOORPOWER+(s.rpm>0?MILLPOWER:0))+' for the machines running now, and '+money(G.paidStock)+' spent on blanks and bars so far';
+    if(cl.textContent!==costTxt) cl.textContent=costTxt;
     cl.className='status'+(G.broke?' warn':'');
+    // rebuild the buttons only when something you can buy changes, never just because cash ticked
+    var sig=U.map(function(u){ return u.k+(u.max?'m':(G.cash>=u.cost?'y':'n'))+u.txt; }).join('|')+'/'+FIN.map(function(f){ return (G.owned.indexOf(f.id)>=0?'o':(G.cash>=f.cost?'y':'n')); }).join('')+'/'+G.curFin;
+    if(sig===shopSig) return;
+    shopSig=sig;
     var ul=document.getElementById('upgList'); ul.innerHTML='';
     U.forEach(function(u){
       var d=document.createElement('div'); d.className='upg'; d.dataset.k=u.k;
@@ -2365,7 +2385,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       x.fillStyle='rgba(255,255,255,.25)'; x.fillText('ABC',90,32);
       d.appendChild(c);
       var info=document.createElement('div');
-      info.innerHTML='<h4>'+f.name+'</h4><p>pays '+f.pay.toFixed(1)+' times aluminum, cuts '+(f.hard===1?'at full speed':f.hard.toFixed(1)+' times slower')+'</p>';
+      info.innerHTML='<h4>'+f.name+'</h4><p>pays '+f.pay.toFixed(1)+' times aluminum, cuts '+(f.hard===1?'at full speed':f.hard.toFixed(1)+' times slower')+', blanks '+money(stockCost(f.id,'blank'))+', bars '+money(stockCost(f.id,'bar'))+'</p>';
       d.appendChild(info);
       var b=document.createElement('button');
       if(own){
@@ -2645,12 +2665,21 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   // the lathe program cuts whatever turned parts the orders are missing
   function lNextNeeded(){
     var miss=missingList(isTurned);
-    return miss.length?miss[0]:null;
+    if(miss.length) return miss[0];
+    // nothing on order: make the part picked on the lathe tab to stock, up to a full shelf
+    if(lUnlocked(G.stockPart)&&invGet('L:'+G.stockPart,G.curFin)<STOCKSHELF) return {ch:'L:'+G.stockPart,fin:G.curFin};
+    return null;
   }
+  var STOCKSHELF=20;
+  // parts open up as the lathe proves itself: every turned part made counts toward the next one
+  var LUNLOCK={standoff:0,stud:0,bushing:10,pin:20,knob:35,flange:50,signpost:75,lazysusan:100};
+  function lUnlocked(id){ return (G.turned||0)>=LUNLOCK[id]; }
+  function unlockedParts(){ return Object.keys(LPARTS).filter(lUnlocked); }
   function lProgStart(){
     var nd=lNextNeeded();
     var P=lathe.prog;
     if(!nd){ P.phase='wait'; P.wait=1; lathe.rpm=0; return; }
+    if(!payStock(nd.fin,'bar')){ P.phase='wait'; P.wait=3; lathe.rpm=0; return; }
     P.part=nd.ch.slice(2); P.fin=nd.fin; P.pass=0; P.z=LZ+6; P.dir=-1;
     lLoad(P.fin);
     lathe.rpm=900; P.phase='rough';
@@ -2701,6 +2730,13 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   // a finished turned part goes to the bins when the program made it, the tray when cut by hand
   function lFinish(id,f,toBins){
     G.made=(G.made||0)+1;
+    var before=unlockedParts().length;
+    G.turned=(G.turned||0)+1;
+    if(unlockedParts().length>before){
+      var fresh=unlockedParts()[unlockedParts().length-1];
+      setTimeout(function(){ toast('the lathe can now turn '+LPARTS[fresh].plural); },600);
+      lPickSig='';
+    }
     var tok='L:'+id;
     lathe.shelf.push({id:id,fin:f}); if(lathe.shelf.length>6) lathe.shelf.shift();
     if(toBins&&invGet(tok,f)<CAP){
@@ -2828,7 +2864,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function lStatus(){
     var el=document.getElementById('lStatus'), P=lathe.prog;
     if(P.on){
-      if(P.phase==='wait') el.textContent='lathe program running, every open order has its turned parts, waiting for new work';
+      if(P.phase==='wait') el.textContent=(invGet('L:'+G.stockPart,G.curFin)>=STOCKSHELF?'lathe program running, every order is covered and the '+LPARTS[G.stockPart].name+' shelf is full':'lathe program running, waiting on cash for bar stock');
       else if(P.part) el.textContent='lathe program, turning a '+lpart(P.part).name+' in '+fin(P.fin).name+', '+({rough:'roughing',finish:'finish pass',thread:'cutting the thread',partoff:'parting off',eject:'part done'}[P.phase]||'loading');
       el.className='status cutting'; return;
     }
@@ -2840,7 +2876,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   document.getElementById('lProgBtn').addEventListener('click',function(){ lRun(); });
   document.getElementById('lLoadBtn').addEventListener('click',function(){
     if(lathe.prog.on){ toast('stop the lathe program first',true); return; }
-    lLoad(G.curFin); toast('a '+fin(G.curFin).name+' bar is in the chuck');
+    if(!payStock(G.curFin,'bar')) return;
+    lLoad(G.curFin); toast('a '+fin(G.curFin).name+' bar is in the chuck for '+money(stockCost(G.curFin,'bar')));
   });
   document.getElementById('lPartBtn').addEventListener('click',function(){
     if(lathe.prog.on){ toast('stop the lathe program first',true); return; }
@@ -2862,6 +2899,26 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     lathe.rpm=Number(this.value);
   });
 
+  var lPickSig='';
+  function renderLPick(){
+    var sig=G.stockPart+'/'+unlockedParts().join(',')+'/'+G.curFin;
+    if(sig===lPickSig) return;
+    lPickSig=sig;
+    var el=document.getElementById('lPick');
+    el.innerHTML='<span>make to stock</span>';
+    Object.keys(LPARTS).forEach(function(id){
+      var b=document.createElement('button'), open=lUnlocked(id);
+      b.className='sw lp'+(id===G.stockPart?' on':'');
+      b.title=LPARTS[id].name;
+      if(open){ b.style.backgroundImage='url('+lIconURL(id,G.curFin)+')'; b.addEventListener('click',function(){ G.stockPart=id; writeSave(); lPickSig=''; renderLPick(); toast('when no order needs a turned part, the lathe makes '+LPARTS[id].plural); }); }
+      else { b.disabled=true; b.textContent=LUNLOCK[id]; b.title=LPARTS[id].name+', unlocks after '+LUNLOCK[id]+' turned parts'; }
+      el.appendChild(b);
+    });
+    var lab=document.createElement('span'); lab.style.width='auto';
+    var nxt=Object.keys(LUNLOCK).filter(function(k){ return !lUnlocked(k); }).sort(function(a,b){ return LUNLOCK[a]-LUNLOCK[b]; })[0];
+    lab.textContent=LPARTS[G.stockPart].plural+(nxt?', '+LPARTS[nxt].plural+' unlock at '+LUNLOCK[nxt]+' turned':'');
+    el.appendChild(lab);
+  }
   function syncLatheTab(){ document.getElementById('latheTab').style.display=G.lathe?'':'none'; }
   function lSyncSliders(){
     document.getElementById('lZ').value=lathe.z; document.getElementById('lX').value=lathe.x;
@@ -2885,7 +2942,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     document.querySelectorAll('#tabs button').forEach(function(b){ b.classList.toggle('on',b.dataset.view===v); });
     ordersSig=''; shopSig=''; ordersDirty=true;
     if(v==='orders'){ buildBins(); renderTray(); renderOrders(); }
-    if(v==='lathe'){ drawLathe(); lStatus(); }
+    if(v==='lathe'){ drawLathe(); lStatus(); lPickSig=''; renderLPick(); }
     if(v==='shop') renderShop();
     if(v==='floor'){ facSync(); renderSel(); facBoard(); }
     if(v==='mill') printDirty=true;
@@ -3014,6 +3071,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var ks=kneeShift(), tx=s.x*XS, tTop=TABLE_TOP+ks, g=part.ghost;
     var over=g.x>TABLE_LEFT+tx-40&&g.x<TABLE_RIGHT+tx+40;
     var near=Math.abs(g.y+B.nz/2-tTop)<120;
+    if(over&&near&&!payStock(G.curFin,'blank')){ part.ghost=null; return; }
     if(over&&near){
       makePart(g.kind);
       part.offset=clamp(g.x-part.nx/2-(TABLE_LEFT+tx),6,TLEN-part.nx-6);

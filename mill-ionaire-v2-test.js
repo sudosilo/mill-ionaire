@@ -59,7 +59,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     ok(await page.isVisible('#howSheet.open'), 'how to play shows on a fresh start');
     await page.click('#howClose');
     ok((await save(page)).seenHow === true, 'closing how to play is remembered');
-    ok((await txt(page, '#hudCash')) === '$0', 'new business starts with no cash');
+    ok((await txt(page, '#hudCash')) === '$40', 'a new business starts with a little cash for its first blanks');
     ok((await txt(page, '#hudMarket')) === '100%', 'market starts at full price');
     ok(await page.$$eval('#orderList .ocard', n => n.length) === 0 || true, 'orders tab not built until opened');
     await tab(page, 'orders'); await page.waitForTimeout(200);
@@ -210,7 +210,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     const before = (await save(page)).cash;
     await page.locator('#upgList .upg[data-k="mill"] button').click({ timeout: 2000 }); await page.clock.runFor(300);
     let g = await save(page);
-    ok(g.mills === 1 && Math.abs(g.cash - (before - 250)) < 1, 'buying a floor mill costs its price', 'cash ' + g.cash);
+    ok(g.mills === 1 && before - g.cash >= 250 && before - g.cash < 290, 'buying a floor mill costs its price', 'cash ' + g.cash);
     for (let i = 0; i < 20; i++) { await page.locator('#upgList .upg[data-k="mill"] button').click({ timeout: 300 }).catch(() => {}); await page.clock.runFor(100); }
     g = await save(page);
     ok(g.mills <= 12, 'the floor stops at twelve mills', 'mills ' + g.mills);
@@ -393,7 +393,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     const c0 = (await save(page)).cash;
     await page.locator('#upgList .upg[data-k="lathe"] button').click(); await page.clock.runFor(300);
     let g = await save(page);
-    ok(g.lathe === true && Math.abs((c0 - g.cash) - Math.round(250 * Math.pow(1.7, 2) / 2)) < 2, 'the lathe costs half the price of the next mill', (c0 - g.cash) + '');
+    ok(g.lathe === true && (c0 - g.cash) >= Math.round(250 * Math.pow(1.7, 2) / 2) && (c0 - g.cash) < Math.round(250 * Math.pow(1.7, 2) / 2) + 30, 'the lathe costs half the price of the next mill', (c0 - g.cash) + '');
     ok(await page.isVisible('#latheTab'), 'buying the lathe opens the lathe tab');
     await tab(page, 'floor'); await page.clock.runFor(300);
     ok(/your mill, the lathe plus 2 floor mills/.test(await txt(page, '#facOrder')) && /, 9 open bays/.test(await txt(page, '#facOrder')), 'the lathe takes a bay on the floor', await txt(page, '#facOrder'));
@@ -423,11 +423,51 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await ctx.close();
   }
 
+  // ---- raw stock costs money, the lathe makes to stock and unlocks parts as it goes ----
+  {
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 500, lathe: true, orders: [] });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await page.evaluate(() => { const g = JSON.parse(localStorage.getItem('mill-ionaire-v2-save')); }); 
+    await page.click('#latheTab'); await page.clock.runFor(400);
+    ok(await page.$$eval('#lPick button:not([disabled])', n => n.length) === 2, 'the lathe starts with standoffs and studs unlocked');
+    await page.click('#lPick button[title="threaded stud"]'); await page.clock.runFor(200);
+    ok((await save(page)).stockPart === 'stud', 'the part picked on the lathe tab is remembered');
+    const c0 = (await save(page)).cash;
+    await page.click('#lLoadBtn'); await page.clock.runFor(200);
+    ok(c0 - (await save(page)).cash === 3, 'loading an aluminum bar costs money', (c0 - (await save(page)).cash) + '');
+    await page.click('#lProgBtn');
+    let g; let t = 0;
+    while (t < 600) { await page.clock.runFor(10000); t += 10; await page.evaluate(() => window.dispatchEvent(new Event('pagehide'))); g = await save(page); if (g.turned >= 10) break; }
+    ok((g.inv['L:stud|alu'] || 0) >= 5, 'when orders are covered the lathe makes the picked part to stock', JSON.stringify(g.inv));
+    ok(g.paidStock >= 30, 'every bar the program loads is paid for', 'spent ' + g.paidStock);
+    await page.clock.runFor(1000);
+    ok(await page.$$eval('#lPick button:not([disabled])', n => n.length) === 3, 'making turned parts unlocks the next part on the catalog');
+    ok(errors.length === 0, 'no script errors with stock costs and the lathe picker', errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 0, owned: ['alu', 'brass'], curFin: 'brass', orders: [] });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    const box = await (await page.$('#machine')).boundingBox();
+    const sx = box.width / 680, sy = box.height / 580;
+    await page.mouse.move(box.x + 170 * sx, box.y + 518 * sy); await page.mouse.down();
+    await page.mouse.move(box.x + 220 * sx, box.y + 420 * sy, { steps: 8 }); await page.mouse.move(box.x + 260 * sx, box.y + 330 * sy, { steps: 8 }); await page.mouse.up();
+    await page.clock.runFor(300);
+    ok(/drag a/.test(await txt(page, '#status')), 'a broke shop cannot drop a brass blank it cannot pay for', await txt(page, '#status'));
+    await page.click('#finPick button[title="raw aluminum"]');
+    await page.mouse.move(box.x + 170 * sx, box.y + 518 * sy); await page.mouse.down();
+    await page.mouse.move(box.x + 220 * sx, box.y + 420 * sy, { steps: 8 }); await page.mouse.move(box.x + 260 * sx, box.y + 330 * sy, { steps: 8 }); await page.mouse.up();
+    await page.clock.runFor(300);
+    ok(/positioning|cutting/.test(await txt(page, '#status')), 'a broke shop still gets an aluminum offcut from the scrap rack', await txt(page, '#status'));
+    ok(errors.length === 0, 'no script errors when the shop is broke', errors.join(' | '));
+    await ctx.close();
+  }
+
   // ---- saving survives a reload ----
   {
     const { ctx, page, errors } = await open(browser, { save: JSON.stringify({ cash: 4321, seenHow: true, owned: ['alu', 'brass'], curFin: 'brass', mills: 2 }) });
     await page.reload(); await page.waitForTimeout(300);
-    ok((await txt(page, '#hudCash')) === '$4,321', 'cash comes back after a reload', await txt(page, '#hudCash'));
+    ok(/^\$4,[23]\d\d$/.test(await txt(page, '#hudCash')), 'cash comes back after a reload', await txt(page, '#hudCash'));
     ok((await txt(page, '#hudMills')) === '3', 'mills come back after a reload', await txt(page, '#hudMills'));
     ok(errors.length === 0, 'no script errors reloading a save', errors.join(' | '));
     await ctx.close();
