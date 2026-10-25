@@ -437,7 +437,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     ok(c0 - (await save(page)).cash === 3, 'loading an aluminum bar costs money', (c0 - (await save(page)).cash) + '');
     await page.click('#lProgBtn');
     let g; let t = 0;
-    while (t < 600) { await page.clock.runFor(10000); t += 10; await page.evaluate(() => window.dispatchEvent(new Event('pagehide'))); g = await save(page); if (g.turned >= 10) break; }
+    while (t < 600) { await page.clock.runFor(10000); t += 10; await page.evaluate(() => window.dispatchEvent(new Event('pagehide'))); g = await save(page); if (g.turned >= 10 && (g.inv['L:stud|alu'] || 0) >= 5) break; }
     ok((g.inv['L:stud|alu'] || 0) >= 5, 'when orders are covered the lathe makes the picked part to stock', JSON.stringify(g.inv));
     ok(g.paidStock >= 30, 'every bar the program loads is paid for', 'spent ' + g.paidStock);
     await page.clock.runFor(1000);
@@ -460,6 +460,52 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.clock.runFor(300);
     ok(/positioning|cutting/.test(await txt(page, '#status')), 'a broke shop still gets an aluminum offcut from the scrap rack', await txt(page, '#status'));
     ok(errors.length === 0, 'no script errors when the shop is broke', errors.join(' | '));
+    await ctx.close();
+  }
+
+  // ---- the press brake and big storefront signs ----
+  {
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 3000, mills: 1, lathe: true, orders: [] });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    ok(!(await page.isVisible('#brakeTab')), 'the brake tab stays hidden until the brake is bought');
+    await tab(page, 'shop'); await page.clock.runFor(300);
+    await page.click('#upgList .upg[data-k="brake"] button'); await page.clock.runFor(300);
+    let g = await save(page);
+    ok(g.brake === true && await page.isVisible('#brakeTab'), 'buying the press brake opens the brake tab');
+    await tab(page, 'floor'); await page.clock.runFor(300);
+    ok(/the lathe, the brake plus 1 floor mills/.test(await txt(page, '#facOrder')) && /, 9 open bays/.test(await txt(page, '#facOrder')), 'the brake takes a bay on the floor', await txt(page, '#facOrder'));
+    await page.click('#brakeTab'); await page.clock.runFor(300);
+    ok(await page.$$eval('#bPick button:not([disabled])', n => n.length) === 2, 'the brake starts with angle and mounting brackets');
+    await page.click('#bLoadBtn'); await page.clock.runFor(200);
+    await page.dispatchEvent('#bPressBtn', 'pointerdown');
+    for (let i = 0; i < 40 && !/right on/.test(await txt(page, '#bStatus')); i++) await page.clock.runFor(50);
+    await page.dispatchEvent('#bPressBtn', 'pointerup'); await page.clock.runFor(200);
+    g = await save(page);
+    ok(g.formed === 1, 'a bend made by hand at the right angle finishes an angle bracket', 'formed ' + g.formed);
+    await page.click('#bProgBtn');
+    let t = 0;
+    while (t < 600) { await page.clock.runFor(10000); t += 10; await page.evaluate(() => window.dispatchEvent(new Event('pagehide'))); g = await save(page); if (g.formed >= 16) break; }
+    ok(g.formed >= 16, 'the brake program forms parts and works through the unlocks', 'formed ' + g.formed);
+    ok(await page.$$eval('#bPick button:not([disabled])', n => n.length) >= 4, 'forming parts unlocks U channel and hat channel');
+    await tab(page, 'orders'); await page.clock.runFor(300);
+    ok(await page.$$eval('#bbins .bin', n => n.length) === 9, 'formed parts get their own bins');
+    let kinds = new Set();
+    for (let i = 0; i < 50; i++) { g = await save(page); g.orders.forEach(o => kinds.add(o.kind)); const p2 = await page.$('#orderList .pass:not([disabled])'); if (p2) await p2.click().catch(() => {}); await page.clock.runFor(21000); }
+    ok(kinds.has('bigsign') && kinds.has('formed'), 'big storefront sign orders and formed part orders show up', [...kinds].join(','));
+    ok(errors.length === 0, 'no script errors on the press brake', errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 3000, brake: true, formed: 200, brakePart: 'mufflerman', orders: [] });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await page.click('#brakeTab'); await page.click('#bLoadBtn'); await page.clock.runFor(200);
+    await page.dispatchEvent('#bPressBtn', 'pointerdown'); await page.clock.runFor(500); await page.dispatchEvent('#bPressBtn', 'pointerup');
+    for (let k = 0; k < 6; k++) { await page.dispatchEvent('#bPressBtn', 'pointerdown'); for (let i = 0; i < 40 && !/right on/.test(await txt(page, '#bStatus')); i++) await page.clock.runFor(50); await page.dispatchEvent('#bPressBtn', 'pointerup'); await page.clock.runFor(100); }
+    ok(/bend/.test(await txt(page, '#bStatus')), 'bending a muffler man by hand walks through its bends', await txt(page, '#bStatus'));
+    await page.dispatchEvent('#bPressBtn', 'pointerdown'); await page.clock.runFor(4000); await page.dispatchEvent('#bPressBtn', 'pointerup'); await page.clock.runFor(200);
+    ok(/load a sheet/.test(await txt(page, '#bStatus')), 'holding the press too long overbends the part into scrap', await txt(page, '#bStatus'));
+    ok(errors.length === 0, 'no script errors bending by hand', errors.join(' | '));
+    if (SHOTS) { await page.click('#bLoadBtn'); for (let k = 0; k < 12; k++) { await page.dispatchEvent('#bPressBtn', 'pointerdown'); for (let i = 0; i < 40 && !/right on/.test(await txt(page, '#bStatus')); i++) await page.clock.runFor(50); await page.dispatchEvent('#bPressBtn', 'pointerup'); await page.clock.runFor(100); } await (await page.$('#view-brake')).screenshot({ path: SHOTS + '/brake.png' }); }
     await ctx.close();
   }
 
