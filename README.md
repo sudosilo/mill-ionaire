@@ -16,7 +16,7 @@ Once you own a floor mill, your operators draw wages every minute, and every mil
 
 The press brake in the shop takes a floor bay and gets its own brake tab. It folds sheet into shape one bend at a time: angle brackets and mounting brackets first, then U channel, hat channel and sign box frames, and finally the giant chip, taco, donut and the muffler man. The brake program forms whatever the orders need or the part you picked. By hand, you hold press and let go when the bend reaches its angle, and holding too long overbends it into scrap. With the brake running, customers order batches of formed parts and big storefront signs for donut shops, taco stands, grocery stores and muffler shops. A big sign needs its letters, a box frame, brackets, standoffs from the lathe and sometimes a giant shape on top, and it pays the most of anything in the game.
 
-Raw stock costs money. Every mill blank and every lathe bar is bought in the finish being cut, harder finishes cost more, and the shop lists each finish's blank and bar price. When the cash runs out the scrap rack still has aluminum offcuts, so the business can always cut its way back.
+Raw stock costs money. Every mill blank and every lathe bar is bought in the finish being cut, harder finishes cost more, and the shop lists each finish's blank and bar price. When the cash runs out, your own mill keeps running on scrap rack stock and free power in any finish, so a shop left running over lunch keeps cutting and shipping its way back while the floor waits for the bills to be paid.
 
 The market cools off the longer you run the shop, so every letter pays a little less as the hours go by. Early money is the easiest money you will ever make.
 

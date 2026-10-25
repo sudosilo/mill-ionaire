@@ -264,7 +264,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <p>Words get longer as your shop grows, and longer words pay more for every letter. Once you run several mills the spelling bee sends in long words at a premium, and now and then a collector wants a whole matching set, which pays double. Number dies and emoji dies in the shop unlock house numbers and emoji, and emoji are the best paying parts there are.</p>
     <p>The engine lathe in the shop costs half the price of your next mill. It turns round parts: sign standoffs, threaded studs, sign posts, bushings, flanges, lazy susan plates, knobs and fixture pins. Once you own it, customers order batches of turned parts, words mounted on standoffs and signs on posts. Run the lathe program on the lathe tab and it turns whatever the orders need, and when nothing is on order it makes the part you picked to stock. Standoffs and studs come first, and every turned part you make counts toward unlocking the next part on the catalog.</p>
     <p>The press brake in the shop takes a floor bay and folds sheet into brackets, channel and sign box frames, and later giant chips, tacos, donuts and the muffler man. With the brake running, customers order big storefront signs that need letters, a box frame, brackets, standoffs from the lathe and sometimes a giant shape on top, and those pay the most of anything.</p>
-    <p>Raw stock costs money. Every mill blank and every lathe bar is bought in the finish you cut, and harder finishes cost more. The shop shows each finish's blank and bar price. If the cash runs out, the scrap rack still has aluminum offcuts so the business never gets stuck.</p>
+    <p>Raw stock costs money. Every mill blank and every lathe bar is bought in the finish you cut, and harder finishes cost more. The shop shows each finish's blank and bar price. If the cash runs out, your own mill keeps running on scrap rack stock and free power, so a shop left running over lunch keeps working while the floor waits for the bills to be paid.</p>
     <p>The stamping press, the powder coat booth and the LED wiring bench open orders that need a finishing step. Those orders go down the finishing line on the orders tab after you ship them, and the customer pays more when they come off.</p>
     <p>Spend your cash in the shop. New finishes pay more per letter but are harder metal, so they cut slower. Floor mills run on their own on the floor tab, and operators keep them going when a light turns amber.</p>
     <p>Once you own a floor mill, your operators draw wages every minute, and every running mill draws power. If the cash runs dry the power gets cut and the crew goes home until you ship an order. Chip conveyors, better coolant, better cutters and better software in the shop make every mill run harder for the same bills.</p>
@@ -770,9 +770,12 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   // raw stock is not free: every mill blank and every lathe bar is bought before it is cut
   function stockCost(f,kind){ return Math.max(1,Math.round((kind==='bar'?3:(kind==='sheet'?4:2.5))*fin(f).pay)); }
   var warnedStock=0;
-  function payStock(f,kind){
+  var warnedFree=0;
+  function payStock(f,kind,own){
     var c=stockCost(f,kind);
     if(G.cash>=c){ G.cash-=c; G.paidStock+=c; writeSave(); return true; }
+    // your own mill never stops: when the cash is gone it cuts on scrap rack stock and free power, so a shop left running keeps working
+    if(own){ if(Date.now()-warnedFree>30000){ warnedFree=Date.now(); toast('out of cash, your mill keeps running on scrap rack stock and free power'); } return true; }
     // when the shop is broke there is always an aluminum offcut in the scrap rack, so the business can never get stuck
     if(f==='alu'&&G.cash<stockCost('alu','bar')) return true;
     if(Date.now()-warnedStock>8000){ warnedStock=Date.now(); toast('not enough cash to buy a '+fin(f).name+' '+(kind==='bar'?'bar':'blank'),true); }
@@ -821,7 +824,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       if(!nd){ demo.phase='wait'; demo.wait=1; s.rpm=0; return; }
       demo.ch=nd.ch; demo.fin=nd.fin;
     } else { demo.ch=ALPHA[demo.letter%26]; demo.fin=G.curFin; }
-    if(!payStock(demo.fin,'blank')){ demo.phase='wait'; demo.wait=3; s.rpm=0; return; }
+    if(!payStock(demo.fin,'blank',true)){ demo.phase='wait'; demo.wait=3; s.rpm=0; return; }
     makePart('square',demo.fin);
     part.placed=true; part.offset=119; part.fall=0;
     demo.mask=demoMask(demo.ch);
@@ -2435,12 +2438,12 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function runningMills(){ var n=0; fac.m.forEach(function(m){ if(fac.running&&!m.idle&&!m.need&&!m.stopped) n++; }); return n; }
   function costPerMin(){
     var wages=G.mills>0?G.ops*WAGE:0;
-    var power=(G.broke?0:runningMills()*FLOORPOWER)+(s.rpm>0?MILLPOWER:0)+(lathe.rpm>0?MILLPOWER:0)+(brake.loaded?MILLPOWER:0);
+    var power=(G.broke?0:runningMills()*FLOORPOWER)+(s.rpm>0&&!G.broke?MILLPOWER:0)+(lathe.rpm>0?MILLPOWER:0)+(brake.loaded?MILLPOWER:0);
     return wages+power;
   }
   function payBills(dt){
     billT+=dt; if(billT<1) return; billT-=1;
-    var wages=(G.mills>0?G.ops*WAGE:0)/60, power=((G.broke?0:runningMills()*FLOORPOWER)+(s.rpm>0?MILLPOWER:0)+(lathe.rpm>0?MILLPOWER:0)+(brake.loaded?MILLPOWER:0))/60;
+    var wages=(G.mills>0?G.ops*WAGE:0)/60, power=((G.broke?0:runningMills()*FLOORPOWER)+(s.rpm>0&&!G.broke?MILLPOWER:0)+(lathe.rpm>0?MILLPOWER:0)+(brake.loaded?MILLPOWER:0))/60;
     var bill=wages+power;
     if(bill<=0) return;
     if(G.cash>=bill){
@@ -2471,7 +2474,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       {k:'soft',name:'better software',verb:'upgrade',txt:G.soft>=2?'nesting software, fastest programs and the most parts per stock load':'faster toolpaths and more parts out of every stock load, level '+G.soft+' of two',cost:G.soft>=2?0:SOFTCOST[G.soft],max:G.soft>=2}
     ];
     var cl=document.getElementById('costLine');
-    var costTxt='running costs '+money(costPerMin())+' a minute, wages '+money(G.mills>0?G.ops*WAGE:0)+' for '+G.ops+(G.ops===1?' operator':' operators')+(G.mills>0?'':' (unpaid until you own a floor mill)')+', power '+money(runningMills()*FLOORPOWER+(s.rpm>0?MILLPOWER:0))+' for the machines running now, and '+money(G.paidStock)+' spent on blanks, bars and sheet so far';
+    var costTxt='running costs '+money(costPerMin())+' a minute, wages '+money(G.mills>0?G.ops*WAGE:0)+' for '+G.ops+(G.ops===1?' operator':' operators')+(G.mills>0?'':' (unpaid until you own a floor mill)')+', power '+money(runningMills()*FLOORPOWER+(s.rpm>0&&!G.broke?MILLPOWER:0))+' for the machines running now, and '+money(G.paidStock)+' spent on blanks, bars and sheet so far';
     if(cl.textContent!==costTxt) cl.textContent=costTxt;
     cl.className='status'+(G.broke?' warn':'');
     // rebuild the buttons only when something you can buy changes, never just because cash ticked
@@ -3419,7 +3422,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var ks=kneeShift(), tx=s.x*XS, tTop=TABLE_TOP+ks, g=part.ghost;
     var over=g.x>TABLE_LEFT+tx-40&&g.x<TABLE_RIGHT+tx+40;
     var near=Math.abs(g.y+B.nz/2-tTop)<120;
-    if(over&&near&&!payStock(G.curFin,'blank')){ part.ghost=null; return; }
+    if(over&&near&&!payStock(G.curFin,'blank',true)){ part.ghost=null; return; }
     if(over&&near){
       makePart(g.kind);
       part.offset=clamp(g.x-part.nx/2-(TABLE_LEFT+tx),6,TLEN-part.nx-6);

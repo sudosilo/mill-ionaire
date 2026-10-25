@@ -453,12 +453,8 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.mouse.move(box.x + 170 * sx, box.y + 518 * sy); await page.mouse.down();
     await page.mouse.move(box.x + 220 * sx, box.y + 420 * sy, { steps: 8 }); await page.mouse.move(box.x + 260 * sx, box.y + 330 * sy, { steps: 8 }); await page.mouse.up();
     await page.clock.runFor(300);
-    ok(/drag a/.test(await txt(page, '#status')), 'a broke shop cannot drop a brass blank it cannot pay for', await txt(page, '#status'));
-    await page.click('#finPick button[title="raw aluminum"]');
-    await page.mouse.move(box.x + 170 * sx, box.y + 518 * sy); await page.mouse.down();
-    await page.mouse.move(box.x + 220 * sx, box.y + 420 * sy, { steps: 8 }); await page.mouse.move(box.x + 260 * sx, box.y + 330 * sy, { steps: 8 }); await page.mouse.up();
-    await page.clock.runFor(300);
-    ok(/positioning|cutting/.test(await txt(page, '#status')), 'a broke shop still gets an aluminum offcut from the scrap rack', await txt(page, '#status'));
+    ok(/positioning|cutting/.test(await txt(page, '#status')), 'a broke shop can still drop a brass blank on its own mill from the scrap rack', await txt(page, '#status'));
+    ok((await save(page)).cash === 0, 'the scrap rack blank costs nothing');
     ok(errors.length === 0, 'no script errors when the shop is broke', errors.join(' | '));
     await ctx.close();
   }
@@ -528,6 +524,20 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.click('#binClose'); await page.waitForTimeout(100);
     ok(!(await page.isVisible('#binDetail')), 'the bin detail closes');
     ok(errors.length === 0, 'no script errors opening bins', errors.join(' | '));
+    await ctx.close();
+  }
+
+  // ---- a broke shop keeps its own mill running on free stock and power ----
+  {
+    const orders = [{ id: 1, word: 'OX', fin: 'brass', who: 'a sign shop', kind: 'word' }];
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 0, mills: 2, ops: 2, owned: ['alu', 'brass'], orders });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await page.click('#progBtn2');
+    let g, t = 0;
+    while (t < 300) { await page.clock.runFor(10000); t += 10; await page.evaluate(() => window.dispatchEvent(new Event('pagehide'))); g = await save(page); if (g.made >= 2 || g.shipped >= 1) break; }
+    ok(g.made >= 2, 'with no cash your own mill still cuts brass letters for the orders', 'made ' + g.made);
+    ok(g.cash >= 0, 'the broke shop never goes below zero', 'cash ' + g.cash);
+    ok(errors.length === 0, 'no script errors running broke', errors.join(' | '));
     await ctx.close();
   }
 
