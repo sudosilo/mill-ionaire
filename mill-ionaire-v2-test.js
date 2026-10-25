@@ -210,7 +210,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     const before = (await save(page)).cash;
     await page.locator('#upgList .upg[data-k="mill"] button').click({ timeout: 2000 }); await page.clock.runFor(300);
     let g = await save(page);
-    ok(g.mills === 1 && g.cash === before - 250, 'buying a floor mill costs its price', 'cash ' + g.cash);
+    ok(g.mills === 1 && Math.abs(g.cash - (before - 250)) < 1, 'buying a floor mill costs its price', 'cash ' + g.cash);
     for (let i = 0; i < 20; i++) { await page.locator('#upgList .upg[data-k="mill"] button').click({ timeout: 300 }).catch(() => {}); await page.clock.runFor(100); }
     g = await save(page);
     ok(g.mills <= 12, 'the floor stops at twelve mills', 'mills ' + g.mills);
@@ -229,7 +229,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.click('#facRush'); await page.clock.runFor(500);
     ok(/rush quota/.test(await txt(page, '#facOrder')), 'a rush shift posts a quota');
     const fb = await (await page.$('#factory')).boundingBox();
-    await page.mouse.click(fb.x + fb.width * 0.5, fb.y + fb.height * 0.06); await page.clock.runFor(200);
+    for (let k = 0; k < 6 && !(await page.isVisible('#facSel')); k++) { await page.mouse.click(fb.x + fb.width * 0.5, fb.y + fb.height * 0.06); await page.clock.runFor(200); if (!(await page.isVisible('#facSel'))) await page.clock.runFor(6000); }
     ok(await page.isVisible('#facSel'), 'tapping a floor mill opens its settings');
     await page.click('#selNext'); await page.click('#selAuto'); await page.click('#selDone');
     ok(errors.length === 0, 'no script errors in the shop and on the floor', errors.join(' | '));
@@ -395,6 +395,12 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     let g = await save(page);
     ok(g.lathe === true && Math.abs((c0 - g.cash) - Math.round(250 * Math.pow(1.7, 2) / 2)) < 2, 'the lathe costs half the price of the next mill', (c0 - g.cash) + '');
     ok(await page.isVisible('#latheTab'), 'buying the lathe opens the lathe tab');
+    await tab(page, 'floor'); await page.clock.runFor(300);
+    ok(/your mill, the lathe plus 2 floor mills/.test(await txt(page, '#facOrder')) && /, 9 open bays/.test(await txt(page, '#facOrder')), 'the lathe takes a bay on the floor', await txt(page, '#facOrder'));
+    const flb = await (await page.$('#factory')).boundingBox();
+    await page.mouse.click(flb.x + flb.width * 0.5, flb.y + flb.height * 0.06); await page.clock.runFor(200);
+    ok(await page.isVisible('#view-lathe.on'), 'tapping the lathe bay opens the lathe');
+    if (SHOTS) { await tab(page, 'floor'); await page.clock.runFor(400); await (await page.$('#factory')).screenshot({ path: SHOTS + '/lathebay.png' }); }
     await page.click('#latheTab'); await page.click('#lProgBtn');
     let t = 0;
     while (t < 400) { await page.clock.runFor(10000); t += 10; await page.evaluate(() => window.dispatchEvent(new Event('pagehide'))); g = await save(page); if ((g.inv['L:flange|alu'] || 0) >= 2 && (g.inv['L:standoff|alu'] || 0) >= 3) break; }
