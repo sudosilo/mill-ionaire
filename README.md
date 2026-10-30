@@ -31,3 +31,15 @@ What is real and what is rough. The part is solid material, so you can machine o
 How it is built. The whole game is mill-ionaire-v2.html, a single file with canvas drawing, plain JavaScript and sound made in the browser, with no downloads and no server. Progress saves in the browser on the device that plays it. The vercel.json file serves the game at the site root. Every push to GitHub runs mill-ionaire-v2-test.js, which plays the whole game in a headless browser, and when every check passes it builds the itch zip and posts it on the itch-latest release.
 
 The thinking behind it. Every item is a letter, every machine turns blanks into letters, every finish changes what a letter is worth, and every order asks for a set of them. Grow the shop the way a real one grows, one more machine at a time.
+
+Maintained by the scribe
+
+Mill-ionaire is a letter shop tycoon in the browser. Customers post word orders, you cut the letters on a simulated knee mill, and shipping an order pays cash that you spend on finishes, floor mills, a lathe, a press brake, and five axis CNCs.
+
+Live at mill-ionaire.vercel.app
+
+Checked every morning by Control Troll, an automated test system that loads the app and clicks through its features.
+
+Latest change. 2026-10-26, v2026.10.26. Redeployed the five axis CNC update.
+
+The full history is in CHANGELOG.md.
