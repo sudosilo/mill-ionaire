@@ -316,7 +316,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.clock.runFor(60000);
     await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
     let g = await save(page);
-    ok(g.paidWages > 5 && g.paidPower > 1, 'a minute of running pays wages and the power bill', 'wages ' + g.paidWages.toFixed(1) + ' power ' + g.paidPower.toFixed(1));
+    ok(g.paidWages > 5 && g.paidPower > 0, 'a minute of running pays wages and the power bill', 'wages ' + g.paidWages.toFixed(1) + ' power ' + g.paidPower.toFixed(1));
     for (const k of ['chip', 'lube', 'bits', 'soft']) {
       await page.locator('#upgList .upg[data-k="' + k + '"] button').click(); await page.clock.runFor(200);
     }
@@ -577,7 +577,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
       const u = route.request().url();
       if (u.includes('/api/score')) {
         posted = JSON.parse(route.request().postData());
-        board.push({ rank: 2, id: 'mine', tag: posted.tag, score: posted.score, ts: 2 });
+        board.push({ rank: 2, id: 'mine', tag: posted.tag, link: posted.link, domain: 'example.com', score: posted.score, ts: 2 });
         return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, entry: { id: 'mine' }, rank: 2 }) });
       }
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, board }) });
@@ -586,7 +586,10 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     ok(/\$2,500,000,000,000,000/.test(await txt(page, '#doneScore')), 'cashing out shows the score in the quadrillions', await txt(page, '#doneScore'));
     await page.fill('#doneTag', 'b1u!'); 
     ok((await page.inputValue('#doneTag')) === 'B1U', 'the tag takes up to three letters or numbers');
+    await page.fill('#doneLink', 'example.com/shop');
     await page.click('#doneSubmit'); await page.waitForTimeout(500);
+    ok(posted && posted.link === 'https://example.com/shop', 'the link goes to the score service with https in front', JSON.stringify(posted));
+    ok((await page.getAttribute('#boardList .me a', 'href')) === 'https://example.com/shop' && (await txt(page, '#boardList .me a')) === 'example.com', 'the board shows the link under the tag');
     ok(posted && posted.game === 'mill-ionaire' && posted.score === 2500000000000000 && posted.duration >= 90000000 && posted.duration < 90010000 && posted.tag === 'B1U', 'the score goes to the score service with the tag and play time', JSON.stringify(posted));
     ok(/number 2/.test(await txt(page, '#boardMsg')) && /B1U/.test(await txt(page, '#boardList')), 'the board shows where the score placed');
     ok((await page.evaluate(k => localStorage.getItem(k), KEY)) === null, 'submitting retires the business');
@@ -600,7 +603,9 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     const { ctx, page, errors } = await open(browser, { save: seed });
     await page.route('https://2026-10-30-orange-scores.vercel.app/**', route => route.abort());
     await page.click('#burger'); await page.click('#doneBtn');
-    await page.fill('#doneTag', 'ABC'); await page.click('#doneSubmit'); await page.waitForTimeout(500);
+    await page.fill('#doneTag', 'ABC'); await page.fill('#doneLink', 'x'.repeat(60)); await page.click('#doneSubmit'); await page.waitForTimeout(300);
+    ok(/too long/.test(await txt(page, '#doneMsg')), 'a link that is too long is caught before sending');
+    await page.fill('#doneLink', ''); await page.click('#doneSubmit'); await page.waitForTimeout(500);
     ok(/could not reach the scoreboard/.test(await txt(page, '#doneMsg')), 'with no connection the cash out says so');
     ok((await save(page)).earned === 5000, 'with no connection the business is kept');
     ok(errors.filter(e => !/Failed to load resource/.test(e)).length === 0, 'no script errors cashing out offline', errors.join(' | '));

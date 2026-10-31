@@ -169,6 +169,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 .mtg-seal{margin-top:24px;}
 .bigscore{font-family:"Courier New",monospace;font-size:30px;font-weight:bold;color:var(--blue);margin:4px 0 8px;word-break:break-all;}
 .taginput{width:110px;font-family:"Courier New",monospace;font-size:26px;font-weight:bold;text-transform:uppercase;letter-spacing:.2em;border:2px solid var(--charcoal);padding:6px 8px;background:#fff;color:var(--charcoal);}
+.linkinput{width:100%;box-sizing:border-box;font-family:"Courier New",monospace;font-size:16px;border:2px solid var(--charcoal);padding:6px 8px;background:#fff;color:var(--charcoal);}
+.brow a{grid-column:2 / 4;font-size:13px;color:var(--blue);text-decoration:underline;word-break:break-all;}
 .brow{display:grid;grid-template-columns:34px 64px 1fr;gap:8px;align-items:baseline;padding:6px 0;border-top:1px solid var(--putty-dark);font-size:15px;}
 .brow b{font-family:"Courier New",monospace;}
 .brow em{font-style:normal;font-family:"Courier New",monospace;text-align:right;color:var(--blue);word-break:break-all;}
@@ -253,6 +255,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <div class="bigscore" id="doneScore">$0</div>
     <p class="spec" id="doneStats"></p>
     <div class="feed"><span>your tag</span><input id="doneTag" maxlength="3" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AAA" class="taginput"></div>
+    <div class="feed"><span>your link, if you want one</span><input id="doneLink" maxlength="60" autocomplete="off" autocapitalize="none" spellcheck="false" inputmode="url" placeholder="yoursite.com" class="linkinput"></div>
     <p class="spec" id="doneMsg"></p>
     <button class="wide" id="doneSubmit" style="background:var(--blue)">submit my score and retire the business</button>
     <button class="wide" id="doneKeep">keep playing</button>
@@ -300,7 +303,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <p>The stamping press, the powder coat booth and the LED wiring bench open orders that need a finishing step. Those orders go down the finishing line on the orders tab after you ship them, and the customer pays more when they come off.</p>
     <p>Spend your cash in the shop. New finishes pay more per letter but are harder metal, so they cut slower. Floor mills run on their own on the floor tab, and operators keep them going when a light turns amber.</p>
     <p>Once you own a floor mill, your operators draw wages every minute, and every running mill draws power. If the cash runs dry the power gets cut and the crew goes home until you ship an order. Chip conveyors, better coolant, better cutters and better software in the shop make every mill run harder for the same bills.</p>
-    <p>When you are done, open the menu and tap I'm done to cash out. Your score is every dollar the business ever earned, and it goes on the shared high score board under a tag of up to three letters. Submitting retires the business, and the next one starts fresh. High scores in the menu shows the board any time.</p>
+    <p>When you are done, open the menu and tap I'm done to cash out. Your score is every dollar the business ever earned, and it goes on the shared high score board under a tag of up to three letters, with a link to your own site if you want one. Submitting retires the business, and the next one starts fresh. High scores in the menu shows the board any time.</p>
     <p>The market cools off the longer you run the shop, so every letter pays a little less as the hours go by. Early money is the easiest money you will ever make.</p>
     <h3>what it does</h3>
     <p>Mill-ionaire is a letter shop tycoon built around a simulated vertical knee mill, the kind of manual machine a Bridgeport is. You cut metal letters, fill customer word orders, buy new finishes and more mills, and grow one machine into a factory floor.</p>
@@ -3429,7 +3432,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   document.getElementById('resetBtn').addEventListener('click',function(){ sheet('menuSheet',false); sheet('resetSheet',true); });
 
   // ---- high scores on the shared score service ----
-  var SCORES_URL='https://2026-10-30-orange-scores.vercel.app', SCORES_GAME='mill-ionaire', TAGKEY='mill-ionaire-v2-tag';
+  var SCORES_URL='https://2026-10-30-orange-scores.vercel.app', SCORES_GAME='mill-ionaire', TAGKEY='mill-ionaire-v2-tag', LINKKEY='mill-ionaire-v2-link';
   function scoresCall(path,opts){
     opts=opts||{};
     var ctl=typeof AbortController==='function'?new AbortController():null, timer=ctl?setTimeout(function(){ ctl.abort(); },8000):null;
@@ -3439,9 +3442,16 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       .then(function(j){ if(timer) clearTimeout(timer); return j||{ok:false,error:'offline'}; });
   }
   function finalScore(){ return Math.max(0,Math.floor(G.earned||0)); }
+  function cleanLink(v){
+    v=String(v||'').trim().replace(/\s+/g,'');
+    if(!v) return '';
+    if(!/^https?:\/\//i.test(v)) v='https://'+v;
+    return v;
+  }
   function cleanTag(t){ return String(t||'').toUpperCase().replace(/[^A-Z0-9 ]/g,'').slice(0,3); }
   var SCORE_ERRORS={tag_rejected:'that tag is not allowed, try another',slow_down:'the scoreboard needs a few seconds between scores, try again',
     score_rejected:'the scoreboard did not accept that score',duration_rejected:'play a little longer before you cash out',score_too_fast:'the scoreboard did not accept that score',
+    link_invalid:'that link does not look like a web address, try yoursite.com',link_too_long:'that link is too long, try a shorter one',link_rejected:'that link is not allowed, try another or leave it blank',link_flagged:'that link is on a blocked list, try another or leave it blank',link_check_failed:'the link check did not finish, try again or leave the link blank',links_disabled:'links are not open on the scoreboard yet, leave the link blank for now',
     offline:'could not reach the scoreboard, your business is still here, try again later',service_unavailable:'the scoreboard is down, your business is still here, try again later'};
   function openDone(){
     sheet('menuSheet',false);
@@ -3450,6 +3460,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     document.getElementById('doneStats').textContent='shipped '+(G.shipped||0)+' orders, made '+(G.made||0)+' parts, ran the shop for '+h+' hours '+mi+' minutes';
     var t=''; try{ t=localStorage.getItem(TAGKEY)||''; }catch(e){}
     document.getElementById('doneTag').value=t;
+    var lk=''; try{ lk=localStorage.getItem(LINKKEY)||''; }catch(e){}
+    document.getElementById('doneLink').value=lk;
     document.getElementById('doneMsg').textContent=finalScore()<1?'earn some money first, there is nothing to submit yet':'';
     document.getElementById('doneSubmit').disabled=finalScore()<1;
     sheet('doneSheet',true);
@@ -3462,7 +3474,12 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       var a=document.createElement('span'); a.textContent=r.rank;
       var b=document.createElement('b'); b.textContent=r.tag;
       var c=document.createElement('em'); c.textContent=money(r.score);
-      d.appendChild(a); d.appendChild(b); d.appendChild(c); el.appendChild(d);
+      d.appendChild(a); d.appendChild(b); d.appendChild(c);
+      if(r.link && /^https?:\/\//i.test(r.link)){
+        var l=document.createElement('a'); l.href=r.link; l.target='_blank'; l.rel='noopener noreferrer nofollow ugc';
+        l.textContent=r.domain||r.link.replace(/^https?:\/\//i,''); d.appendChild(l);
+      }
+      el.appendChild(d);
     });
   }
   function openBoard(title,msg,mineId,isNew){
@@ -3487,11 +3504,13 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   document.getElementById('doneSubmit').addEventListener('click',function(){
     var tag=cleanTag(document.getElementById('doneTag').value), msg=document.getElementById('doneMsg'), btn=this;
     if(!tag.trim()){ msg.textContent='put in a tag of up to three letters or numbers'; return; }
-    try{ localStorage.setItem(TAGKEY,tag); }catch(e){}
+    var link=cleanLink(document.getElementById('doneLink').value);
+    if(link.length>60){ msg.textContent=SCORE_ERRORS.link_too_long; return; }
+    try{ localStorage.setItem(TAGKEY,tag); localStorage.setItem(LINKKEY,document.getElementById('doneLink').value.trim()); }catch(e){}
     btn.disabled=true; msg.textContent='sending your score';
     var score=finalScore();
     scoresCall('/api/score',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({game:SCORES_GAME,tag:tag.padEnd(3,' '),link:'',score:score,duration:Math.max(1000,Math.floor(G.played*1000))})})
+      body:JSON.stringify({game:SCORES_GAME,tag:tag.padEnd(3,' '),link:link,score:score,duration:Math.max(1000,Math.floor(G.played*1000))})})
     .then(function(r){
       btn.disabled=false;
       if(!r.ok){ msg.textContent=SCORE_ERRORS[r.error]||SCORE_ERRORS.offline; return; }
