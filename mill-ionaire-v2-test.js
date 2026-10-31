@@ -724,6 +724,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
 
   await browser.close();
   console.log(results.join('\n'));
+  if (process.env.CI) results.filter(r => r.startsWith('FAIL')).forEach(r => console.log('::error::' + r));
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.log(results.join('\n')); console.error('\nSTOPPED: ' + e.message.split('\n')[0]); process.exit(1); });
