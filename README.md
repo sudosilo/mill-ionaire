@@ -20,6 +20,8 @@ The five axis CNC is the expensive shortcut to a simpler shop. A CNC takes a flo
 
 Raw stock costs money. Every mill blank and every lathe bar is bought in the finish being cut, harder finishes cost more, and the shop lists each finish's blank and bar price. When the cash runs out, your own mill keeps running on scrap rack stock and free power in any finish, so a shop left running over lunch keeps cutting and shipping its way back while the floor waits for the bills to be paid.
 
+When you are done, open the menu and tap I'm done to cash out. Your score is every dollar the business ever earned, from a few hundred up into the quadrillions, and it goes on the shared high score board under a tag of up to three letters. Submitting retires the business and the next one starts fresh. High scores in the menu shows the board at any time. Scores live on the shared score service in the sudosilo 2026-10-30-orange-scores repo, where Mill-ionaire is registered.
+
 The market cools off the longer you run the shop, so every letter pays a little less as the hours go by. Early money is the easiest money you will ever make.
 
 The shop makes sound. Each running mill hums, chatters while it cuts, and squeals once in a while, and a full floor sounds like a whole shop. The blue note button turns sound on and off, and the menu has the shop volume. The menu also holds how to play and starting the whole business over, which asks before it throws anything away. The blue i button opens the same how to play and information panel.

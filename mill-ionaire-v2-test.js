@@ -107,7 +107,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.click('#howClose'); ok(!(await page.isVisible('#howSheet.open')), 'how to play closes');
     ok(await page.isVisible('#view-mill #demoBtn') && await page.isVisible('#view-mill #fixBtn'), 'alphabet run and millwright sit on the mill itself');
     await page.click('#fixBtn'); await page.waitForTimeout(80);
-    ok(await page.$$eval('#menuSheet button', n => n.map(b => b.id).join(',')) === 'howBtn,resetBtn,menuClose', 'the menu holds only how to play, start over and close');
+    ok(await page.$$eval('#menuSheet button', n => n.map(b => b.id).join(',')) === 'doneBtn,boardBtn,howBtn,resetBtn,menuClose', 'the menu holds cash out, high scores, how to play, start over and close');
     await page.click('#burger'); await page.click('#resetBtn');
     ok(/scrap heap/.test(await txt(page, '#resetSheet')), 'start over asks for confirmation first');
     await page.click('#resetNo');
@@ -564,6 +564,46 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     ok(/five axis program/.test(await txt(page, '#status')) || /covered/.test(await txt(page, '#status')), 'your own mill runs the five axis program', await txt(page, '#status'));
     ok(errors.length === 0, 'no script errors with five axis CNCs', errors.join(' | '));
     if (SHOTS) { await tab(page, 'floor'); await page.clock.runFor(500); await (await page.$('#factory')).screenshot({ path: SHOTS + '/cnc.png' }); }
+    await ctx.close();
+  }
+
+  // ---- cashing out to the shared high score board ----
+  {
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 900, earned: 2500000000000000, shipped: 40, made: 300, played: 90000 });
+    const { ctx, page, errors } = await open(browser, { save: seed });
+    let posted = null;
+    const board = [{ rank: 1, id: 'aaaa', tag: 'TOP', score: 9000000000000000, ts: 1 }];
+    await page.route('https://2026-10-30-orange-scores.vercel.app/**', async route => {
+      const u = route.request().url();
+      if (u.includes('/api/score')) {
+        posted = JSON.parse(route.request().postData());
+        board.push({ rank: 2, id: 'mine', tag: posted.tag, score: posted.score, ts: 2 });
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, entry: { id: 'mine' }, rank: 2 }) });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, board }) });
+    });
+    await page.click('#burger'); await page.click('#doneBtn');
+    ok(/\$2,500,000,000,000,000/.test(await txt(page, '#doneScore')), 'cashing out shows the score in the quadrillions', await txt(page, '#doneScore'));
+    await page.fill('#doneTag', 'b1u!'); 
+    ok((await page.inputValue('#doneTag')) === 'B1U', 'the tag takes up to three letters or numbers');
+    await page.click('#doneSubmit'); await page.waitForTimeout(500);
+    ok(posted && posted.game === 'mill-ionaire' && posted.score === 2500000000000000 && posted.duration >= 90000000 && posted.duration < 90010000 && posted.tag === 'B1U', 'the score goes to the score service with the tag and play time', JSON.stringify(posted));
+    ok(/number 2/.test(await txt(page, '#boardMsg')) && /B1U/.test(await txt(page, '#boardList')), 'the board shows where the score placed');
+    ok((await page.evaluate(k => localStorage.getItem(k), KEY)) === null, 'submitting retires the business');
+    await page.click('#boardNew'); await page.waitForTimeout(500);
+    ok((await txt(page, '#hudCash')) === '$40', 'a new business starts after cashing out');
+    ok(errors.length === 0, 'no script errors cashing out', errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 900, earned: 5000, played: 600 });
+    const { ctx, page, errors } = await open(browser, { save: seed });
+    await page.route('https://2026-10-30-orange-scores.vercel.app/**', route => route.abort());
+    await page.click('#burger'); await page.click('#doneBtn');
+    await page.fill('#doneTag', 'ABC'); await page.click('#doneSubmit'); await page.waitForTimeout(500);
+    ok(/could not reach the scoreboard/.test(await txt(page, '#doneMsg')), 'with no connection the cash out says so');
+    ok((await save(page)).earned === 5000, 'with no connection the business is kept');
+    ok(errors.filter(e => !/Failed to load resource/.test(e)).length === 0, 'no script errors cashing out offline', errors.join(' | '));
     await ctx.close();
   }
 

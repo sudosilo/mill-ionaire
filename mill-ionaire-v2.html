@@ -167,6 +167,12 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 .bin s{display:flex;justify-content:center;gap:2px;height:6px;margin-top:3px;text-decoration:none;}
 .bin s u{width:6px;height:6px;border:1px solid var(--charcoal);}
 .mtg-seal{margin-top:24px;}
+.bigscore{font-family:"Courier New",monospace;font-size:30px;font-weight:bold;color:var(--blue);margin:4px 0 8px;word-break:break-all;}
+.taginput{width:110px;font-family:"Courier New",monospace;font-size:26px;font-weight:bold;text-transform:uppercase;letter-spacing:.2em;border:2px solid var(--charcoal);padding:6px 8px;background:#fff;color:var(--charcoal);}
+.brow{display:grid;grid-template-columns:34px 64px 1fr;gap:8px;align-items:baseline;padding:6px 0;border-top:1px solid var(--putty-dark);font-size:15px;}
+.brow b{font-family:"Courier New",monospace;}
+.brow em{font-style:normal;font-family:"Courier New",monospace;text-align:right;color:var(--blue);word-break:break-all;}
+.brow.me{background:#E4E9EE;}
 .sw.lp{background-color:var(--face);background-size:contain;background-repeat:no-repeat;background-position:center;font-size:12px;}
 .sw.lp:disabled{background:var(--putty-dark);color:var(--steel-dark);}
 .binlab{font-size:12px;color:var(--steel-dark);margin:12px 0 4px;letter-spacing:.04em;}
@@ -232,9 +238,34 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   <div class="sheetbox">
     <h3>machine menu</h3>
     <div class="feed" style="margin-top:8px"><span>shop volume</span><input type="range" id="volRange" min="0" max="100" step="1" value="60" style="flex:1;height:34px;accent-color:#2E4A63;"></div>
+    <button class="wide" id="doneBtn" style="background:var(--blue)">I'm done, submit my score</button>
+    <button class="wide" id="boardBtn">high scores</button>
     <button class="wide" id="howBtn">how to play</button>
     <button class="wide" id="resetBtn">start the whole business over</button>
     <button class="wide" id="menuClose">close</button>
+  </div>
+</div>
+
+<div class="sheet" id="doneSheet">
+  <div class="sheetbox">
+    <h3>cash out and submit your score</h3>
+    <p>Your score is every dollar the business ever earned.</p>
+    <div class="bigscore" id="doneScore">$0</div>
+    <p class="spec" id="doneStats"></p>
+    <div class="feed"><span>your tag</span><input id="doneTag" maxlength="3" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AAA" class="taginput"></div>
+    <p class="spec" id="doneMsg"></p>
+    <button class="wide" id="doneSubmit" style="background:var(--blue)">submit my score and retire the business</button>
+    <button class="wide" id="doneKeep">keep playing</button>
+  </div>
+</div>
+
+<div class="sheet" id="boardSheet">
+  <div class="sheetbox">
+    <h3 id="boardTitle">high scores</h3>
+    <p class="spec" id="boardMsg"></p>
+    <div id="boardList"></div>
+    <button class="wide" id="boardNew" style="display:none;background:var(--blue)">start a new business</button>
+    <button class="wide" id="boardClose">close</button>
   </div>
 </div>
 
@@ -269,6 +300,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <p>The stamping press, the powder coat booth and the LED wiring bench open orders that need a finishing step. Those orders go down the finishing line on the orders tab after you ship them, and the customer pays more when they come off.</p>
     <p>Spend your cash in the shop. New finishes pay more per letter but are harder metal, so they cut slower. Floor mills run on their own on the floor tab, and operators keep them going when a light turns amber.</p>
     <p>Once you own a floor mill, your operators draw wages every minute, and every running mill draws power. If the cash runs dry the power gets cut and the crew goes home until you ship an order. Chip conveyors, better coolant, better cutters and better software in the shop make every mill run harder for the same bills.</p>
+    <p>When you are done, open the menu and tap I'm done to cash out. Your score is every dollar the business ever earned, and it goes on the shared high score board under a tag of up to three letters. Submitting retires the business, and the next one starts fresh. High scores in the menu shows the board any time.</p>
     <p>The market cools off the longer you run the shop, so every letter pays a little less as the hours go by. Early money is the easiest money you will ever make.</p>
     <h3>what it does</h3>
     <p>Mill-ionaire is a letter shop tycoon built around a simulated vertical knee mill, the kind of manual machine a Bridgeport is. You cut metal letters, fill customer word orders, buy new finishes and more mills, and grow one machine into a factory floor.</p>
@@ -760,7 +792,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     G.done=G.done.filter(function(j){ return typeof j==='number'&&j>=0&&j<JOBS.length; });
     G.tray=G.tray.filter(function(t){ return t&&typeof t.ch==='string'&&(t.ch===''||ALLCH.indexOf(t.ch)>=0)&&FINBY[t.fin]; }).slice(-24);
   }
-  function writeSave(){ try{ localStorage.setItem(SAVEKEY,JSON.stringify(G)); }catch(e){} }
+  function writeSave(){ if(resetting) return; try{ localStorage.setItem(SAVEKEY,JSON.stringify(G)); }catch(e){} }
 
   // the market cools off the longer the shop has been running
   function market(){ var h=G.played/3600; return 0.2+0.8*Math.exp(-h/4); }
@@ -3395,13 +3427,89 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   document.getElementById('howBtn').addEventListener('click',function(){ sheet('menuSheet',false); sheet('howSheet',true); });
   document.getElementById('howClose').addEventListener('click',function(){ sheet('howSheet',false); G.seenHow=true; writeSave(); });
   document.getElementById('resetBtn').addEventListener('click',function(){ sheet('menuSheet',false); sheet('resetSheet',true); });
+
+  // ---- high scores on the shared score service ----
+  var SCORES_URL='https://2026-10-30-orange-scores.vercel.app', SCORES_GAME='mill-ionaire', TAGKEY='mill-ionaire-v2-tag';
+  function scoresCall(path,opts){
+    opts=opts||{};
+    var ctl=typeof AbortController==='function'?new AbortController():null, timer=ctl?setTimeout(function(){ ctl.abort(); },8000):null;
+    if(ctl) opts.signal=ctl.signal;
+    return fetch(SCORES_URL+path,opts).then(function(r){ return r.json(); })
+      .catch(function(){ return {ok:false,error:'offline'}; })
+      .then(function(j){ if(timer) clearTimeout(timer); return j||{ok:false,error:'offline'}; });
+  }
+  function finalScore(){ return Math.max(0,Math.floor(G.earned||0)); }
+  function cleanTag(t){ return String(t||'').toUpperCase().replace(/[^A-Z0-9 ]/g,'').slice(0,3); }
+  var SCORE_ERRORS={tag_rejected:'that tag is not allowed, try another',slow_down:'the scoreboard needs a few seconds between scores, try again',
+    score_rejected:'the scoreboard did not accept that score',duration_rejected:'play a little longer before you cash out',score_too_fast:'the scoreboard did not accept that score',
+    offline:'could not reach the scoreboard, your business is still here, try again later',service_unavailable:'the scoreboard is down, your business is still here, try again later'};
+  function openDone(){
+    sheet('menuSheet',false);
+    document.getElementById('doneScore').textContent=money(finalScore());
+    var h=Math.floor(G.played/3600), mi=Math.floor((G.played%3600)/60);
+    document.getElementById('doneStats').textContent='shipped '+(G.shipped||0)+' orders, made '+(G.made||0)+' parts, ran the shop for '+h+' hours '+mi+' minutes';
+    var t=''; try{ t=localStorage.getItem(TAGKEY)||''; }catch(e){}
+    document.getElementById('doneTag').value=t;
+    document.getElementById('doneMsg').textContent=finalScore()<1?'earn some money first, there is nothing to submit yet':'';
+    document.getElementById('doneSubmit').disabled=finalScore()<1;
+    sheet('doneSheet',true);
+  }
+  function renderBoard(board,mineId){
+    var el=document.getElementById('boardList'); el.innerHTML='';
+    if(!board.length){ el.innerHTML='<p class="spec">no scores yet, be the first</p>'; return; }
+    board.forEach(function(r){
+      var d=document.createElement('div'); d.className='brow'+(r.id===mineId?' me':'');
+      var a=document.createElement('span'); a.textContent=r.rank;
+      var b=document.createElement('b'); b.textContent=r.tag;
+      var c=document.createElement('em'); c.textContent=money(r.score);
+      d.appendChild(a); d.appendChild(b); d.appendChild(c); el.appendChild(d);
+    });
+  }
+  function openBoard(title,msg,mineId,isNew){
+    sheet('menuSheet',false);
+    document.getElementById('boardTitle').textContent=title||'high scores';
+    document.getElementById('boardMsg').textContent=msg||'loading the scoreboard';
+    document.getElementById('boardNew').style.display=isNew?'block':'none';
+    document.getElementById('boardClose').style.display=isNew?'none':'block';
+    document.getElementById('boardList').innerHTML='';
+    sheet('boardSheet',true);
+    scoresCall('/api/board?game='+SCORES_GAME+'&limit=10').then(function(r){
+      if(!r.ok){ if(!msg) document.getElementById('boardMsg').textContent=SCORE_ERRORS[r.error]||SCORE_ERRORS.offline; return; }
+      if(!msg) document.getElementById('boardMsg').textContent='';
+      renderBoard(r.board||[],mineId);
+    });
+  }
+  document.getElementById('doneBtn').addEventListener('click',openDone);
+  document.getElementById('boardBtn').addEventListener('click',function(){ openBoard(); });
+  document.getElementById('doneKeep').addEventListener('click',function(){ sheet('doneSheet',false); });
+  document.getElementById('boardClose').addEventListener('click',function(){ sheet('boardSheet',false); });
+  document.getElementById('doneTag').addEventListener('input',function(){ var c=cleanTag(this.value); if(c!==this.value) this.value=c; });
+  document.getElementById('doneSubmit').addEventListener('click',function(){
+    var tag=cleanTag(document.getElementById('doneTag').value), msg=document.getElementById('doneMsg'), btn=this;
+    if(!tag.trim()){ msg.textContent='put in a tag of up to three letters or numbers'; return; }
+    try{ localStorage.setItem(TAGKEY,tag); }catch(e){}
+    btn.disabled=true; msg.textContent='sending your score';
+    var score=finalScore();
+    scoresCall('/api/score',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({game:SCORES_GAME,tag:tag.padEnd(3,' '),link:'',score:score,duration:Math.max(1000,Math.floor(G.played*1000))})})
+    .then(function(r){
+      btn.disabled=false;
+      if(!r.ok){ msg.textContent=SCORE_ERRORS[r.error]||SCORE_ERRORS.offline; return; }
+      // the score is in, so the business is retired and the next one starts fresh
+      sheet('doneSheet',false);
+      try{ localStorage.removeItem(SAVEKEY); }catch(e){}
+      resetting=true;
+      openBoard('your score is in','you placed number '+(r.rank||'?')+' with '+money(score)+'. The business is retired.',r.entry&&r.entry.id,true);
+    });
+  });
+  document.getElementById('boardNew').addEventListener('click',function(){ location.reload(); });
   document.getElementById('resetNo').addEventListener('click',function(){ sheet('resetSheet',false); });
   document.getElementById('resetYes').addEventListener('click',function(){
     try{ localStorage.removeItem(SAVEKEY); }catch(e){}
     G=freshSave(); resetting=true; location.reload();
   });
   var resetting=false;
-  ['howSheet','resetSheet','emptySheet'].forEach(function(id){
+  ['howSheet','resetSheet','emptySheet','doneSheet'].forEach(function(id){
     document.getElementById(id).addEventListener('click',function(e){ if(e.target===this) sheet(id,false); });
   });
   document.addEventListener('visibilitychange',function(){ if(!resetting) writeSave(); });
