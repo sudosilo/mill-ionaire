@@ -695,6 +695,31 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await ctx.close();
   }
 
+  // ---- the office: sales managers ship ready orders, linguistics engineers spell spoken ones ----
+  {
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 1000000, mills: 1, floor: [{ ch: 'E', fin: 'alu', auto: false, stopped: true }],
+      inv: { 'C|alu': 3, 'A|alu': 3, 'T|alu': 3, 'D|alu': 1, 'O|alu': 1, 'G|alu': 1 },
+      orders: [{ id: 501, word: 'DOG', fin: 'alu', who: 'a sign shop', kind: 'word' }, { id: 502, word: 'CAT', fin: 'alu', who: 'a caller on the phone', kind: 'spoken', guess: '' }] });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await tab(page, 'shop'); await page.clock.runFor(300);
+    ok(/needs the office/.test(await txt(page, '#upgList .upg[data-k="sales"]')), 'sales managers wait for the office building');
+    await page.click('#upgList .upg[data-k="office"] button'); await page.clock.runFor(200);
+    await page.click('#upgList .upg[data-k="sales"] button'); await page.clock.runFor(200);
+    await page.click('#upgList .upg[data-k="ling"] button'); await page.clock.runFor(200);
+    let g = await save(page);
+    ok(g.office === true && g.sales === 1 && g.ling === 1 && g.cash < 1000000 - 700000 + 500 && g.cash > 1000000 - 700000 - 100, 'the office, a sales manager and a linguistics engineer cost what the shop says', String(g.cash));
+    ok(/the office/.test(await txt(page, '#costLine')), 'the office shows up in the running costs', await txt(page, '#costLine'));
+    await tab(page, 'orders'); await page.clock.runFor(1500);
+    g = await save(page);
+    ok(!g.orders.some(o => o.id === 501), 'the sales manager ships a ready order without a tap');
+    for (let i = 0; i < 30 && (await save(page)).orders.some(o => o.id === 502); i++) await page.clock.runFor(500);
+    g = await save(page);
+    ok(!g.orders.some(o => o.id === 502) && g.inv['C|alu'] === 2, 'the linguistics engineer spells the spoken order right and sells it');
+    ok(/office: 1 sales manager/.test(await txt(page, '#officeBox')), 'the orders tab shows the office line', await txt(page, '#officeBox'));
+    ok(errors.length === 0, 'no script errors in the office', errors.join(' | '));
+    await ctx.close();
+  }
+
   // ---- saving survives a reload ----
   {
     const { ctx, page, errors } = await open(browser, { save: JSON.stringify({ cash: 4321, seenHow: true, owned: ['alu', 'brass'], curFin: 'brass', mills: 2 }) });

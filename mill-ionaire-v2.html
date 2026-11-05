@@ -132,6 +132,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 .tile.miss{opacity:.38;}
 .truckcv{width:100%;height:auto;display:block;margin-bottom:8px;background:#E4E9EE;border:2px solid var(--charcoal);}
 .truckgo{position:fixed;left:0;bottom:90px;width:100%;max-width:640px;height:auto;pointer-events:none;z-index:60;}
+.officebox{height:40px;overflow:hidden;margin:0 0 10px;padding:4px 8px;font-size:13px;line-height:16px;border-left:4px solid var(--blue);background:#E4E9EE;}
 .tile.slot{background:#fff;border-style:dashed;border-color:var(--blue);}
 .ocard .row.spk{margin-bottom:6px;}
 .ocard .row.spk button{flex:1;background:var(--blue);}
@@ -319,6 +320,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <p>On the mill tab, tap run the order program under the machine. The mill loads a blank in the right finish, cuts whatever letter the orders are missing, and drops it straight into the bins. You can also cut by hand with the wheels and sliders, then bag the part and drag it into its bin.</p>
     <p>Words get longer as your shop grows, and longer words pay more for every letter. Once you run several mills the spelling bee sends in long words at a premium, and now and then a collector wants a whole matching set, which pays double. Once you own a floor mill, a caller on the phone sometimes says a word out loud instead of writing it down. Tap hear it, tap spell it and type the word into its slots, and the order program cuts the letters you typed. Sell it when the slots are filled. Spell it right and it pays more than any other word, spell it wrong and the customer docks you half the price. Number dies and emoji dies in the shop unlock house numbers and emoji, and emoji are the best paying parts there are.</p>
     <p>The engine lathe in the shop costs half the price of your next mill. It turns round parts: sign standoffs, threaded studs, sign posts, bushings, flanges, lazy susan plates, knobs and fixture pins. Once you own it, customers order batches of turned parts, words mounted on standoffs and signs on posts. Run the lathe program on the lathe tab and it turns whatever the orders need, and when nothing is on order it makes the part you picked to stock. Standoffs and studs come first, and every turned part you make counts toward unlocking the next part on the catalog.</p>
+    <p>The office building in the shop houses the business side, and it costs money every minute to keep open. Inside it you can hire sales managers, who ship every order the moment its parts are in the bins, and linguistics engineers, who take the spoken orders, spell each word right so the floor can cut it, and sell it when the letters are in. Each one handles one order every few seconds and draws a big salary, so a busy shop with a backlog may need more than one.</p>
     <p>The warehouse in the shop is the next step past the CNCs. It has three times the floor space, and every machine and the whole crew move over. The floor is drawn smaller so it all fits, and the crew show up as dots colored by trade. Orders start coming by the flatbed truckload, one word spelled out over and over on the trailer, and shipping the truck pays for the whole load. Bigger machines break in new ways. Millwrights replace drive gears and ballscrew nuts, electricians reset drives and breakers, and controls techs clear CNC alarms and replace crashed tool holders. Gears, nuts and tool holders come off the spare shelf, and only a five axis CNC can make them, so CNCs on auto make spares whenever the shelf runs low or a machine is waiting on one.</p>
     <p>The press brake in the shop takes a floor bay and folds sheet into brackets, channel and sign box frames, and later giant chips, tacos, donuts and the muffler man. With the brake running, customers order big storefront signs that need letters, a box frame, brackets, standoffs from the lathe and sometimes a giant shape on top, and those pay the most of anything.</p>
     <p>The five axis CNC is the expensive shortcut. A CNC takes a floor bay and cuts letters, numbers, emoji and turned parts, all in one machine. It runs faster than a knee mill with no chip stops, half the tool wear and a smaller power bill, on stock that costs a little more per part. You can also make your own mill a five axis CNC, which still runs free when the cash is gone, and swap the lathe for a CNC in the same bay.</p>
@@ -359,6 +361,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 <div class="view" id="view-orders">
   <div class="panel">
     <div class="panel-label">customer orders</div>
+    <div class="officebox" id="officeBox" style="display:none"></div>
     <div class="selbox" id="lineBox" style="display:none;margin:0 0 12px"><b style="font-size:14px">finishing line</b><div id="lineList"></div></div>
     <div class="orders" id="orderList"></div>
     <p class="hint">A blue corner on a tile means that letter is in the bins in the right finish. Letters sitting loose in the tray do not count until they are stowed.</p>
@@ -680,6 +683,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function tokName(t){ return isPart(t)?partInfo(t).name:t; }
   var CNCSTOCK=1.2, CNCPOWER=0.6, CNCSPEED=1.3, CNCWEAR=0.5, CNCCOST=15000;
   // the warehouse: three times the floor, specialist crews, breakdowns that use up spare parts only a five axis CNC can make
+  // the office: sales managers ship ready orders on their own, linguistics engineers spell the spoken orders
+  var OFFICECOST=500000, OFFICEUPKEEP=400, STAFFBASE=100000, STAFFWAGE=250, SALESECS=5, LINGSECS=8;
   var WAREHOUSECOST=750000, SPAREKEEP=6, SPARETIME=2, SPECWAGE=30, SPECBASE={mw:20000,el:20000,ct:30000};
   var SPARES={gear:{name:'drive gear',plural:'drive gears',short:'gear'},nut:{name:'ballscrew nut',plural:'ballscrew nuts',short:'nut'},holder:{name:'tool holder',plural:'tool holders',short:'holder'}};
   function isSpare(t){ return typeof t==='string'&&t.indexOf('S:')===0&&!!SPARES[t.slice(2)]; }
@@ -777,7 +782,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var SAVEKEY='mill-ionaire-v2-save';
   function freshSave(){
     return {cash:40,played:0,owned:['alu'],curFin:'alu',inv:{},orders:[],mills:0,ops:1,foreman:false,
-            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[],lathe:false,stockPart:'standoff',turned:0,paidStock:0,brake:false,brakePart:'angle',formed:0,homeCnc:false,warehouse:false,mw:0,el:0,ct:0,spares:{gear:0,nut:0,holder:0}};
+            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[],lathe:false,stockPart:'standoff',turned:0,paidStock:0,brake:false,brakePart:'angle',formed:0,homeCnc:false,warehouse:false,mw:0,el:0,ct:0,spares:{gear:0,nut:0,holder:0},office:false,sales:0,ling:0};
   }
   var G=freshSave();
   // reads the save and throws away anything that is the wrong shape, so a damaged save never breaks the game
@@ -797,6 +802,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     G.cash=Math.max(0,G.cash); G.played=Math.max(0,G.played); G.earned=Math.max(0,G.earned);
     G.warehouse=G.warehouse===true; G.mills=int(G.mills,0,(G.warehouse?38:12)-(G.lathe===true?1:0)-(G.brake===true?1:0)); G.ops=int(G.ops,1,G.warehouse?16:6);
     G.mw=int(G.mw,0,6); G.el=int(G.el,0,6); G.ct=int(G.ct,0,6);
+    G.office=G.office===true; G.sales=G.office?int(G.sales,0,6):0; G.ling=G.office?int(G.ling,0,6):0;
     var sp={}; Object.keys(SPARES).forEach(function(k){ sp[k]=int((G.spares||{})[k],0,99); }); G.spares=sp; G.head=int(G.head,0,3); G.chipConv=G.chipConv===true; G.lube=int(G.lube,0,2); G.bits=int(G.bits,0,2); G.soft=int(G.soft,0,2); G.broke=G.broke===true; G.dies=int(G.dies,0,2); G.stamper=G.stamper===true; G.booth=G.booth===true; G.ledbench=G.ledbench===true; G.lathe=G.lathe===true; G.passCd=Math.max(0,Math.min(20,G.passCd));
     G.made=Math.max(0,G.made); G.turned=Math.max(0,Math.floor(Number(G.turned)||0)); G.formed=Math.max(0,Math.floor(Number(G.formed)||0)); G.brake=G.brake===true; G.homeCnc=G.homeCnc===true; if(!BPARTS[G.brakePart]) G.brakePart='angle'; G.paidStock=Math.max(0,Number(G.paidStock)||0); if(!LPARTS[G.stockPart]) G.stockPart='standoff'; G.shipped=Math.max(0,G.shipped); G.foreman=G.foreman===true; G.sound=G.sound!==false; G.vol=Math.max(0,Math.min(1,G.vol));
     var own=['alu'];
@@ -2633,6 +2639,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
   }
   function renderLine(){
+    var ob=document.getElementById('officeBox'); if(ob){ ob.style.display=G.office?'block':'none'; var ol=officeLine(); if(ob.textContent!==ol) ob.textContent=ol; }
     var box=document.getElementById('lineBox'), el=document.getElementById('lineList');
     if(!G.line.length){ box.style.display='none'; return; }
     box.style.display='block';
@@ -2644,8 +2651,50 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     });
     el.innerHTML=html;
   }
+  // the office staff work their own queues; when the cash runs dry they stop until the bills are paid
+  var salesT=[], lingJob=[];
+  function officeTick(dt){
+    if(!G.office||G.broke) return;
+    var k, o, i;
+    for(k=0;k<G.sales;k++){
+      salesT[k]=(salesT[k]||0)-dt;
+      if(salesT[k]>0) continue;
+      o=null; for(i=0;i<G.orders.length;i++) if(G.orders[i].kind!=='spoken'&&canShip(G.orders[i])){ o=G.orders[i]; break; }
+      if(o){ shipOrder(o.id); salesT[k]=SALESECS; } else salesT[k]=0;
+    }
+    var claimed={};
+    for(k=0;k<G.ling;k++){
+      var j=lingJob[k];
+      if(j){ o=null; for(i=0;i<G.orders.length;i++) if(G.orders[i].id===j.id) o=G.orders[i]; if(!o) j=lingJob[k]=null; }
+      if(!j){
+        for(i=0;i<G.orders.length;i++){
+          o=G.orders[i];
+          var taken=lingJob.some(function(q){ return q&&q.id===o.id; });
+          if(o.kind==='spoken'&&o.guess!==o.word&&!taken){ j=lingJob[k]={id:o.id,left:LINGSECS}; break; }
+        }
+      }
+      if(!j) continue;
+      claimed[j.id]=true;
+      j.left-=dt;
+      if(j.left<=0){
+        for(i=0;i<G.orders.length;i++) if(G.orders[i].id===j.id){ G.orders[i].guess=G.orders[i].word; ordersDirty=true; binsDirty=true; }
+        lingJob[k]=null;
+      }
+    }
+    // a spoken order spelled right sells as soon as its letters are in
+    for(i=0;i<G.orders.length;i++){ o=G.orders[i]; if(G.ling&&o.kind==='spoken'&&o.guess===o.word&&canShip(o)){ shipOrder(o.id); break; } }
+  }
+  function officeLine(){
+    if(!G.office) return '';
+    var ready=G.orders.filter(function(o){ return o.kind!=='spoken'&&canShip(o); }).length;
+    var spoken=G.orders.filter(function(o){ return o.kind==='spoken'&&o.guess!==o.word; }).length;
+    if(G.broke) return 'the office is dark until the bills are paid';
+    return 'office: '+G.sales+(G.sales===1?' sales manager':' sales managers')+', '+ready+(ready===1?' order':' orders')+' ready to ship. '+
+      G.ling+(G.ling===1?' linguistics engineer':' linguistics engineers')+', '+spoken+(spoken===1?' spoken order':' spoken orders')+' to spell.';
+  }
   function ordersTick(dt){
     lineTick(dt);
+    officeTick(dt);
     if(G.passCd>0) G.passCd=Math.max(0,G.passCd-dt);
     if(G.orders.length<maxOrders()){
       orderT-=dt;
@@ -2804,7 +2853,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function opCost(){ return Math.round(350*Math.pow(1.6,G.ops-1)); }
   function opMax(){ return G.warehouse?16:6; }
   function specCost(k){ return Math.round(SPECBASE[k]*Math.pow(1.5,G[k])); }
-  function wagesPerMin(){ return G.mills>0?G.ops*WAGE+(G.mw+G.el+G.ct)*SPECWAGE:0; }
+  function wagesPerMin(){ return (G.mills>0?G.ops*WAGE+(G.mw+G.el+G.ct)*SPECWAGE:0)+officePerMin(); }
+  function officePerMin(){ return G.office?OFFICEUPKEEP+(G.sales+G.ling)*STAFFWAGE:0; }
+  function staffCost(k){ return Math.round(STAFFBASE*Math.pow(1.5,G[k])); }
   var DIECOST=[2000,9000], HEADCOST=[800,2500,7000], CHIPCOST=2500, LUBECOST=[900,3200], BITCOST=[1500,5000], SOFTCOST=[1200,4500];
   // running costs: operators draw wages once the floor has a mill, and every running mill draws power
   var WAGE=3.75, FLOORPOWER=2, MILLPOWER=0.75, billT=0, warnedBroke=false;
@@ -2844,6 +2895,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       {k:'mw',name:'hire a millwright',verb:'hire',txt:!G.warehouse?'needs the warehouse':(G.mw>=6?'six millwrights, the crew is full':'replaces stripped drive gears and worn ballscrew nuts, each repair uses a spare part, you have '+G.mw+' of 6'),cost:(!G.warehouse||G.mw>=6)?0:specCost('mw'),max:!G.warehouse||G.mw>=6},
       {k:'el',name:'hire an electrician',verb:'hire',txt:!G.warehouse?'needs the warehouse':(G.el>=6?'six electricians, the crew is full':'resets faulted spindle drives and tripped breakers, you have '+G.el+' of 6'),cost:(!G.warehouse||G.el>=6)?0:specCost('el'),max:!G.warehouse||G.el>=6},
       {k:'ct',name:'hire a controls tech',verb:'hire',txt:!G.warehouse?'needs the warehouse':(G.ct>=6?'six controls techs, the crew is full':'clears CNC probe alarms and replaces crashed tool holders from the spare shelf, you have '+G.ct+' of 6'),cost:(!G.warehouse||G.ct>=6)?0:specCost('ct'),max:!G.warehouse||G.ct>=6},
+      {k:'office',name:'office building',verb:'buy',txt:G.office?'open, it houses the sales managers and linguistics engineers and costs '+money(OFFICEUPKEEP)+' a minute to run':'an office for the people who run the business side, needed before you can hire sales managers or linguistics engineers, and it costs '+money(OFFICEUPKEEP)+' a minute to keep open',cost:G.office?0:OFFICECOST,max:G.office},
+      {k:'sales',name:'hire a sales manager',verb:'hire',txt:!G.office?'needs the office building':(G.sales>=6?'six sales managers, the office is full':'ships every order the moment its parts are in the bins, one order every few seconds each, so a busy shop may need more than one. Paid '+money(STAFFWAGE)+' a minute, you have '+G.sales+' of 6'),cost:(!G.office||G.sales>=6)?0:staffCost('sales'),max:!G.office||G.sales>=6},
+      {k:'ling',name:'hire a linguistics engineer',verb:'hire',txt:!G.office?'needs the office building':(G.ling>=6?'six linguistics engineers, the office is full':'takes the spoken orders, spells each word right so the floor can cut it, and sells it when the letters are in, a few seconds a word each. Paid '+money(STAFFWAGE)+' a minute, you have '+G.ling+' of 6'),cost:(!G.office||G.ling>=6)?0:staffCost('ling'),max:!G.office||G.ling>=6},
       {k:'fore',name:'foreman',verb:'hire',txt:G.foreman?'on duty, operators go where they are needed without being told':'sends operators to stopped mills without you tapping',cost:G.foreman?0:3000,max:G.foreman},
       {k:'head',name:'high speed head',verb:'upgrade',txt:G.head>=3?'fully upgraded, the order program cuts at top speed':'makes the order program on your main mill cut faster, level '+G.head+' of three',cost:G.head>=3?0:HEADCOST[G.head],max:G.head>=3},
       {k:'dies',name:G.dies>=1?'emoji dies':'number dies',verb:'unlock',txt:G.dies>=2?'letters, numbers and emoji all unlocked':(G.dies===1?'cut emoji, the best paying parts there are, and take emoji orders':'cut the numbers zero through nine and take house number orders'),cost:G.dies>=2?0:DIECOST[G.dies],max:G.dies>=2},
@@ -2856,7 +2910,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       {k:'soft',name:'better software',verb:'upgrade',txt:G.soft>=2?'nesting software, fastest programs and the most parts per stock load':'faster toolpaths and more parts out of every stock load, level '+G.soft+' of two',cost:G.soft>=2?0:SOFTCOST[G.soft],max:G.soft>=2}
     ];
     var cl=document.getElementById('costLine');
-    var costTxt='running costs '+money(costPerMin())+' a minute, wages '+money(wagesPerMin())+' for '+G.ops+(G.ops===1?' operator':' operators')+(G.warehouse?' and '+(G.mw+G.el+G.ct)+' specialists':'')+(G.mills>0?'':' (unpaid until you own a floor mill)')+', power '+money(floorPower()+(s.rpm>0&&!G.broke?myPower():0))+' for the machines running now, and '+money(G.paidStock)+' spent on blanks, bars and sheet so far';
+    var costTxt='running costs '+money(costPerMin())+' a minute, wages '+money(wagesPerMin())+' for '+G.ops+(G.ops===1?' operator':' operators')+(G.warehouse?' and '+(G.mw+G.el+G.ct)+' specialists':'')+(G.office?', the office '+money(officePerMin()):'')+(G.mills>0?'':' (unpaid until you own a floor mill)')+', power '+money(floorPower()+(s.rpm>0&&!G.broke?myPower():0))+' for the machines running now, and '+money(G.paidStock)+' spent on blanks, bars and sheet so far';
     if(cl.textContent!==costTxt) cl.textContent=costTxt;
     cl.className='status'+(G.broke?' warn':'');
     // rebuild the buttons only when something you can buy changes, never just because cash ticked
@@ -2904,6 +2958,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(k==='warehouse'){ if(G.warehouse) return; c=WAREHOUSECOST; if(G.cash<c) return; G.cash-=c; G.warehouse=true; fac.tsig=''; facSync(); binsDirty=true; toast('the whole shop moved into the warehouse, three times the floor'); }
     if(k==='mw'||k==='el'||k==='ct'){ if(!G.warehouse||G[k]>=6) return; c=specCost(k); if(G.cash<c) return; G.cash-=c; G[k]++; facSync(); toast(TECHS[k].name+' '+G[k]+' clocked in'); }
     if(k==='op'){ if(G.ops>=opMax()) return; c=opCost(); if(G.cash<c) return; G.cash-=c; G.ops++; facSync(); toast('operator '+G.ops+' clocked in'); }
+    if(k==='office'){ if(G.office) return; c=OFFICECOST; if(G.cash<c) return; G.cash-=c; G.office=true; ordersDirty=true; toast('the office building is open'); }
+    if(k==='sales'||k==='ling'){ if(!G.office||G[k]>=6) return; c=staffCost(k); if(G.cash<c) return; G.cash-=c; G[k]++; toast((k==='sales'?'sales manager ':'linguistics engineer ')+G[k]+' started in the office'); }
     if(k==='fore'){ if(G.foreman) return; c=3000; if(G.cash<c) return; G.cash-=c; G.foreman=true; toast('the foreman is on the floor'); }
     if(k==='head'){ if(G.head>=3) return; c=HEADCOST[G.head]; if(G.cash<c) return; G.cash-=c; G.head++; toast('high speed head, level '+G.head); }
     if(k==='chip'){ if(G.chipConv) return; c=CHIPCOST; if(G.cash<c) return; G.cash-=c; G.chipConv=true; toast('chip conveyors are running, no more chip stops'); }
