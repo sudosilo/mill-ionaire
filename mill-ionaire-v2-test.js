@@ -593,8 +593,9 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     ok(posted && posted.game === 'mill-ionaire' && posted.score === 2500000000000000 && posted.duration >= 90000000 && posted.duration < 90010000 && posted.tag === 'B1U', 'the score goes to the score service with the tag and play time', JSON.stringify(posted));
     ok(/number 2/.test(await txt(page, '#boardMsg')) && /B1U/.test(await txt(page, '#boardList')), 'the board shows where the score placed');
     ok((await page.evaluate(k => localStorage.getItem(k), KEY)) === null, 'submitting retires the business');
-    await page.click('#boardNew'); await page.waitForTimeout(500);
-    ok((await txt(page, '#hudCash')) === '$40', 'a new business starts after cashing out');
+    await page.click('#boardNew');
+    await page.waitForFunction(() => { const e = document.getElementById('hudCash'); return e && e.textContent === '$40'; }, null, { timeout: 8000 }).catch(() => {});
+    ok((await txt(page, '#hudCash')) === '$40', 'a new business starts after cashing out', await txt(page, '#hudCash'));
     ok(errors.length === 0, 'no script errors cashing out', errors.join(' | '));
     await ctx.close();
   }
@@ -609,6 +610,43 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     ok(/could not reach the scoreboard/.test(await txt(page, '#doneMsg')), 'with no connection the cash out says so');
     ok((await save(page)).earned === 5000, 'with no connection the business is kept');
     ok(errors.filter(e => !/Failed to load resource/.test(e)).length === 0, 'no script errors cashing out offline', errors.join(' | '));
+    await ctx.close();
+  }
+
+  // ---- spoken orders: hear the word, spell it, sell it ----
+  {
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 1000, mills: 1, floor: [{ ch: 'E', fin: 'alu', auto: false, stopped: true }],
+      inv: { 'C|alu': 2, 'A|alu': 2, 'T|alu': 2, 'K|alu': 1 },
+      orders: [{ id: 77, word: 'CAT', fin: 'alu', who: 'a caller on the phone', kind: 'spoken', guess: '' }] });
+    const { ctx, page, errors } = await open(browser, { save: seed });
+    await page.evaluate(() => { window.__said = []; speechSynthesis.speak = u => window.__said.push(u.text); });
+    await tab(page, 'orders'); await page.waitForTimeout(300);
+    const card = '#orderList .ocard[data-id="77"]';
+    ok(await page.isVisible(card), 'a spoken order shows on the orders tab');
+    ok(!/CAT/.test(await txt(page, card)), 'the spoken word is never written on the card', await txt(page, card));
+    ok((await page.$$(card + ' .tile.slot')).length === 3, 'the card shows a slot for every letter');
+    ok(await page.isDisabled(card + ' .ship'), 'sell is locked until the word is spelled');
+    await page.click(card + ' .hear');
+    ok((await page.evaluate(() => window.__said)).indexOf('cat') >= 0, 'hear it says the word out loud');
+    await page.click(card + ' .spellit'); await page.waitForTimeout(200);
+    ok(await page.isVisible('#spellSheet.open'), 'spell it opens the letter keys');
+    for (const k of ['C', 'A', 'K']) await page.click('#spellKeys button[data-k="' + k + '"]');
+    ok((await page.$$('#spellSlots .tile.slot')).length === 0, 'typed letters fill the slots');
+    await page.click('#spellDone'); await page.waitForTimeout(300);
+    const c0 = (await save(page)).cash;
+    await page.click(card + ' .ship'); await page.waitForTimeout(300);
+    let g = await save(page);
+    ok(g.cash < c0 && g.orders.some(o => o.id === 77 && o.guess === ''), 'a wrong spelling loses money and clears the slots', c0 + ' ' + g.cash);
+    ok(g.inv['K|alu'] === 1, 'a wrong spelling keeps the letters in the bins');
+    await page.click(card + ' .spellit'); await page.waitForTimeout(200);
+    for (const k of ['C', 'A', 'X']) await page.click('#spellKeys button[data-k="' + k + '"]');
+    await page.click('#spellBack'); await page.click('#spellKeys button[data-k="T"]');
+    await page.click('#spellDone'); await page.waitForTimeout(300);
+    const c1 = (await save(page)).cash;
+    await page.click(card + ' .ship'); await page.waitForTimeout(300);
+    g = await save(page);
+    ok(g.cash > c1 && !g.orders.some(o => o.id === 77) && g.inv['C|alu'] === 1, 'the right spelling sells the order and uses the letters', c1 + ' ' + g.cash);
+    ok(errors.length === 0, 'no script errors on spoken orders', errors.join(' | '));
     await ctx.close();
   }
 

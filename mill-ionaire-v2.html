@@ -130,6 +130,14 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 .tiles{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
 .tile{width:38px;height:44px;border:2px solid var(--charcoal);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:22px;color:#fff;text-shadow:0 1px 0 #000,0 0 3px #000;background-size:cover;position:relative;}
 .tile.miss{opacity:.38;}
+.tile.slot{background:#fff;border-style:dashed;border-color:var(--blue);}
+.ocard .row.spk{margin-bottom:6px;}
+.ocard .row.spk button{flex:1;background:var(--blue);}
+#spellKeys{margin:8px 0;}
+.krow{display:flex;gap:4px;justify-content:center;margin-bottom:4px;}
+.krow button{flex:1 1 0;min-width:0;width:auto;max-width:36px;margin:0;min-height:44px;padding:0;font-size:17px;font-weight:bold;font-family:"Courier New",monospace;}
+.krow button.kwide{max-width:none;font-size:14px;font-family:inherit;}
+#spellSlots{min-height:48px;}
 .tile.ok::after{content:"";position:absolute;right:-5px;bottom:-5px;width:12px;height:12px;background:var(--blue);border:2px solid var(--charcoal);}
 .ocard .row{display:flex;gap:6px;align-items:center;}
 .ocard .row b{flex:1;font-family:"Courier New",monospace;font-size:18px;color:var(--blue);}
@@ -281,6 +289,18 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   </div>
 </div>
 
+<div class="sheet" id="spellSheet">
+  <div class="sheetbox">
+    <h3>spell the word you hear</h3>
+    <p class="spec" id="spellInfo"></p>
+    <div class="tiles" id="spellSlots"></div>
+    <button class="wide" id="spellHear" style="background:var(--blue)">hear it again</button>
+    <div id="spellKeys"></div>
+    <div class="krow"><button id="spellBack" class="kwide">back up a letter</button><button id="spellClear" class="kwide">clear</button></div>
+    <button class="wide" id="spellDone">done</button>
+  </div>
+</div>
+
 <div class="sheet" id="emptySheet">
   <div class="sheetbox">
     <h3>are you sure you want to scrap all this hard work?</h3>
@@ -295,7 +315,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <h3>how to play</h3>
     <p>Customers post word orders on the orders tab. Each word has to be made from letters cut in one finish, like brass or blue anodize, and shipping it pays cash.</p>
     <p>On the mill tab, tap run the order program under the machine. The mill loads a blank in the right finish, cuts whatever letter the orders are missing, and drops it straight into the bins. You can also cut by hand with the wheels and sliders, then bag the part and drag it into its bin.</p>
-    <p>Words get longer as your shop grows, and longer words pay more for every letter. Once you run several mills the spelling bee sends in long words at a premium, and now and then a collector wants a whole matching set, which pays double. Number dies and emoji dies in the shop unlock house numbers and emoji, and emoji are the best paying parts there are.</p>
+    <p>Words get longer as your shop grows, and longer words pay more for every letter. Once you run several mills the spelling bee sends in long words at a premium, and now and then a collector wants a whole matching set, which pays double. Once you own a floor mill, a caller on the phone sometimes says a word out loud instead of writing it down. Tap hear it, tap spell it and type the word into its slots, and the order program cuts the letters you typed. Sell it when the slots are filled. Spell it right and it pays more than any other word, spell it wrong and the customer docks you half the price. Number dies and emoji dies in the shop unlock house numbers and emoji, and emoji are the best paying parts there are.</p>
     <p>The engine lathe in the shop costs half the price of your next mill. It turns round parts: sign standoffs, threaded studs, sign posts, bushings, flanges, lazy susan plates, knobs and fixture pins. Once you own it, customers order batches of turned parts, words mounted on standoffs and signs on posts. Run the lathe program on the lathe tab and it turns whatever the orders need, and when nothing is on order it makes the part you picked to stock. Standoffs and studs come first, and every turned part you make counts toward unlocking the next part on the catalog.</p>
     <p>The press brake in the shop takes a floor bay and folds sheet into brackets, channel and sign box frames, and later giant chips, tacos, donuts and the muffler man. With the brake running, customers order big storefront signs that need letters, a box frame, brackets, standoffs from the lathe and sometimes a giant shape on top, and those pay the most of anything.</p>
     <p>The five axis CNC is the expensive shortcut. A CNC takes a floor bay and cuts letters, numbers, emoji and turned parts, all in one machine. It runs faster than a knee mill with no chip stops, half the tool wear and a smaller power bill, on stock that costs a little more per part. You can also make your own mill a five axis CNC, which still runs free when the cash is gone, and swap the lathe for a CNC in the same bay.</p>
@@ -663,7 +683,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   // letters first, numbers once the number dies are bought, emoji once the emoji dies are bought
   function charset(){ var a=ALPHA.split(''); if(G.dies>=1) a=a.concat(DIGITS.split('')); if(G.dies>=2) a=a.concat(EMOJI); return a; }
   function isEmoji(ch){ return EMOJI.indexOf(ch)>=0; }
-  function toks(o){ return Array.from(o.word||'').concat(o.parts||[]); }
+  function toks(o){ if(o.kind==='spoken') return Array.from(o.guess||''); return Array.from(o.word||'').concat(o.parts||[]); }
   function oname(o){ if(o.kind==='turned'||o.kind==='formed') return partInfo(o.parts[0]).plural; if(o.kind==='bigsign') return o.word+' sign'; if(o.kind==='set') return 'a matching set'; return o.word; }
   var demo={on:false,mode:'alpha',phase:'idle',letter:0,mask:null,i:0,j:0,dir:1,shelf:[],eject:0,pass:1,stage:'rough',ch:'A',fin:'alu',wait:0};
 
@@ -783,8 +803,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }).slice(0,9).map(function(q){
       var id=Math.floor(Number(q.id))||0; if(id>maxId) maxId=id;
       return {id:id,word:q.word,parts:q.parts?q.parts.slice():undefined,fin:q.fin,who:CLIENTS.indexOf(q.who)>=0?q.who:CLIENTS[0],
-        kind:KINDS.indexOf(q.kind)>=0?q.kind:'word',proc:PROCS[q.proc]?q.proc:'',color:PCOLORS.indexOf(q.color)>=0?q.color:''};
-    });
+        kind:KINDS.indexOf(q.kind)>=0?q.kind:'word',proc:PROCS[q.proc]?q.proc:'',color:PCOLORS.indexOf(q.color)>=0?q.color:'',
+        guess:q.kind==='spoken'&&typeof q.guess==='string'?q.guess.replace(/[^A-Z]/g,'').slice(0,q.word.length):undefined};
+    }).map(function(q){ if(q.kind==='spoken'){ q.who=SPOKENWHO; q.proc=''; q.color=''; q.parts=undefined; if(!/^[A-Z]+$/.test(q.word)) q.kind='word'; } return q; });
     G.line=G.line.filter(function(j){ return j&&j.order&&goodWord(j.order.word)&&goodParts(j.order.parts)&&FINBY[j.order.fin]&&PROCS[j.order.proc]; }).slice(0,30).map(function(j){
       var o=j.order;
       return {order:{id:Math.floor(Number(o.id))||0,word:o.word,parts:o.parts?o.parts.slice():undefined,fin:o.fin,who:CLIENTS.indexOf(o.who)>=0?o.who:CLIENTS[0],kind:KINDS.indexOf(o.kind)>=0?o.kind:'word',proc:o.proc,color:PCOLORS.indexOf(o.color)>=0?o.color:'',pay:Math.max(0,Math.min(1e9,Number(o.pay)||0))},left:Math.max(0,Number(j.left)||0),total:Math.max(1,Number(j.total)||1)};
@@ -2301,7 +2322,19 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     'MOUNTAIN','STARLIGHT','BACKYARD','SUNFLOWER','BUTTERFLY','MILLWRIGHT','MACHINIST','HOMESTEAD','WILDERNESS','TUMBLEWEED',
     'ROADRUNNER','JACKRABBIT','SAGEBRUSH','BLACKSMITH','LIGHTHOUSE','WATERFALL','PLAYGROUND','WONDERFUL','THUNDERBIRD',
     'HANDCRAFTED','CHAMPIONSHIP','ENCYCLOPEDIA','UNBELIEVABLE','EXTRAORDINARY','SPECTACULAR','MAGNIFICENT','CONSTELLATION'];
-  var KINDS=['word','spell','set','num','emoji','turned','mounted','post','formed','bigsign'];
+  var KINDS=['word','spell','set','num','emoji','turned','mounted','post','formed','bigsign','spoken'];
+  // spoken orders: the customer says the word out loud and you spell it, so leave out words that sound like other words
+  var SPOKENWHO='a caller on the phone', SPEAK=typeof window.speechSynthesis!=='undefined'&&typeof window.SpeechSynthesisUtterance==='function';
+  var SOUNDALIKE=['SUN','STEEL','MAIL','SALE','ROAD','HAY','GATE','TEAM','BAND','COOP','MESA','CAFE','PRIDE','SIGN','BLUE','ROUTE','DOCK','NUT'];
+  function sayWord(o){
+    if(!SPEAK){ toast('this browser cannot speak, pass this order',true); return; }
+    try{
+      window.speechSynthesis.cancel();
+      var u=new SpeechSynthesisUtterance(o.word.toLowerCase());
+      u.rate=0.8; u.lang='en-US'; u.volume=G.sound===false?0:Math.max(0.3,G.vol);
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
   var PCOLORS=['red','blue','black','white','orange','teal','yellow','green'];
   // finishing processes a shipped order can need, each run by its own station
   var PROCS={stamp:{name:'stamped with a maker\'s mark',station:'stamper',mult:1.3,secs:1.5},
@@ -2314,10 +2347,11 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var ordersDirty=true, ordersSig='', orderT=0;
   function maxOrders(){ return Math.min(9,3+Math.ceil(G.mills/2)); }
   function orderValue(o){
-    var tk=toks(o), v=0;
+    var tk=o.kind==='spoken'?Array.from(o.word):toks(o), v=0;
     for(var i=0;i<tk.length;i++) v+=letterBase(tk[i]);
     var bonus=1+0.18*Math.max(0,tk.filter(function(t){ return !isPart(t); }).length-3);       // longer words pay more for every letter
     if(o.kind==='spell') bonus*=1.5;                 // spelling bee words pay a premium on top
+    if(o.kind==='spoken') bonus*=1.6;                // a word you only hear pays the most of any word
     if(o.kind==='set') bonus*=2;                     // a matching set pays double
     if(o.kind==='bigsign') bonus*=1.5;               // a whole storefront sign pays a premium
     if(o.proc&&PROCS[o.proc]) bonus*=PROCS[o.proc].mult;
@@ -2327,6 +2361,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var f=fin(o.fin).name, t;
     if(o.kind==='set') t='a matching '+(o.word===ALPHA?'alphabet':(o.word===DIGITS?'number':'emoji'))+' set in '+f;
     else if(o.kind==='spell') t='spelling bee word '+o.word+' in '+f;
+    else if(o.kind==='spoken') t='a word said on the phone, '+o.word.length+' letters in '+f;
     else if(o.kind==='num') t='house number '+o.word+' in '+f;
     else if(o.kind==='turned') t=o.parts.length+' '+LPARTS[o.parts[0].slice(2)].plural+' in '+f;
     else if(o.kind==='mounted') t=o.word+' in '+f+', mounted on standoffs';
@@ -2355,6 +2390,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       var bee=WORDS.filter(function(w){ return w.length>=7&&w.length<=maxLen; });
       if(bee.length){ o.kind='spell'; o.word=pick(bee); o.who='the spelling bee'; }
     }
+    if(!o.word&&SPEAK&&G.mills>=1&&Math.random()<0.2){
+      var heard=WORDS.filter(function(w){ return w.length>=3&&w.length<=maxLen&&SOUNDALIKE.indexOf(w)<0; });
+      if(heard.length){ o.kind='spoken'; o.word=pick(heard); o.guess=''; o.who=SPOKENWHO; }
+    }
     if(!o.word&&canTurn()&&Math.random()<0.4){
       var r2=Math.random(), short=WORDS.filter(function(w){ return w.length<=Math.min(maxLen,7); });
       if(r2<0.45){ o.kind='turned'; o.word=''; var pid=pick(unlockedParts()), pn=2+Math.floor(Math.random()*(1+mills)); o.parts=[]; for(var q=0;q<pn;q++) o.parts.push('L:'+pid); o.who=pick(['a machine builder','a furniture maker','a sign shop','a hardware store','a fixture shop']); }
@@ -2377,7 +2416,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
     if(!o.word&&o.kind!=='turned'&&o.kind!=='formed'){ var pool=WORDS.filter(function(w){ return w.length<=maxLen; }); o.word=pick(pool); }
     var pr=ownedProcs();
-    if(pr.length&&o.kind!=='set'&&Math.random()<0.4){ o.proc=pick(pr); if(o.proc==='pc') o.color=pick(PCOLORS); }
+    if(pr.length&&o.kind!=='set'&&o.kind!=='spoken'&&Math.random()<0.4){ o.proc=pick(pr); if(o.proc==='pc') o.color=pick(PCOLORS); }
     return o;
   }
   function haveFlags(o){
@@ -2388,12 +2427,19 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
     return out;
   }
-  function canShip(o){ return haveFlags(o).every(function(x){ return x; }); }
+  function canShip(o){ if(o.kind==='spoken'&&(o.guess||'').length!==o.word.length) return false; return haveFlags(o).every(function(x){ return x; }); }
   function shipOrder(id){
     for(var i=0;i<G.orders.length;i++){
       var o=G.orders[i];
       if(o.id!==id) continue;
       if(!canShip(o)) return;
+      if(o.kind==='spoken'&&o.guess!==o.word){
+        // spelled wrong: the customer docks you and the letters stay in the bins
+        var pen=Math.max(1,Math.round(orderValue(o)*0.5));
+        G.cash=Math.max(0,G.cash-pen); o.guess='';
+        toast('that is not how they spell it, the customer docked you '+money(pen),true);
+        ordersDirty=true; writeSave(); return;
+      }
       var tk=toks(o);
       for(var k=0;k<tk.length;k++) invAdd(tk[k],o.fin,-1);
       G.orders.splice(i,1);
@@ -2454,7 +2500,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   }
   function renderOrders(){
     var shipN=0;
-    var sig=G.orders.map(function(o){ var c=canShip(o); if(c) shipN++; return o.id+':'+haveFlags(o).join(''); }).join('|')+'/'+(G.passCd>0);
+    var sig=G.orders.map(function(o){ var c=canShip(o); if(c) shipN++; return o.id+':'+(o.guess||'')+':'+haveFlags(o).join(''); }).join('|')+'/'+(G.passCd>0);
     var badge=document.getElementById('badgeOrders');
     badge.textContent=shipN; badge.classList.toggle('show',shipN>0);
     if(view!=='orders') return;
@@ -2477,6 +2523,25 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
         tiles+=isFormed(tk[i])?'<div class="tile turned '+(flags[i]?'ok':'miss')+'" style="background-image:url('+bIconURL(tk[i].slice(2),o.fin)+')"></div>'
           :isTurned(tk[i])?'<div class="tile turned '+(flags[i]?'ok':'miss')+'" style="background-image:url('+lIconURL(tk[i].slice(2),o.fin)+')"></div>'
           :'<div class="tile '+(flags[i]?'ok':'miss')+(isEmoji(tk[i])?' emo':'')+'" style="background-image:url('+swatchURL(o.fin)+')">'+tk[i]+'</div>';
+      if(o.kind==='spoken'){
+        tiles='';
+        for(var j=0;j<o.word.length;j++){
+          var gl=(o.guess||'')[j];
+          tiles+=gl?'<div class="tile '+(flags[j]?'ok':'miss')+'" style="background-image:url('+swatchURL(o.fin)+')">'+gl+'</div>':'<div class="tile slot"></div>';
+        }
+        var okS=canShip(o);
+        d.innerHTML='<h4>'+orderTitle(o)+'</h4><p>for '+o.who+', spell it right or they dock you half the price</p><div class="tiles">'+tiles+'</div>'+
+          '<div class="row spk"><button class="hear">hear it</button><button class="spellit">spell it</button></div>'+
+          '<div class="row"><b>'+money(orderValue(o))+'</b>'+
+          '<button class="pass"'+(G.passCd>0?' disabled':'')+'>pass</button>'+
+          '<button class="ship"'+(okS?'':' disabled')+'>sell</button></div>';
+        d.querySelector('.hear').addEventListener('click',function(){ sayWord(o); });
+        d.querySelector('.spellit').addEventListener('click',function(){ openSpell(o.id); });
+        d.querySelector('.ship').addEventListener('click',function(){ shipOrder(o.id); });
+        d.querySelector('.pass').addEventListener('click',function(){ passOrder(o.id); });
+        el.appendChild(d);
+        return;
+      }
       var ok=canShip(o);
       d.innerHTML='<h4>'+orderTitle(o)+'</h4><p>for '+o.who+'</p><div class="tiles">'+tiles+'</div>'+
         '<div class="row"><b>'+money(orderValue(o))+'</b>'+
@@ -2487,6 +2552,40 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       el.appendChild(d);
     });
   }
+
+  // ---- spelling a spoken order ----
+  var spellId=-1;
+  function spellOrder(){ for(var i=0;i<G.orders.length;i++) if(G.orders[i].id===spellId) return G.orders[i]; return null; }
+  function renderSpell(){
+    var o=spellOrder(), el=document.getElementById('spellSlots');
+    if(!o){ sheet('spellSheet',false); return; }
+    var h='';
+    for(var i=0;i<o.word.length;i++){ var c=(o.guess||'')[i]; h+=c?'<div class="tile" style="background-image:url('+swatchURL(o.fin)+')">'+c+'</div>':'<div class="tile slot"></div>'; }
+    el.innerHTML=h;
+    document.getElementById('spellInfo').textContent=o.word.length+' letters in '+fin(o.fin).name+'. Once every slot is filled, the order program cuts any of your letters the bins are missing, then sell it on the orders tab.';
+  }
+  function openSpell(id){ spellId=id; var o=spellOrder(); if(!o) return; renderSpell(); sheet('spellSheet',true); sayWord(o); }
+  function spellKey(k){
+    var o=spellOrder(); if(!o) return;
+    var g=o.guess||'';
+    if(k==='back') g=g.slice(0,-1); else if(k==='clear') g=''; else if(g.length<o.word.length) g+=k;
+    o.guess=g; ordersDirty=true; binsDirty=true; renderSpell(); writeSave();
+  }
+  (function(){
+    var kb=document.getElementById('spellKeys');
+    ['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'].forEach(function(row){
+      var r=document.createElement('div'); r.className='krow';
+      Array.from(row).forEach(function(ch){
+        var b=document.createElement('button'); b.textContent=ch; b.dataset.k=ch;
+        b.addEventListener('click',function(){ spellKey(ch); }); r.appendChild(b);
+      });
+      kb.appendChild(r);
+    });
+    document.getElementById('spellBack').addEventListener('click',function(){ spellKey('back'); });
+    document.getElementById('spellClear').addEventListener('click',function(){ spellKey('clear'); });
+    document.getElementById('spellHear').addEventListener('click',function(){ var o=spellOrder(); if(o) sayWord(o); });
+    document.getElementById('spellDone').addEventListener('click',function(){ sheet('spellSheet',false); });
+  })();
 
   // ---- shop ----
   var shopSig='';
@@ -3528,7 +3627,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     G=freshSave(); resetting=true; location.reload();
   });
   var resetting=false;
-  ['howSheet','resetSheet','emptySheet','doneSheet'].forEach(function(id){
+  ['howSheet','resetSheet','emptySheet','doneSheet','spellSheet'].forEach(function(id){
     document.getElementById(id).addEventListener('click',function(e){ if(e.target===this) sheet(id,false); });
   });
   document.addEventListener('visibilitychange',function(){ if(!resetting) writeSave(); });
