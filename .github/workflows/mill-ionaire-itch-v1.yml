@@ -45,4 +45,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete itch-latest --yes --cleanup-tag || true
-          gh release create itch-latest "$VER-itch.zip" --title "$VER itch build" --notes "Upload this zip to itch.io as an HTML game."
+          # GitHub can take a few seconds to forget the old tag, so the new release gets a few tries
+          for try in 1 2 3 4 5; do
+            if gh release create itch-latest "$VER-itch.zip" --target "$GITHUB_SHA" --title "$VER itch build" --notes "Upload this zip to itch.io as an HTML game."; then exit 0; fi
+            sleep 10
+            gh release delete itch-latest --yes --cleanup-tag || true
+          done
+          exit 1
