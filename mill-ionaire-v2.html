@@ -132,7 +132,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 .tile.miss{opacity:.38;}
 .truckcv{width:100%;height:auto;display:block;margin-bottom:8px;background:#E4E9EE;border:2px solid var(--charcoal);}
 .truckgo{position:fixed;left:0;bottom:90px;width:100%;max-width:640px;height:auto;pointer-events:none;z-index:60;}
-.officebox{height:40px;overflow:hidden;margin:0 0 10px;padding:4px 8px;font-size:13px;line-height:16px;border-left:4px solid var(--blue);background:#E4E9EE;}
+.officebox{height:72px;overflow:hidden;margin:0 0 10px;padding:4px 8px;font-size:13px;line-height:16px;border-left:4px solid var(--blue);background:#E4E9EE;}
 .tile.slot{background:#fff;border-style:dashed;border-color:var(--blue);}
 .ocard .row.spk{margin-bottom:6px;}
 .ocard .row.spk button{flex:1;background:var(--blue);}
@@ -292,6 +292,15 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   </div>
 </div>
 
+<div class="sheet" id="outsideSheet">
+  <div class="sheetbox">
+    <h3>the business from the street</h3>
+    <canvas id="outsideCv" width="640" height="300" style="width:100%;height:auto;display:block;border:2px solid var(--charcoal)"></canvas>
+    <p class="spec" id="outsideTxt"></p>
+    <button class="wide" id="outsideClose">close</button>
+  </div>
+</div>
+
 <div class="sheet" id="spellSheet">
   <div class="sheetbox">
     <h3>spell the word you hear</h3>
@@ -321,6 +330,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <p>Words get longer as your shop grows, and longer words pay more for every letter. Once you run several mills the spelling bee sends in long words at a premium, and now and then a collector wants a whole matching set, which pays double. Once you own a floor mill, a caller on the phone sometimes says a word out loud instead of writing it down. Tap hear it, tap spell it and type the word into its slots, and the order program cuts the letters you typed. Sell it when the slots are filled. Spell it right and it pays more than any other word, spell it wrong and the customer docks you half the price. Number dies and emoji dies in the shop unlock house numbers and emoji, and emoji are the best paying parts there are.</p>
     <p>The engine lathe in the shop costs half the price of your next mill. It turns round parts: sign standoffs, threaded studs, sign posts, bushings, flanges, lazy susan plates, knobs and fixture pins. Once you own it, customers order batches of turned parts, words mounted on standoffs and signs on posts. Run the lathe program on the lathe tab and it turns whatever the orders need, and when nothing is on order it makes the part you picked to stock. Standoffs and studs come first, and every turned part you make counts toward unlocking the next part on the catalog.</p>
     <p>The office building in the shop houses the business side, and it costs money every minute to keep open. Inside it you can hire sales managers, who ship every order the moment its parts are in the bins, and linguistics engineers, who take the spoken orders, spell each word right so the floor can cut it, and sell it when the letters are in. Each one handles one order every few seconds and draws a big salary, so a busy shop with a backlog may need more than one.</p>
+    <p>In the warehouse the shop sells a laser cutter and a metal 3D printer, each taking a floor bay. The laser cuts gusset plates, enclosure panels, logo cutouts and way guards, and the printer slowly prints rocket nozzles, injector plates, impellers and coolant manifolds. They bring laser and printer orders and rocket engine kits that pay double, and a laser and printer tech to keep them running. Every kind of machine makes spare parts for the others: CNCs make drive gears, ballscrew nuts and tool holders, the laser cuts recoater blades for the printers, and the printer makes nozzle tips for the lasers. When the shelf is empty the dealer sells the part at a steep markup. With a CNC, a laser, a printer and a lathe or a CNC for leadscrews, customers start ordering whole Bridgeport mills, the best money in the game. The office moves up to an office unit and then an office tower for more seats, and besides sales and linguistics it seats finance analysts, who earn a return on the cash but sometimes lose a chunk to a customer going bankrupt, and designers, who invent holiday and two tone textures that pay well but cut slow on pricey stock. The outside view button on the floor tab shows the buildings from the street.</p>
     <p>The warehouse in the shop is the next step past the CNCs. It has three times the floor space, and every machine and the whole crew move over. The floor is drawn smaller so it all fits, and the crew show up as dots colored by trade. Orders start coming by the flatbed truckload, one word spelled out over and over on the trailer, and shipping the truck pays for the whole load. Bigger machines break in new ways. Millwrights replace drive gears and ballscrew nuts, electricians reset drives and breakers, and controls techs clear CNC alarms and replace crashed tool holders. Gears, nuts and tool holders come off the spare shelf, and only a five axis CNC can make them, so CNCs on auto make spares whenever the shelf runs low or a machine is waiting on one.</p>
     <p>The press brake in the shop takes a floor bay and folds sheet into brackets, channel and sign box frames, and later giant chips, tacos, donuts and the muffler man. With the brake running, customers order big storefront signs that need letters, a box frame, brackets, standoffs from the lathe and sometimes a giant shape on top, and those pay the most of anything.</p>
     <p>The five axis CNC is the expensive shortcut. A CNC takes a floor bay and cuts letters, numbers, emoji and turned parts, all in one machine. It runs faster than a knee mill with no chip stops, half the tool wear and a smaller power bill, on stock that costs a little more per part. You can also make your own mill a five axis CNC, which still runs free when the cash is gone, and swap the lathe for a CNC in the same bay.</p>
@@ -350,6 +360,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <button class="switch" id="facRun">pause the floor</button>
     <button class="switch" id="facRush" style="min-width:150px">start a rush shift</button>
     <button class="switch" id="facClose" style="min-width:90px">back to the mill</button>
+    <button class="switch" id="facOutside" style="min-width:90px;background:var(--blue);color:#fff">outside view</button>
   </div>
   <div class="status" id="facOrder">no floor mills yet</div>
   <canvas id="factory" width="700" height="560"></canvas>
@@ -376,6 +387,12 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <div class="bins" id="lbins" style="display:none"></div>
     <p class="binlab" id="bbinsLab" style="display:none">formed parts from the press brake</p>
     <div class="bins" id="bbins" style="display:none"></div>
+    <p class="binlab" id="xbinsLab" style="display:none">laser cut parts</p>
+    <div class="bins" id="xbins" style="display:none"></div>
+    <p class="binlab" id="pbinsLab" style="display:none">metal printed parts</p>
+    <div class="bins" id="pbins" style="display:none"></div>
+    <p class="binlab" id="cbinsLab" style="display:none">CNC castings for Bridgeport mills</p>
+    <div class="bins" id="cbins" style="display:none"></div>
     <div class="selbox" id="binDetail" style="display:none"></div>
     <button class="wide" id="emptyBtn" style="background:var(--rust);margin-top:12px">empty the inventory bins</button>
     <p class="hint">Loose parts pile up in the tray at the top. Drag one down onto its matching letter bin to stow it. Each bin holds a hundred of each finish, and a part will not go into the wrong letter. The colored marks under a bin show which finishes are in it.</p>
@@ -660,7 +677,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     flange:{name:'flange',plural:'flanges',short:'flng',len:0.28,val:38,f:function(t){ return t>0.7?0.98:0.45; }},
     lazysusan:{name:'lazy susan plate',plural:'lazy susan plates',short:'susan',len:0.16,val:50,f:function(t){ return (t>0.4&&t<0.6)?0.82:0.98; }},
     knob:{name:'knob',plural:'knobs',short:'knob',len:0.32,val:28,f:function(t){ return t<0.6?Math.max(0.3,0.85*Math.sqrt(Math.max(0,1-Math.pow((t-0.3)/0.3,2)))):0.3; }},
-    pin:{name:'fixture pin',plural:'fixture pins',short:'pin',len:0.4,val:14,f:function(t){ return t<0.15?0.1+t/0.15*0.15:0.25; }}
+    pin:{name:'fixture pin',plural:'fixture pins',short:'pin',len:0.4,val:14,f:function(t){ return t<0.15?0.1+t/0.15*0.15:0.25; }},
+    leadscrew:{name:'leadscrew',plural:'leadscrews',short:'screw',len:0.95,val:300,thread:true,time:4,f:function(){ return 0.3; }}
   };
   function isTurned(t){ return typeof t==='string'&&t.indexOf('L:')===0; }
   // formed parts from the press brake, drawn as the outline the bends make
@@ -677,32 +695,66 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   };
   // five axis CNC machines cut everything a mill cuts plus the turned parts, but not formed sheet parts
   function cncCount(){ return G.floor.filter(function(c){ return c&&c.kind==='cnc'; }).length; }
+  function hasKind(k){ return G.floor.some(function(c){ return c&&c.kind===k; }); }
   function canTurn(){ return G.lathe||G.homeCnc||cncCount()>0; }
-  function cncWants(t){ return !isFormed(t); }
+  function cncWants(t){ return !isFormed(t)&&!isLaser(t)&&!isPrinted(t); }
   function tokShort(t){ return isSpare(t)?SPARES[t.slice(2)].short:(isPart(t)?partInfo(t).short:t); }
   function tokName(t){ return isPart(t)?partInfo(t).name:t; }
   var CNCSTOCK=1.2, CNCPOWER=0.6, CNCSPEED=1.3, CNCWEAR=0.5, CNCCOST=15000;
   // the warehouse: three times the floor, specialist crews, breakdowns that use up spare parts only a five axis CNC can make
   // the office: sales managers ship ready orders on their own, linguistics engineers spell the spoken orders
-  var OFFICECOST=500000, OFFICEUPKEEP=400, STAFFBASE=100000, STAFFWAGE=250, SALESECS=5, LINGSECS=8;
-  var WAREHOUSECOST=750000, SPAREKEEP=6, SPARETIME=2, SPECWAGE=30, SPECBASE={mw:20000,el:20000,ct:30000};
-  var SPARES={gear:{name:'drive gear',plural:'drive gears',short:'gear'},nut:{name:'ballscrew nut',plural:'ballscrew nuts',short:'nut'},holder:{name:'tool holder',plural:'tool holders',short:'holder'}};
+  var OFFICECOST=500000, OFFICEUPKEEP=400, STAFFBASE=100000, STAFFWAGE=250, SALESECS=5, LINGSECS=8, DESIGNSECS=150;
+  var OFFICES=[null,{name:'office building',cost:500000,upkeep:400,seats:4},{name:'office unit',cost:750000,upkeep:700,seats:8},{name:'office tower',cost:1000000,upkeep:1200,seats:16}];
+  var STAFF={sales:'sales manager',ling:'linguistics engineer',fin:'finance analyst',design:'designer'};
+  function seats(){ return G.officeLv?OFFICES[G.officeLv].seats:0; }
+  function staffN(){ return (G.sales||0)+(G.ling||0)+(G.fin||0)+(G.design||0); }
+  var WAREHOUSECOST=750000, SPAREKEEP=6, SPARETIME=2, SPECWAGE=30, SPECBASE={mw:20000,el:20000,ct:30000,am:40000};
+  var SPARES={gear:{name:'drive gear',plural:'drive gears',short:'gear',maker:'cnc',buy:4000},nut:{name:'ballscrew nut',plural:'ballscrew nuts',short:'nut',maker:'cnc',buy:5000},holder:{name:'tool holder',plural:'tool holders',short:'holder',maker:'cnc',buy:3000},
+    tip:{name:'laser nozzle tip',plural:'laser nozzle tips',short:'tip',maker:'print',buy:6000},blade:{name:'recoater blade',plural:'recoater blades',short:'blade',maker:'laser',buy:6000}};
+  var LASERCOST=40000, PRINTCOST=60000;
   function isSpare(t){ return typeof t==='string'&&t.indexOf('S:')===0&&!!SPARES[t.slice(2)]; }
-  var TECHS={op:{name:'operator',plural:'operators',color:'#2E4A63'},mw:{name:'millwright',plural:'millwrights',color:'#B5760D'},el:{name:'electrician',plural:'electricians',color:'#C9A227'},ct:{name:'controls tech',plural:'controls techs',color:'#3F8F8A'}};
+  var TECHS={op:{name:'operator',plural:'operators',color:'#2E4A63'},am:{name:'laser and printer tech',plural:'laser and printer techs',color:'#7B4FA0'},mw:{name:'millwright',plural:'millwrights',color:'#B5760D'},el:{name:'electrician',plural:'electricians',color:'#C9A227'},ct:{name:'controls tech',plural:'controls techs',color:'#3F8F8A'}};
   var NEEDS={chips:{who:'op',secs:2,txt:'chips cleared'},tool:{who:'op',secs:3.5,txt:'a tool change'},stock:{who:'op',secs:2,txt:'more stock'},
     gear:{who:'mw',secs:6,part:'gear',txt:'a stripped drive gear replaced'},nut:{who:'mw',secs:7,part:'nut',txt:'a worn ballscrew nut replaced'},
     drive:{who:'el',secs:5,txt:'a faulted spindle drive reset'},breaker:{who:'el',secs:3,txt:'a tripped breaker reset'},
-    alarm:{who:'ct',secs:4,txt:'a probe alarm cleared',cnc:true},crash:{who:'ct',secs:6,part:'holder',txt:'a crashed tool holder replaced',cnc:true}};
-  var BREAKRATE={gear:0.0006,nut:0.0004,drive:0.0005,breaker:0.0006,alarm:0.0009,crash:0.00045};
+    alarm:{who:'ct',secs:4,txt:'a probe alarm cleared',on:'cnc'},crash:{who:'ct',secs:6,part:'holder',txt:'a crashed tool holder replaced',on:'cnc'},
+    lens:{who:'am',secs:4,txt:'a dirty laser lens cleaned',on:'laser'},tipburn:{who:'am',secs:6,part:'tip',txt:'a burnt nozzle tip replaced',on:'laser'},
+    recoat:{who:'am',secs:7,part:'blade',txt:'a damaged recoater blade replaced',on:'print'},powder:{who:'am',secs:4,txt:'a powder jam cleared',on:'print'}};
+  var BREAKRATE={gear:0.0006,nut:0.0004,drive:0.0005,breaker:0.0006,alarm:0.0009,crash:0.00045,lens:0.0009,tipburn:0.0006,recoat:0.0006,powder:0.0008};
   function isFormed(t){ return typeof t==='string'&&t.indexOf('B:')===0; }
-  function isPart(t){ return isTurned(t)||isFormed(t); }
-  function partInfo(t){ return isTurned(t)?LPARTS[t.slice(2)]:BPARTS[t.slice(2)]; }
-  var ALLCH=ALPHA.split('').concat(DIGITS.split('')).concat(EMOJI).concat(Object.keys(LPARTS).map(function(k){ return 'L:'+k; })).concat(Object.keys(BPARTS).map(function(k){ return 'B:'+k; }));
+  // laser cut plate, metal printed parts and big CNC castings, drawn as flat shapes with their holes
+  function ring(n,r,r2){ var a=[]; for(var i=0;i<n;i++){ var t=2*Math.PI*i/n, rr=(r2&&i%2)?r2:r; a.push([rr*Math.cos(t),rr*Math.sin(t)]); } return a; }
+  var XPARTS={
+    gusset:{name:'gusset plate',plural:'gusset plates',short:'guss',val:30,pts:[[0,0],[40,0],[0,40]],holes:[[8,8,3]]},
+    panel:{name:'enclosure panel',plural:'enclosure panels',short:'panel',val:45,pts:[[0,0],[50,0],[50,34],[0,34]],holes:[[6,6,2],[44,6,2],[6,28,2],[44,28,2]]},
+    logo:{name:'logo cutout',plural:'logo cutouts',short:'logo',val:70,pts:ring(10,24,11),holes:[[0,0,4]]},
+    guard:{name:'way guard',plural:'way guards',short:'guard',val:220,time:3,pts:[[0,0],[60,0],[60,18],[0,18]],holes:[[10,9,3],[30,9,3],[50,9,3]]}
+  };
+  var PPARTS={
+    nozzle:{name:'rocket nozzle',plural:'rocket nozzles',short:'nozl',val:160,time:2,pts:[[12,0],[22,0],[24,14],[36,44],[-2,44],[10,14]],holes:[]},
+    injector:{name:'injector plate',plural:'injector plates',short:'inj',val:120,time:2,pts:ring(16,22),holes:[[0,0,3],[10,0,2],[-10,0,2],[0,10,2],[0,-10,2],[7,7,2],[-7,-7,2],[7,-7,2],[-7,7,2]]},
+    impeller:{name:'impeller',plural:'impellers',short:'imp',val:100,time:2,pts:ring(12,24,9),holes:[[0,0,5]]},
+    manifold:{name:'coolant manifold',plural:'coolant manifolds',short:'mani',val:400,time:4,pts:[[0,0],[44,0],[44,12],[30,12],[30,26],[14,26],[14,12],[0,12]],holes:[[7,6,2],[22,6,2],[37,6,2]]}
+  };
+  var CPARTS={
+    saddle:{name:'saddle casting',plural:'saddle castings',short:'sadl',val:900,time:6,pts:[[0,10],[10,0],[50,0],[60,10],[60,30],[0,30]],holes:[[30,18,6]]},
+    knee:{name:'knee casting',plural:'knee castings',short:'knee',val:1100,time:7,pts:[[0,0],[44,0],[44,50],[0,50]],holes:[[22,36,5]]},
+    head:{name:'mill head',plural:'mill heads',short:'head',val:1500,time:8,pts:[[6,0],[38,0],[44,20],[34,46],[10,46],[0,20]],holes:[[22,20,7]]}
+  };
+  function isLaser(t){ return typeof t==='string'&&t.indexOf('X:')===0&&!!XPARTS[t.slice(2)]; }
+  function isPrinted(t){ return typeof t==='string'&&t.indexOf('P:')===0&&!!PPARTS[t.slice(2)]; }
+  function isCasting(t){ return typeof t==='string'&&t.indexOf('C:')===0&&!!CPARTS[t.slice(2)]; }
+  function isFlat(t){ return isLaser(t)||isPrinted(t)||isCasting(t); }
+  function isPart(t){ return isTurned(t)||isFormed(t)||isFlat(t); }
+  function partInfo(t){ return isTurned(t)?LPARTS[t.slice(2)]:(isLaser(t)?XPARTS[t.slice(2)]:(isPrinted(t)?PPARTS[t.slice(2)]:(isCasting(t)?CPARTS[t.slice(2)]:BPARTS[t.slice(2)]))); }
+  function partTime(t){ var i=isPart(t)?partInfo(t):null; return (i&&i.time)||1; }
+  var ALLCH=ALPHA.split('').concat(DIGITS.split('')).concat(EMOJI).concat(Object.keys(LPARTS).map(function(k){ return 'L:'+k; })).concat(Object.keys(BPARTS).map(function(k){ return 'B:'+k; }))
+    .concat(Object.keys(XPARTS).map(function(k){ return 'X:'+k; })).concat(Object.keys(PPARTS).map(function(k){ return 'P:'+k; })).concat(Object.keys(CPARTS).map(function(k){ return 'C:'+k; }));
   // letters first, numbers once the number dies are bought, emoji once the emoji dies are bought
   function charset(){ var a=ALPHA.split(''); if(G.dies>=1) a=a.concat(DIGITS.split('')); if(G.dies>=2) a=a.concat(EMOJI); return a; }
   function isEmoji(ch){ return EMOJI.indexOf(ch)>=0; }
   function toks(o){ if(o.kind==='spoken') return Array.from(o.guess||''); if(o.kind==='truck'){ var a=[], w=Array.from(o.word||''); for(var c=0;c<(o.copies||1);c++) a=a.concat(w); return a; } return Array.from(o.word||'').concat(o.parts||[]); }
-  function oname(o){ if(o.kind==='turned'||o.kind==='formed') return partInfo(o.parts[0]).plural; if(o.kind==='bigsign') return o.word+' sign'; if(o.kind==='set') return 'a matching set'; if(o.kind==='truck') return 'a flatbed of '+o.word; return o.word; }
+  function oname(o){ if(o.kind==='turned'||o.kind==='formed'||o.kind==='lasered'||o.kind==='printed') return partInfo(o.parts[0]).plural; if(o.kind==='aero') return o.word+' rocket kit'; if(o.kind==='bridgeport') return 'a Bridgeport mill'; if(o.kind==='bigsign') return o.word+' sign'; if(o.kind==='set') return 'a matching set'; if(o.kind==='truck') return 'a flatbed of '+o.word; return o.word; }
   var demo={on:false,mode:'alpha',phase:'idle',letter:0,mask:null,i:0,j:0,dir:1,shelf:[],eject:0,pass:1,stage:'rough',ch:'A',fin:'alu',wait:0};
 
   // ---------- finishes and textures ----------
@@ -718,8 +770,42 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     {id:'knurl',   name:'knurled steel', rgb:[142,142,140], pat:'knurl',   hard:1.8, pay:4.4, cost:7000},
     {id:'carbon',  name:'carbon fiber',  rgb:[62,62,68],    pat:'carbon',  hard:2.1, pay:5.6, cost:10500},
     {id:'bronze',  name:'hammered bronze',rgb:[156,112,58], pat:'hammer',  hard:2.3, pay:6.6, cost:15500},
-    {id:'damascus',name:'damascus',      rgb:[128,130,136], pat:'damascus',hard:2.8, pay:9.0, cost:25000}
+    {id:'damascus',name:'damascus',      rgb:[128,130,136], pat:'damascus',hard:2.8, pay:9.0, cost:25000},
+    // designer textures: two and three color patterns the design team dreams up, never sold in the shop
+    {id:'twotone', name:'two tone blue and green',rgb:[52,102,172],rgb2:[70,150,86],pat:'twotone',hard:2.4,pay:7.0,cost:0,design:true},
+    {id:'candy',   name:'candy cane',    rgb:[236,236,232],rgb2:[190,40,46],pat:'candy',  hard:2.6, pay:7.6, cost:0, design:true},
+    {id:'giftwrap',name:'gift wrap',     rgb:[178,40,46],rgb2:[40,120,62],rgb3:[214,176,64],pat:'giftwrap',hard:2.8,pay:8.4,cost:0,design:true},
+    {id:'jingle',  name:'jingle bells',  rgb:[34,104,58],rgb2:[226,190,70],rgb3:[244,244,240],pat:'jingle',hard:3.0,pay:9.2,cost:0,design:true},
+    {id:'halloween',name:'halloween',    rgb:[226,120,34],rgb2:[30,28,30],rgb3:[120,60,150],pat:'halloween',hard:3.2,pay:10,cost:0,design:true}
   ];
+  function isDesign(id){ return !!fin(id).design; }
+  // which of a designer texture's colors sits at a point: zero, one or two
+  function patColor(p,u,v){
+    switch(p){
+      case 'twotone': return ((u+v)%96)<48?0:1;
+      case 'candy': return ((u+v)%24)<12?0:1;
+      case 'giftwrap':
+        if((u%64)<7||(v%64)<7) return 1;
+        return (Math.hypot((u%32)-16,(v%32)-16)<4)?2:0;
+      case 'jingle':
+        var a=(u%40)-20, b=(v%40)-20;
+        if(Math.hypot(a,b)<6) return 1;
+        if((Math.abs(a+20-((v/40|0)%2)*20)<1.5||Math.abs(b)<1.5)&&Math.hypot(a,b)>14&&Math.hypot(a,b)<18) return 2;
+        return 0;
+      case 'halloween':
+        var c=((u+2*v)%48);
+        if(c<9) return 1;
+        return (Math.hypot((u%36)-18,(v%36)-18)<5)?2:0;
+    }
+    return 0;
+  }
+  var PCOLC={};
+  function patColTex(id){
+    if(PCOLC[id]) return PCOLC[id];
+    var p=fin(id).pat, t=new Uint8Array(256*256);
+    for(var v=0;v<256;v++) for(var u=0;u<256;u++) t[v*256+u]=patColor(p,u,v);
+    PCOLC[id]=t; return t;
+  }
   var FINBY={}; FIN.forEach(function(f){ FINBY[f.id]=f; });
   function fin(id){ return FINBY[id]||FIN[0]; }
 
@@ -761,10 +847,11 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   }
   // writes one pixel of a finish into image data
   function finPx(d,o,id,u,v,shade,alpha){
-    var f=fin(id), t=patTex(id), dv=t[((v&255)<<8)|(u&255)];
-    d[o]=Math.max(0,Math.min(255,f.rgb[0]*shade+dv));
-    d[o+1]=Math.max(0,Math.min(255,f.rgb[1]*shade+dv));
-    d[o+2]=Math.max(0,Math.min(255,f.rgb[2]*shade+dv));
+    var f=fin(id), t=patTex(id), dv=t[((v&255)<<8)|(u&255)], c=f.rgb;
+    if(f.rgb2){ var ci=patColTex(id)[((v&255)<<8)|(u&255)]; c=ci===2?(f.rgb3||f.rgb2):(ci===1?f.rgb2:f.rgb); }
+    d[o]=Math.max(0,Math.min(255,c[0]*shade+dv));
+    d[o+1]=Math.max(0,Math.min(255,c[1]*shade+dv));
+    d[o+2]=Math.max(0,Math.min(255,c[2]*shade+dv));
     d[o+3]=alpha;
   }
   var SWC={};
@@ -782,7 +869,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var SAVEKEY='mill-ionaire-v2-save';
   function freshSave(){
     return {cash:40,played:0,owned:['alu'],curFin:'alu',inv:{},orders:[],mills:0,ops:1,foreman:false,
-            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[],lathe:false,stockPart:'standoff',turned:0,paidStock:0,brake:false,brakePart:'angle',formed:0,homeCnc:false,warehouse:false,mw:0,el:0,ct:0,spares:{gear:0,nut:0,holder:0},office:false,sales:0,ling:0};
+            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[],lathe:false,stockPart:'standoff',turned:0,paidStock:0,brake:false,brakePart:'angle',formed:0,homeCnc:false,warehouse:false,mw:0,el:0,ct:0,spares:{gear:0,nut:0,holder:0},office:false,sales:0,ling:0,officeLv:0,fin:0,design:0,am:0,bports:0,paidSpares:0};
   }
   var G=freshSave();
   // reads the save and throws away anything that is the wrong shape, so a damaged save never breaks the game
@@ -801,8 +888,11 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     function int(n,a,b){ n=Math.floor(Number(n)||0); return n<a?a:(n>b?b:n); }
     G.cash=Math.max(0,G.cash); G.played=Math.max(0,G.played); G.earned=Math.max(0,G.earned);
     G.warehouse=G.warehouse===true; G.mills=int(G.mills,0,(G.warehouse?38:12)-(G.lathe===true?1:0)-(G.brake===true?1:0)); G.ops=int(G.ops,1,G.warehouse?16:6);
-    G.mw=int(G.mw,0,6); G.el=int(G.el,0,6); G.ct=int(G.ct,0,6);
-    G.office=G.office===true; G.sales=G.office?int(G.sales,0,6):0; G.ling=G.office?int(G.ling,0,6):0;
+    G.mw=int(G.mw,0,6); G.el=int(G.el,0,6); G.ct=int(G.ct,0,6); G.am=int(G.am,0,6); G.bports=int(G.bports,0,1e9);
+    G.officeLv=int(G.officeLv,0,3); if(G.office===true&&!G.officeLv) G.officeLv=1; G.office=G.officeLv>0;
+    G.sales=int(G.sales,0,16); G.ling=int(G.ling,0,16); G.fin=int(G.fin,0,16); G.design=int(G.design,0,16);
+    ['design','fin','ling','sales'].forEach(function(k){ while(G.sales+G.ling+G.fin+G.design>seats()&&G[k]>0) G[k]--; });
+    G.paidSpares=Math.max(0,Number(G.paidSpares)||0);
     var sp={}; Object.keys(SPARES).forEach(function(k){ sp[k]=int((G.spares||{})[k],0,99); }); G.spares=sp; G.head=int(G.head,0,3); G.chipConv=G.chipConv===true; G.lube=int(G.lube,0,2); G.bits=int(G.bits,0,2); G.soft=int(G.soft,0,2); G.broke=G.broke===true; G.dies=int(G.dies,0,2); G.stamper=G.stamper===true; G.booth=G.booth===true; G.ledbench=G.ledbench===true; G.lathe=G.lathe===true; G.passCd=Math.max(0,Math.min(20,G.passCd));
     G.made=Math.max(0,G.made); G.turned=Math.max(0,Math.floor(Number(G.turned)||0)); G.formed=Math.max(0,Math.floor(Number(G.formed)||0)); G.brake=G.brake===true; G.homeCnc=G.homeCnc===true; if(!BPARTS[G.brakePart]) G.brakePart='angle'; G.paidStock=Math.max(0,Number(G.paidStock)||0); if(!LPARTS[G.stockPart]) G.stockPart='standoff'; G.shipped=Math.max(0,G.shipped); G.foreman=G.foreman===true; G.sound=G.sound!==false; G.vol=Math.max(0,Math.min(1,G.vol));
     var own=['alu'];
@@ -835,7 +925,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     });
     G.nextId=Math.max(int(G.nextId,1,1e9),maxId+1);
     G.floor=G.floor.filter(function(c){ return c&&typeof c.ch==='string'&&(ALLCH.indexOf(c.ch)>=0||isSpare(c.ch))&&FINBY[c.fin]; })
-      .slice(0,38).map(function(c){ return {ch:c.ch,fin:own.indexOf(c.fin)>=0?c.fin:'alu',auto:c.auto!==false,stopped:c.stopped===true,kind:c.kind==='cnc'?'cnc':'mill'}; });
+      .slice(0,38).map(function(c){ return {ch:c.ch,fin:own.indexOf(c.fin)>=0?c.fin:'alu',auto:c.auto!==false,stopped:c.stopped===true,kind:['cnc','laser','print'].indexOf(c.kind)>=0?c.kind:'mill'}; });
     G.done=G.done.filter(function(j){ return typeof j==='number'&&j>=0&&j<JOBS.length; });
     G.tray=G.tray.filter(function(t){ return t&&typeof t.ch==='string'&&(t.ch===''||ALLCH.indexOf(t.ch)>=0)&&FINBY[t.fin]; }).slice(-24);
   }
@@ -1068,7 +1158,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function partBin(tok){
     var tot=invTotal(tok), d=document.createElement('div'), id=tok.slice(2);
     var best=G.curFin, bn=-1; FIN.forEach(function(f){ var n=invGet(tok,f.id); if(n>bn){ bn=n; best=f.id; } });
-    var url=isTurned(tok)?lIconURL(id,best):bIconURL(id,best);
+    var url=partIconURL(tok,best);
     d.className='bin pbin'+(tot>0?' has':'')+(binSel===tok?' sel':''); d.dataset.ch=tok;
     d.innerHTML='<b class="pic" style="background-image:url('+url+')"></b><i>'+tot+'</i><s>'+dotsFor(tok)+'</s>';
     return d;
@@ -1078,7 +1168,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var el=document.getElementById('bins');
     el.innerHTML='';
     var cs=charset();
-    [['lbins','lbinsLab',canTurn(),LPARTS,'L:'],['bbins','bbinsLab',G.brake,BPARTS,'B:']].forEach(function(r){
+    [['lbins','lbinsLab',canTurn(),LPARTS,'L:'],['bbins','bbinsLab',G.brake,BPARTS,'B:'],['xbins','xbinsLab',hasKind('laser'),XPARTS,'X:'],['pbins','pbinsLab',hasKind('print'),PPARTS,'P:'],['cbins','cbinsLab',G.warehouse&&cncCount()>0,CPARTS,'C:']].forEach(function(r){
       var box=document.getElementById(r[0]);
       box.innerHTML=''; box.style.display=r[2]?'grid':'none';
       document.getElementById(r[1]).style.display=r[2]?'block':'none';
@@ -1111,7 +1201,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       var n=invGet(tok,f.id), w=want[f.id]||0;
       if(!n&&!w) return;
       any=true;
-      var pic=part?'<b class="dpic" style="background-image:url('+(isTurned(tok)?lIconURL(tok.slice(2),f.id):bIconURL(tok.slice(2),f.id))+')"></b>'
+      var pic=part?'<b class="dpic" style="background-image:url('+partIconURL(tok,f.id)+')"></b>'
         :'<b class="dpic tilepic'+(isEmoji(tok)?' emo':'')+'" style="background-image:url('+swatchURL(f.id)+')">'+tok+'</b>';
       rows+='<div class="drow">'+pic+'<span>'+f.name+(w?'<br><small>open orders want '+w+'</small>':'')+'</span><em>'+n+'</em><div class="bar"><i style="width:'+Math.min(100,n)+'%;background:var(--blue)"></i></div></div>';
     });
@@ -1166,6 +1256,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function letterThumb(ch,f){
     if(isTurned(ch)) return lIcon(ch.slice(2),f);
     if(isFormed(ch)) return bIcon(ch.slice(2),f);
+    if(isFlat(ch)) return xIcon(ch,f);
     var c=document.createElement('canvas'); c.width=B.nx; c.height=B.ny;
     var x=c.getContext('2d'), im=x.createImageData(B.nx,B.ny), d=im.data;
     var m=ch?demoMask(ch):null;
@@ -1977,7 +2068,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     while(G.floor.length<G.mills) G.floor.push({ch:ALPHA[G.floor.length%26],fin:'alu',auto:true});
     while(fac.m.length<G.mills){
       var c=G.floor[fac.m.length];
-      fac.m.push({ch:c.ch,fin:c.fin,auto:c.auto!==false,stopped:c.stopped===true,cnc:c.kind==='cnc',prog:0,wear:0,stock:5,need:'',sweep:0,dir:1,made:0,flash:0,idle:false});
+      var mk=['cnc','laser','print'].indexOf(c.kind)>=0?c.kind:'mill';
+      fac.m.push({ch:c.ch,fin:c.fin,auto:c.auto!==false,stopped:c.stopped===true,cnc:mk==='cnc',mk:mk,prog:0,wear:0,stock:5,need:'',sweep:0,dir:1,made:0,flash:0,idle:false});
     }
     // the crew: operators first, then the specialists, each keeping its place when someone new is hired
     var want=[], kk;
@@ -1985,6 +2077,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     for(kk=0;kk<G.mw;kk++) want.push('mw');
     for(kk=0;kk<G.el;kk++) want.push('el');
     for(kk=0;kk<G.ct;kk++) want.push('ct');
+    for(kk=0;kk<G.am;kk++) want.push('am');
     var tsig=want.join(',')+(G.warehouse?'w':'');
     if(fac.tsig!==tsig){
       var pool={}; fac.ops.forEach(function(p){ (pool[p.kind]=pool[p.kind]||[]).push(p); });
@@ -2000,19 +2093,33 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function homeX(i){ return G.warehouse?14+i*Math.min(20,(fcv.width-28)/Math.max(1,fac.ops.length||G.ops)):30+i*56; }
   function crewOf(k){ return k==='op'?G.ops:(G[k]||0); }
   // what to make next on a CNC in the warehouse: a spare a broken machine is waiting on, or one the shelf is short of
-  function spareBusy(kind,skip){ var n=0; fac.m.forEach(function(m,i){ if(i!==skip&&m.cnc&&m.ch==='S:'+kind&&m.prog>0&&!m.idle&&!m.stopped) n++; }); return n; }
+  function spareBusy(kind,skip){ var n=0; fac.m.forEach(function(m,i){ if(i!==skip&&m.ch==='S:'+kind&&m.prog>0&&!m.idle&&!m.stopped) n++; }); return n; }
   function urgentSpare(i){
-    var waiting={};
+    var waiting={}, mk=fac.m[i].mk;
     fac.m.forEach(function(m){ var nd=NEEDS[m.need]; if(nd&&nd.part&&!m.partIn) waiting[nd.part]=(waiting[nd.part]||0)+1; });
-    for(var k in waiting) if((G.spares[k]||0)+spareBusy(k,i)<waiting[k]) return {ch:'S:'+k,fin:'alu'};
+    for(var k in waiting) if(SPARES[k].maker===mk&&(G.spares[k]||0)+spareBusy(k,i)<waiting[k]) return {ch:'S:'+k,fin:'alu'};
     return null;
   }
   function stockSpare(i){
-    var best=null, low=SPAREKEEP;
-    Object.keys(SPARES).forEach(function(k){ var have=(G.spares[k]||0)+spareBusy(k,i); if(have<low){ low=have; best=k; } });
+    var best=null, low=SPAREKEEP, mk=fac.m[i].mk;
+    Object.keys(SPARES).forEach(function(k){ if(SPARES[k].maker!==mk) return; var have=(G.spares[k]||0)+spareBusy(k,i); if(have<low){ low=have; best=k; } });
     return best?{ch:'S:'+best,fin:'alu'}:null;
   }
-  function facStore(i){ var m=fac.m[i]; G.floor[i]={ch:m.ch,fin:m.fin,auto:m.auto,stopped:m.stopped,kind:m.cnc?'cnc':'mill'}; writeSave(); }
+  function facStore(i){ var m=fac.m[i]; G.floor[i]={ch:m.ch,fin:m.fin,auto:m.auto,stopped:m.stopped,kind:m.mk||'mill'}; writeSave(); }
+  var MACH={mill:{name:'mill',speed:1,power:1,stock:1},cnc:{name:'CNC',speed:CNCSPEED,power:CNCPOWER,stock:CNCSTOCK},
+    laser:{name:'laser',speed:1.6,power:1.5,stock:1},print:{name:'printer',speed:0.5,power:1.2,stock:2}};
+  function machName(m){ return MACH[m.mk||'mill'].name; }
+  function machineWants(m){ return m.mk==='cnc'?cncWants:(m.mk==='laser'?isLaser:(m.mk==='print'?isPrinted:null)); }
+  function stockKind(t,m){ return (isTurned(t)||m.mk==='print'||isCasting(t))?'bar':(m.mk==='laser'?'sheet':'blank'); }
+  function stockMult(t,m){ return MACH[m.mk||'mill'].stock*(isCasting(t)?6:1); }
+  // what each machine can be set to by hand
+  function machineSet(m){
+    if(m.mk==='laser') return Object.keys(XPARTS).map(function(k){ return 'X:'+k; }).concat(spareSet('laser'));
+    if(m.mk==='print') return Object.keys(PPARTS).map(function(k){ return 'P:'+k; }).concat(spareSet('print'));
+    if(m.mk==='cnc') return charset().concat(unlockedParts().map(function(k){ return 'L:'+k; })).concat(G.warehouse?Object.keys(CPARTS).map(function(k){ return 'C:'+k; }):[]).concat(spareSet('cnc'));
+    return charset();
+  }
+  function spareSet(mk){ return G.warehouse?Object.keys(SPARES).filter(function(k){ return SPARES[k].maker===mk; }).map(function(k){ return 'S:'+k; }):[]; }
 
   // every letter the open orders still need, one entry per missing letter
   function missingList(want){
@@ -2059,7 +2166,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function brakeBay(){ return 1+(G.lathe?1:0); }
   function bayCols(){ var narrow=fcv.clientWidth&&fcv.clientWidth<520; return G.warehouse?(narrow?6:9):(narrow?3:4); }
   function facFit(){
-    var rows=Math.ceil(bays()/bayCols()), h=rows*bayH()+(G.warehouse?170:70);
+    var rows=Math.ceil(bays()/bayCols()), h=rows*bayH()+(G.warehouse?200:70);
     if(fcv.height!==h) fcv.height=h;
   }
   function OPY(){ return G.warehouse?Math.ceil(bays()/bayCols())*bayH()+22:fcv.height-28; }
@@ -2089,23 +2196,24 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       if(m.need||m.stopped) continue;
       if(m.prog<=0){
         if(m.auto){
-          var nd=(m.cnc&&G.warehouse)?urgentSpare(i):null;
-          if(!nd) nd=nextNeeded(i,m.cnc?cncWants:null);
-          if(!nd&&m.cnc&&G.warehouse) nd=stockSpare(i);
+          var maker=m.mk!=='mill'&&G.warehouse;
+          var nd=maker?urgentSpare(i):null;
+          if(!nd) nd=nextNeeded(i,machineWants(m));
+          if(!nd&&maker) nd=stockSpare(i);
           if(!nd){ m.idle=true; continue; }
           m.ch=nd.ch; m.fin=nd.fin;
         }
-        if(!payStock(m.fin,isTurned(m.ch)?'bar':'blank',false,m.cnc?CNCSTOCK:1)){ m.idle=true; continue; }
+        if(!payStock(m.fin,stockKind(m.ch,m),false,stockMult(m.ch,m))){ m.idle=true; continue; }
         m.idle=false;
       }
       var hard=fin(m.fin).hard;
-      var rate=(1-0.35*m.wear)*(1+0.25*G.bits)*(1+0.1*G.soft)*(m.cnc?CNCSPEED:1)/(9*hard*(isSpare(m.ch)?SPARETIME:1));      // a part takes about nine seconds fresh in aluminum
+      var rate=(1-0.35*m.wear)*(1+0.25*G.bits)*(1+0.1*G.soft)*MACH[m.mk||'mill'].speed/(9*hard*(isSpare(m.ch)?SPARETIME:1)*partTime(m.ch));      // a part takes about nine seconds fresh in aluminum
       m.prog+=dt*rate;
       m.sweep+=dt*m.dir*1.6;
       if(m.sweep>1){m.sweep=1;m.dir=-1;} if(m.sweep<0){m.sweep=0;m.dir=1;}
-      m.wear+=dt*0.016*hard*(1-0.3*G.lube)*(1-0.15*G.bits)*(m.cnc?CNCWEAR:1);
-      if(!G.chipConv&&!m.cnc&&Math.random()<dt*0.012){ m.need='chips'; m.flash=1; }
-      if(G.warehouse&&!m.need) for(var bk in BREAKRATE){ if(NEEDS[bk].cnc&&!m.cnc) continue; if(Math.random()<dt*BREAKRATE[bk]){ m.need=bk; m.flash=1; break; } }
+      if(m.mk==='mill'||m.mk==='cnc') m.wear+=dt*0.016*hard*(1-0.3*G.lube)*(1-0.15*G.bits)*(m.cnc?CNCWEAR:1);
+      if(!G.chipConv&&m.mk==='mill'&&Math.random()<dt*0.012){ m.need='chips'; m.flash=1; }
+      if(G.warehouse&&!m.need) for(var bk in BREAKRATE){ if(NEEDS[bk].on?NEEDS[bk].on!==m.mk:(m.mk!=='mill'&&m.mk!=='cnc')) continue; if(Math.random()<dt*BREAKRATE[bk]){ m.need=bk; m.flash=1; break; } }
       if(m.need) continue;
       if(m.wear>=1){ m.need='tool'; m.flash=1; }
       if(m.prog>=1){
@@ -2138,12 +2246,18 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   }
 
   // sends the right kind of technician to a stopped machine; says why when nobody can go
+  var warnedBuy=0;
   function facDispatch(i){
     var m=fac.m[i], nd=NEEDS[m.need];
     if(!nd) return '';
     for(var k=0;k<fac.ops.length;k++) if(fac.ops[k].busy===i) return '';
     if(!crewOf(nd.who)) return 'this needs '+(nd.who==='el'?'an ':'a ')+TECHS[nd.who].name+', hire one in the shop';
-    if(nd.part&&!m.partIn&&(G.spares[nd.part]||0)<1) return 'out of spare '+SPARES[nd.part].plural+', a five axis CNC has to make one';
+    if(nd.part&&!m.partIn&&(G.spares[nd.part]||0)<1){
+      // nobody made one, so the part gets bought from the dealer at a steep markup when there is cash for it
+      var sp=SPARES[nd.part];
+      if(G.cash>=sp.buy){ G.cash-=sp.buy; G.spares[nd.part]=1; G.paidSpares=(G.paidSpares||0)+sp.buy; writeSave(); if(Date.now()-warnedBuy>15000){ warnedBuy=Date.now(); toast('bought a '+sp.name+' from the dealer for '+money(sp.buy)+', a '+MACH[sp.maker].name+' makes them for the price of the metal',true); } }
+      else return 'out of spare '+sp.plural+', a '+MACH[sp.maker].name+' has to make one or the dealer wants '+money(sp.buy);
+    }
     for(var j=0;j<fac.ops.length;j++){
       var p=fac.ops[j];
       if(p.busy<0&&p.kind===nd.who){
@@ -2158,7 +2272,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   }
   function needLine(m){
     var nd=NEEDS[m.need]; if(!nd) return '';
-    if(nd.part&&!m.partIn&&(G.spares[nd.part]||0)<1) return 'needs '+nd.txt+', out of spares';
+    if(nd.part&&!m.partIn&&(G.spares[nd.part]||0)<1&&G.cash<SPARES[nd.part].buy) return 'needs '+nd.txt+', out of spares';
     if(!crewOf(nd.who)) return 'needs '+nd.txt+', no '+TECHS[nd.who].name;
     return 'needs '+nd.txt;
   }
@@ -2279,7 +2393,15 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       fx.fillStyle='#2E4A63'; fx.font='bold '+Math.round(10*FS)+'px Trebuchet MS'; fx.fillText(o.label,c.x+5,c.y+13*FS);
       return;
     }
-    if(o.cnc){
+    if(o.mk==='laser'){
+      fx.fillStyle='#65675F'; fx.fillRect(mx,my+mh*0.45,mw,mh*0.4);
+      fx.fillStyle='#9A9C97'; fx.fillRect(mx,my+mh*0.3,mw,mh*0.12);
+      fx.fillStyle='#2E4A63'; fx.fillRect(mx+mw*0.4,my+mh*0.1,mw*0.14,mh*0.25);
+      if(o.busy){ fx.fillStyle='#E04040'; fx.fillRect(mx+mw*0.46,my+mh*0.35,2,mh*0.12); }
+    } else if(o.mk==='print'){
+      fx.fillStyle='#E4E9EE'; fx.fillRect(mx,my,mw,mh); fx.strokeStyle='#2E4A63'; fx.lineWidth=2; fx.strokeRect(mx,my,mw,mh);
+      fx.fillStyle=o.busy?'#E0912B':'#9A9C97'; fx.fillRect(mx+mw*0.2,my+mh*0.3,mw*0.6,mh*0.4);
+    } else if(o.cnc){
       fx.fillStyle='#9A9C97'; fx.fillRect(mx,my,mw,mh);
       fx.fillStyle='#2E4A63'; fx.fillRect(mx+mw*0.2,my+mh*0.2,mw*0.5,mh*0.45);
       fx.strokeStyle='#2B2924'; fx.lineWidth=1; fx.strokeRect(mx,my,mw,mh);
@@ -2304,7 +2426,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(G.lathe) drawMiniBay(cells[1],{label:'lathe'});
     if(G.brake) drawMiniBay(cells[brakeBay()],{label:'brake'});
     var L0=lead();
-    for(i=0;i<fac.m.length;i++){ var m=fac.m[i]; drawMiniBay(cells[i+L0],{sel:i===fac.sel,busy:!m.idle&&!m.stopped&&!m.need,ch:m.ch,fin:m.fin,prog:m.prog,need:!!m.need,cnc:m.cnc}); }
+    for(i=0;i<fac.m.length;i++){ var m=fac.m[i]; drawMiniBay(cells[i+L0],{sel:i===fac.sel,busy:!m.idle&&!m.stopped&&!m.need,ch:m.ch,fin:m.fin,prog:m.prog,need:!!m.need,cnc:m.cnc,mk:m.mk}); }
     for(i=fac.m.length+L0;i<bays();i++){ var c=cells[i]; fx.save(); fx.strokeStyle='#9A9C97'; fx.setLineDash([5,4]); fx.strokeRect(c.x+4,c.y+4,c.w-8,c.h-8); fx.restore(); }
     // the crew are dots, colored by trade
     for(i=0;i<fac.ops.length;i++){
@@ -2324,7 +2446,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     });
     y+=18*FS;
     fx.fillStyle='#2B2924';
-    fx.fillText('spare parts on the shelf: '+Object.keys(SPARES).map(function(k){ return G.spares[k]+' '+(G.spares[k]===1?SPARES[k].name:SPARES[k].plural); }).join(', '),10,y);
+    var words=('spare parts on the shelf: '+Object.keys(SPARES).map(function(k){ return G.spares[k]+' '+(G.spares[k]===1?SPARES[k].name:SPARES[k].plural); }).join(', ')).split(' '), line='';
+    words.forEach(function(w){ if(fx.measureText(line+w).width>fcv.width-20){ fx.fillText(line,10,y); y+=16*FS; line=''; } line+=w+' '; });
+    fx.fillText(line,10,y);
     if(G.foreman){ fx.fillStyle='#2E4A63'; fx.fillText('foreman on duty',10,y+18*FS); }
   }
   function facDraw(){
@@ -2344,7 +2468,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var L0=lead();
     for(i=0;i<fac.m.length;i++){
       var m=fac.m[i];
-      var nm=(m.cnc?'CNC ':'mill ')+(i+2);
+      var nm=machName(m)+' '+(i+2);
       var line=nm+', made '+m.made;
       if(m.stopped) line=nm+', stopped';
       else if(m.need) line=needLine(m);
@@ -2386,7 +2510,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(fac.sel<0||fac.sel>=fac.m.length){ box.style.display='none'; return; }
     var m=fac.m[fac.sel];
     box.style.display='block';
-    box.innerHTML='<div class="feed"><span>'+(m.cnc?'CNC ':'mill ')+(fac.sel+2)+'</span>'+
+    box.innerHTML='<div class="feed"><span>'+machName(m)+' '+(fac.sel+2)+'</span>'+
       '<button class="switch'+(m.auto?' on':'')+'" id="selAuto" style="'+(m.auto?'background:var(--blue)':'')+'">'+(m.auto?'auto, cutting for orders':'manual, tap for auto')+'</button></div>'+
       '<div class="feed"><span>part '+tokShort(m.ch)+'</span><button id="selPrev">&#8592;</button><button id="selNext">&#8594;</button></div>'+
       '<div class="finrow" id="selFin"><span>finish</span></div>'+
@@ -2399,7 +2523,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       b.addEventListener('click',function(){ m.fin=id; m.auto=false; m.prog=0; facStore(fac.sel); renderSel(); });
       fr.appendChild(b);
     });
-    function shift(n){ var cs=charset().concat(m.cnc?unlockedParts().map(function(k){ return 'L:'+k; }):[]).concat(m.cnc&&G.warehouse?Object.keys(SPARES).map(function(k){ return 'S:'+k; }):[]), at=Math.max(0,cs.indexOf(m.ch)); m.ch=cs[(at+n+cs.length)%cs.length]; m.auto=false; m.prog=0; m.idle=false; facStore(fac.sel); renderSel(); }
+    function shift(n){ var cs=machineSet(m), at=Math.max(0,cs.indexOf(m.ch)); m.ch=cs[(at+n+cs.length)%cs.length]; m.auto=false; m.prog=0; m.idle=false; facStore(fac.sel); renderSel(); }
     box.querySelector('#selPrev').addEventListener('click',function(){ shift(-1); });
     box.querySelector('#selNext').addEventListener('click',function(){ shift(1); });
     box.querySelector('#selAuto').addEventListener('click',function(){ m.auto=!m.auto; m.prog=0; facStore(fac.sel); renderSel(); });
@@ -2454,7 +2578,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     'MOUNTAIN','STARLIGHT','BACKYARD','SUNFLOWER','BUTTERFLY','MILLWRIGHT','MACHINIST','HOMESTEAD','WILDERNESS','TUMBLEWEED',
     'ROADRUNNER','JACKRABBIT','SAGEBRUSH','BLACKSMITH','LIGHTHOUSE','WATERFALL','PLAYGROUND','WONDERFUL','THUNDERBIRD',
     'HANDCRAFTED','CHAMPIONSHIP','ENCYCLOPEDIA','UNBELIEVABLE','EXTRAORDINARY','SPECTACULAR','MAGNIFICENT','CONSTELLATION'];
-  var KINDS=['word','spell','set','num','emoji','turned','mounted','post','formed','bigsign','spoken','truck'];
+  var KINDS=['word','spell','set','num','emoji','turned','mounted','post','formed','bigsign','spoken','truck','lasered','printed','aero','bridgeport'];
+  var AEROWORDS=['ROCKET','THRUST','NOZZLE','ORBIT','LAUNCH','BOOSTER','COMET','LIFTOFF','APOGEE','PAYLOAD','IGNITION','ENGINE'];
+  var BPKIT=['L:leadscrew','L:leadscrew','C:saddle','C:knee','C:head','X:guard','X:guard','P:manifold'];
+  function canBridgeport(){ return G.warehouse&&cncCount()>0&&hasKind('laser')&&hasKind('print'); }
   var TRUCKLOAD=40;
   // spoken orders: the customer says the word out loud and you spell it, so leave out words that sound like other words
   var SPOKENWHO='a caller on the phone', SPEAK=typeof window.speechSynthesis!=='undefined'&&typeof window.SpeechSynthesisUtterance==='function';
@@ -2508,6 +2635,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(o.kind==='truck') bonus*=1.25*(o.copies||1);   // a whole flatbed of the word, with a bulk premium                // a word you only hear pays the most of any word
     if(o.kind==='set') bonus*=2;                     // a matching set pays double
     if(o.kind==='bigsign') bonus*=1.5;               // a whole storefront sign pays a premium
+    if(o.kind==='aero') bonus*=2;                    // rocket work pays for the precision
+    if(o.kind==='bridgeport') bonus*=4;              // a whole Bridgeport mill is the best money in the game
     if(o.proc&&PROCS[o.proc]) bonus*=PROCS[o.proc].mult;
     return v*1.25*bonus*fin(o.fin).pay*market();
   }
@@ -2522,6 +2651,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     else if(o.kind==='mounted') t=o.word+' in '+f+', mounted on standoffs';
     else if(o.kind==='post') t=o.word+' sign on a post, in '+f;
     else if(o.kind==='formed') t=o.parts.length+' '+BPARTS[o.parts[0].slice(2)].plural+' in '+f;
+    else if(o.kind==='lasered') t=o.parts.length+' '+XPARTS[o.parts[0].slice(2)].plural+' laser cut in '+f;
+    else if(o.kind==='printed') t=o.parts.length+' '+PPARTS[o.parts[0].slice(2)].plural+' printed in '+f;
+    else if(o.kind==='aero') t='rocket engine kit '+o.word+' in '+f+', a printed nozzle and injector plate and laser cut gussets';
+    else if(o.kind==='bridgeport') t='a Bridgeport mill built in '+f+': leadscrews, saddle, knee, head, way guards and a coolant manifold';
     else if(o.kind==='bigsign'){ var extra=o.parts.filter(function(p){ var b=BPARTS[p.slice(2)]; return isFormed(p)&&b.size>=3&&p!=='B:boxframe'; })[0]; t='big storefront sign '+o.word+' in '+f+', box frame and brackets'+(extra?', topped with a '+BPARTS[extra.slice(2)].name:''); }
     else t=o.word+' in '+f;
     if(o.proc==='pc') t+=', powder coated '+(o.color||'red');
@@ -2533,9 +2666,21 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var mills=1+G.mills;
     // words grow with the shop: three letters on one mill, longer for every mill after
     var maxLen=Math.min(14,1+2*mills+(G.owned.length>3?1:0));
-    var f=(Math.random()<0.45)?G.owned[G.owned.length-1]:pick(G.owned);
+    var plain=G.owned.filter(function(id){ return !isDesign(id); }), fancy=G.owned.filter(isDesign);
+    var f=(Math.random()<0.45)?plain[plain.length-1]:pick(plain);
     var o={id:G.nextId++,fin:f,who:pick(CLIENTS),kind:'word',proc:'',color:''};
+    // the design team's textures sell to holiday catalogs and party stores
+    if(fancy.length&&Math.random()<0.25){ o.fin=pick(fancy); o.who=pick(['a gift shop','a theater','a wedding planner','a museum']); }
     var r=Math.random();
+    // the specialty machines bring their own work: laser and printed batches, rocket kits, whole Bridgeport mills
+    if(G.warehouse&&(hasKind('laser')||hasKind('print'))&&Math.random()<0.4){
+      var rr=Math.random(), both=hasKind('laser')&&hasKind('print');
+      if(canBridgeport()&&rr<0.3){ o.kind='bridgeport'; o.word=''; o.parts=BPKIT.slice(); o.who=pick(['a machine shop','a tool and die shop','a trade school','a fab shop']); }
+      else if(both&&rr<0.6){ o.kind='aero'; o.word=pick(AEROWORDS); o.parts=['P:nozzle','P:injector']; for(var qa=0;qa<2+Math.floor(Math.random()*3);qa++) o.parts.push('X:gusset'); o.who=pick(['a rocket startup','a launch company','an aerospace shop']); }
+      else if(hasKind('laser')&&(rr<0.8||!hasKind('print'))){ o.kind='lasered'; o.word=''; var xid=pick(['gusset','panel','logo']); o.parts=[]; for(var qx=0;qx<3+Math.floor(Math.random()*5);qx++) o.parts.push('X:'+xid); o.who=pick(['a fab shop','a sign shop','a contractor']); }
+      else { o.kind='printed'; o.word=''; var pid2=pick(['nozzle','injector','impeller']); o.parts=[]; for(var qp=0;qp<2+Math.floor(Math.random()*3);qp++) o.parts.push('P:'+pid2); o.who=pick(['a rocket startup','a pump maker','an aerospace shop']); }
+    }
+    if(o.parts) r=9;
     if(mills>=3&&r<0.06) { o.kind='set'; o.word=ALPHA; o.who='a sign collector'; }
     else if(G.dies>=1&&mills>=3&&r<0.09) { o.kind='set'; o.word=DIGITS; o.who='an address plate maker'; }
     else if(G.dies>=2&&mills>=4&&r<0.11) { o.kind='set'; o.word=EMOJI.join(''); o.who='a novelty shop'; }
@@ -2545,18 +2690,18 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       var bee=WORDS.filter(function(w){ return w.length>=7&&w.length<=maxLen; });
       if(bee.length){ o.kind='spell'; o.word=pick(bee); o.who='the spelling bee'; }
     }
-    if(!o.word&&SPEAK&&G.mills>=1&&Math.random()<0.2){
+    if(!o.word&&!o.parts&&SPEAK&&G.mills>=1&&Math.random()<0.2){
       var heard=WORDS.filter(function(w){ return w.length>=3&&w.length<=maxLen&&SOUNDALIKE.indexOf(w)<0; });
       if(heard.length){ o.kind='spoken'; o.word=pick(heard); o.guess=''; o.who=SPOKENWHO; }
     }
-    if(!o.word&&canTurn()&&Math.random()<0.4){
+    if(!o.word&&!o.parts&&canTurn()&&Math.random()<0.4){
       var r2=Math.random(), short=WORDS.filter(function(w){ return w.length<=Math.min(maxLen,7); });
       if(r2<0.45){ o.kind='turned'; o.word=''; var pid=pick(unlockedParts()), pn=2+Math.floor(Math.random()*(1+mills)); o.parts=[]; for(var q=0;q<pn;q++) o.parts.push('L:'+pid); o.who=pick(['a machine builder','a furniture maker','a sign shop','a hardware store','a fixture shop']); }
       else if(r2<0.8){ o.kind='mounted'; o.word=pick(short); o.parts=[]; for(var q2=0;q2<o.word.length;q2++) o.parts.push('L:standoff'); }
       else if(lUnlocked('signpost')){ o.kind='post'; o.word=pick(short); o.parts=['L:signpost']; }
       else { o.kind='mounted'; o.word=pick(short); o.parts=[]; for(var q3=0;q3<o.word.length;q3++) o.parts.push('L:standoff'); }
     }
-    if(!o.word&&G.brake&&Math.random()<0.4){
+    if(!o.word&&!o.parts&&G.brake&&Math.random()<0.4){
       var r3=Math.random(), shortB=WORDS.filter(function(w){ return w.length<=Math.min(maxLen,9); });
       if(r3<0.5||!bUnlocked('boxframe')){ o.kind='formed'; o.word=''; var bid=pick(bUnlockedParts().filter(function(k){ return BPARTS[k].size<3; })), bn=2+Math.floor(Math.random()*(1+mills)); o.parts=[]; for(var q4=0;q4<bn;q4++) o.parts.push('B:'+bid); o.who=pick(['a sign shop','a fab shop','a contractor','a cabinet maker','a hardware store']); }
       else {
@@ -2569,14 +2714,14 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
         if(sh[1]&&bUnlocked(sh[1])) o.parts.push('B:'+sh[1]);
       }
     }
-    if(!o.word&&o.kind!=='turned'&&o.kind!=='formed'){ var pool=WORDS.filter(function(w){ return w.length<=maxLen; }); o.word=pick(pool); }
+    if(!o.word&&o.kind!=='turned'&&o.kind!=='formed'&&o.kind!=='lasered'&&o.kind!=='printed'&&o.kind!=='bridgeport'){ var pool=WORDS.filter(function(w){ return w.length<=maxLen; }); o.word=pick(pool); }
     if(G.warehouse&&o.kind==='word'&&Math.random()<0.6){
       // the warehouse ships by the truckload: one word, spelled out over and over on a flatbed
       var tw=WORDS.filter(function(w){ return w.length>=3&&w.length<=Math.min(10,maxLen); });
       o.kind='truck'; o.word=pick(tw); o.copies=Math.max(3,Math.floor(TRUCKLOAD/o.word.length)); o.who=pick(['a trucking yard','a sign shop','a hardware store','a print shop']);
     }
     var pr=ownedProcs();
-    if(pr.length&&o.kind!=='set'&&o.kind!=='spoken'&&o.kind!=='truck'&&Math.random()<0.4){ o.proc=pick(pr); if(o.proc==='pc') o.color=pick(PCOLORS); }
+    if(pr.length&&o.kind!=='set'&&o.kind!=='spoken'&&o.kind!=='truck'&&o.kind!=='bridgeport'&&Math.random()<0.4){ o.proc=pick(pr); if(o.proc==='pc') o.color=pick(PCOLORS); }
     return o;
   }
   function haveFlags(o){
@@ -2611,6 +2756,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
         toast(oname(o).length>14?'the order went to the finishing line':oname(o)+' went to the finishing line');
       } else {
         G.shipped=(G.shipped||0)+1;
+        if(o.kind==='bridgeport'){ G.bports=(G.bports||0)+1; if(G.bports===1) setTimeout(function(){ toast('your first Bridgeport mill is out the door, now you are a real Mill-ionaire'); },2600); }
         earn(orderValue(o),'for '+oname(o)+' to '+o.who); sndDing();
       }
       orderT=2.5; binsDirty=true; ordersDirty=true; buildBins();
@@ -2653,9 +2799,36 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   }
   // the office staff work their own queues; when the cash runs dry they stop until the bills are paid
   var salesT=[], lingJob=[];
+  var finT=0, designT=0;
   function officeTick(dt){
     if(!G.office||G.broke) return;
     var k, o, i;
+    // finance: a steady return on the cash most minutes, and now and then a customer on credit goes under
+    if(G.fin){
+      finT+=dt;
+      if(finT>=60){
+        finT=0;
+        if(Math.random()<Math.min(0.5,0.05*G.fin)){
+          var loss=Math.round(Math.min(G.cash*0.12,150000*G.fin));
+          if(loss>0){ G.cash-=loss; G.finLost=(G.finLost||0)+loss; toast('a customer on credit went bankrupt, the finance team lost '+money(loss),true); }
+        } else {
+          var gain=Math.min(G.cash*0.012,25000)*G.fin;
+          if(gain>=1) earn(gain,'from the finance team');
+        }
+      }
+    }
+    // design: the team works through the texture packs one at a time
+    if(G.design){
+      var next=FIN.filter(function(f){ return f.design&&G.owned.indexOf(f.id)<0; })[0];
+      if(next){
+        designT+=dt*G.design;
+        if(designT>=DESIGNSECS){
+          designT=0; G.owned.push(next.id); G.owned.sort(function(a,b){ return FIN.indexOf(fin(a))-FIN.indexOf(fin(b)); });
+          shopSig=''; ordersDirty=true; writeSave();
+          toast('the design team finished the '+next.name+' texture, customers will ask for it');
+        }
+      }
+    }
     for(k=0;k<G.sales;k++){
       salesT[k]=(salesT[k]||0)-dt;
       if(salesT[k]>0) continue;
@@ -2689,8 +2862,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var ready=G.orders.filter(function(o){ return o.kind!=='spoken'&&canShip(o); }).length;
     var spoken=G.orders.filter(function(o){ return o.kind==='spoken'&&o.guess!==o.word; }).length;
     if(G.broke) return 'the office is dark until the bills are paid';
-    return 'office: '+G.sales+(G.sales===1?' sales manager':' sales managers')+', '+ready+(ready===1?' order':' orders')+' ready to ship. '+
-      G.ling+(G.ling===1?' linguistics engineer':' linguistics engineers')+', '+spoken+(spoken===1?' spoken order':' spoken orders')+' to spell.';
+    var left=FIN.filter(function(f){ return f.design&&G.owned.indexOf(f.id)<0; }).length;
+    return OFFICES[G.officeLv].name+', '+staffN()+' of '+seats()+' seats. '+G.sales+(G.sales===1?' sales manager':' sales managers')+', '+ready+(ready===1?' order':' orders')+' ready to ship. '+
+      G.ling+(G.ling===1?' linguistics engineer':' linguistics engineers')+', '+spoken+(spoken===1?' spoken order':' spoken orders')+' to spell. '+
+      G.fin+' in finance. '+G.design+(G.design===1?' designer':' designers')+(G.design?(left?', working on the next texture':', out of ideas and still on the payroll'):'')+'.';
   }
   function ordersTick(dt){
     lineTick(dt);
@@ -2724,7 +2899,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       var tk=toks(o);
       for(var i=0;i<tk.length;i++)
         tiles+=isFormed(tk[i])?'<div class="tile turned '+(flags[i]?'ok':'miss')+'" style="background-image:url('+bIconURL(tk[i].slice(2),o.fin)+')"></div>'
-          :isTurned(tk[i])?'<div class="tile turned '+(flags[i]?'ok':'miss')+'" style="background-image:url('+lIconURL(tk[i].slice(2),o.fin)+')"></div>'
+          :isPart(tk[i])?'<div class="tile turned '+(flags[i]?'ok':'miss')+'" style="background-image:url('+partIconURL(tk[i],o.fin)+')"></div>'
           :'<div class="tile '+(flags[i]?'ok':'miss')+(isEmoji(tk[i])?' emo':'')+'" style="background-image:url('+swatchURL(o.fin)+')">'+tk[i]+'</div>';
       if(o.kind==='truck'){
         var wl=Array.from(o.word), have=flags.filter(function(x){ return x; }).length, okT=canShip(o);
@@ -2813,6 +2988,74 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     })(t0);
   }
 
+  // ---- the outside view: the buildings from the street, with flatbeds hauling giant letters past ----
+  var outside={on:false,t:0,trucks:[]};
+  function outsideWords(){
+    var w=G.orders.filter(function(o){ return o.word&&/^[A-Z]+$/.test(o.word); }).map(function(o){ return o.word; });
+    return w.length?w:['MILL','SIGN','SHOP'];
+  }
+  function drawOutside(dt){
+    var cv=document.getElementById('outsideCv'), c=cv.getContext('2d'), W=640, H=300;
+    outside.t+=dt;
+    c.fillStyle='#CFE0EE'; c.fillRect(0,0,W,H);
+    c.fillStyle='#F2D58A'; c.beginPath(); c.arc(560,50,24,0,Math.PI*2); c.fill();
+    c.fillStyle='#D8C9A6'; c.fillRect(0,200,W,100);
+    c.fillStyle='#55534E'; c.fillRect(0,236,W,50);
+    c.fillStyle='#E8E2D2'; for(var x=0;x<W;x+=40) c.fillRect(x,280,20,3);
+    // the shop or the warehouse, wearing the name in blue
+    var bw=G.warehouse?330:170, bh=G.warehouse?120:90, bx=20, by=200-bh;
+    c.fillStyle='#B9B4A6'; c.fillRect(bx,by,bw,bh);
+    c.fillStyle='#8E897C'; for(var r=bx+10;r<bx+bw;r+=22) c.fillRect(r,by,3,bh);
+    c.fillStyle='#2E4A63'; c.fillRect(bx,by-10,bw,14);
+    c.fillStyle='#2E4A63'; c.fillRect(bx+bw*0.12,by+14,bw*0.76,26);
+    c.fillStyle='#fff'; c.font='bold '+(G.warehouse?22:15)+'px Trebuchet MS'; c.textAlign='center'; c.fillText('MILL-IONAIRE',bx+bw/2,by+33);
+    c.fillStyle='#6A675E'; for(var d=0;d<(G.warehouse?3:1);d++) c.fillRect(bx+20+d*90,by+bh-50,60,50);
+    c.fillStyle='#57534A'; for(d=0;d<(G.warehouse?3:1);d++) for(var l=0;l<5;l++) c.fillRect(bx+20+d*90,by+bh-50+l*10,60,2);
+    // smoke from the stack when the floor is running
+    c.fillStyle='#8E897C'; c.fillRect(bx+bw-30,by-40,12,30);
+    if(fac.running&&G.mills>0){ c.fillStyle='rgba(120,120,120,.35)'; for(var p=0;p<4;p++){ var q=(outside.t*0.6+p*0.25)%1; c.beginPath(); c.arc(bx+bw-24+q*30,by-46-q*50,6+q*10,0,Math.PI*2); c.fill(); } }
+    // the office, growing with every move up
+    if(G.officeLv){
+      var ow=[0,90,110,90][G.officeLv], oh=[0,70,110,180][G.officeLv], ox=bx+bw+40, oy=200-oh;
+      c.fillStyle=G.officeLv===3?'#7F95A8':'#C9C3B2'; c.fillRect(ox,oy,ow,oh);
+      c.fillStyle='#E4E9EE';
+      for(var wy=oy+10;wy<200-16;wy+=18) for(var wx=ox+8;wx<ox+ow-12;wx+=18) c.fillRect(wx,wy,10,10);
+      c.fillStyle='#2E4A63'; c.font='bold 11px Trebuchet MS'; c.fillText(OFFICES[G.officeLv].name,ox+ow/2,oy-6);
+    }
+    c.textAlign='left';
+    // flatbeds roll by more often the bigger the shop is
+    var rate=0.15+0.02*G.mills;
+    if(Math.random()<dt*rate&&outside.trucks.length<3) outside.trucks.push({x:-420,word:pick(outsideWords()),v:70+Math.random()*50});
+    outside.trucks.forEach(function(t){
+      t.x+=t.v*dt;
+      var y=262, n=t.word.length, L=Math.max(150,n*26+12);
+      c.fillStyle='#65675F'; c.fillRect(t.x,y-16,L,9);
+      c.fillStyle='#2E4A63'; c.fillRect(t.x+L+4,y-44,48,37);
+      c.fillStyle='#E4E9EE'; c.fillRect(t.x+L+30,y-39,16,14);
+      c.fillStyle='#2B2924'; [t.x+22,t.x+L-24,t.x+L+36].forEach(function(wx){ c.beginPath(); c.arc(wx,y-4,8,0,Math.PI*2); c.fill(); });
+      for(var i=0;i<n;i++){
+        c.fillStyle='#C9C3B2'; c.fillRect(t.x+6+i*26,y-46,24,30);
+        c.strokeStyle='#2B2924'; c.lineWidth=1.5; c.strokeRect(t.x+6+i*26,y-46,24,30);
+        c.fillStyle='#2B2924'; c.font='bold 22px Trebuchet MS'; c.textAlign='center'; c.fillText(t.word[i],t.x+18+i*26,y-23); c.textAlign='left';
+      }
+    });
+    outside.trucks=outside.trucks.filter(function(t){ return t.x<W+60; });
+  }
+  function outsideLoop(){
+    var last=performance.now();
+    (function step(now){
+      if(!outside.on) return;
+      drawOutside(Math.min(0.1,(now-last)/1000)); last=now;
+      requestAnimationFrame(step);
+    })(last);
+  }
+  document.getElementById('facOutside').addEventListener('click',function(){
+    outside.on=true; outside.trucks=[{x:40,word:pick(outsideWords()),v:80}];
+    document.getElementById('outsideTxt').textContent=(G.warehouse?'the warehouse':'the shop')+' with '+(G.mills+1)+' machines on the floor'+(G.officeLv?', and the '+OFFICES[G.officeLv].name+' next door':'')+(G.bports?', '+G.bports+' Bridgeport mills sold':'')+'.';
+    sheet('outsideSheet',true); outsideLoop();
+  });
+  document.getElementById('outsideClose').addEventListener('click',function(){ outside.on=false; sheet('outsideSheet',false); });
+
   // ---- spelling a spoken order ----
   var spellId=-1;
   function spellOrder(){ for(var i=0;i<G.orders.length;i++) if(G.orders[i].id===spellId) return G.orders[i]; return null; }
@@ -2853,14 +3096,16 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function opCost(){ return Math.round(350*Math.pow(1.6,G.ops-1)); }
   function opMax(){ return G.warehouse?16:6; }
   function specCost(k){ return Math.round(SPECBASE[k]*Math.pow(1.5,G[k])); }
-  function wagesPerMin(){ return (G.mills>0?G.ops*WAGE+(G.mw+G.el+G.ct)*SPECWAGE:0)+officePerMin(); }
-  function officePerMin(){ return G.office?OFFICEUPKEEP+(G.sales+G.ling)*STAFFWAGE:0; }
+  function wagesPerMin(){ return (G.mills>0?G.ops*WAGE+(G.mw+G.el+G.ct+G.am)*SPECWAGE:0)+officePerMin(); }
+  function officePerMin(){ return G.officeLv?OFFICES[G.officeLv].upkeep+staffN()*STAFFWAGE:0; }
   function staffCost(k){ return Math.round(STAFFBASE*Math.pow(1.5,G[k])); }
+  function staffOk(){ return G.officeLv>0&&staffN()<seats(); }
+  function staffTxt(k,what){ if(!G.officeLv) return 'needs the office building'; if(staffN()>=seats()) return 'every seat in the office is taken, '+G[k]+' on staff, move up to a bigger office for more seats'; return what+'. Paid '+money(STAFFWAGE)+' a minute, '+G[k]+' on staff, '+(seats()-staffN())+' open seats in the office'; }
   var DIECOST=[2000,9000], HEADCOST=[800,2500,7000], CHIPCOST=2500, LUBECOST=[900,3200], BITCOST=[1500,5000], SOFTCOST=[1200,4500];
   // running costs: operators draw wages once the floor has a mill, and every running mill draws power
   var WAGE=3.75, FLOORPOWER=2, MILLPOWER=0.75, billT=0, warnedBroke=false;
   // power units drawn by the floor: a five axis CNC draws less than a knee mill
-  function floorPower(){ var n=0; fac.m.forEach(function(m){ if(fac.running&&!m.idle&&!m.need&&!m.stopped) n+=m.cnc?CNCPOWER:1; }); return n*FLOORPOWER; }
+  function floorPower(){ var n=0; fac.m.forEach(function(m){ if(fac.running&&!m.idle&&!m.need&&!m.stopped) n+=MACH[m.mk||'mill'].power; }); return n*FLOORPOWER; }
   function myPower(){ return MILLPOWER*(G.homeCnc?CNCPOWER:1); }
   function costPerMin(){
     var wages=wagesPerMin();
@@ -2892,12 +3137,17 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       {k:'homecnc',name:'make your mill a five axis CNC',verb:'upgrade',txt:G.homeCnc?'done, your own machine is a five axis CNC and still runs free when the cash is gone':'swaps your own mill for a five axis CNC: the order program runs faster, also cuts turned parts, draws less power, and keeps running free when the cash is gone',cost:G.homeCnc?0:CNCCOST,max:G.homeCnc},
       {k:'warehouse',name:'move to the warehouse',verb:'move',txt:G.warehouse?'done, the shop runs out of a warehouse with three times the floor':'a warehouse with three times the floor space, every machine and the crew move over. The floor is drawn smaller so it all fits, flatbed truck orders start coming in, and bigger machines bring new breakdowns for specialist crews, fixed with spare parts only a five axis CNC can make',cost:G.warehouse?0:WAREHOUSECOST,max:G.warehouse},
       {k:'op',name:'hire an operator',verb:'hire',txt:G.ops>=opMax()?'the crew is full, '+opMax()+' operators':'a person, not a mill, who clears chips, changes tools and loads stock, you have '+G.ops+' of '+opMax(),cost:G.ops>=opMax()?0:opCost(),max:G.ops>=opMax()},
+      {k:'laser',name:'laser cutter',verb:'buy a laser',txt:!G.warehouse?'needs the warehouse':(G.mills>=maxMills()?'the floor is full':'takes a floor bay and cuts gusset plates, enclosure panels, logo cutouts, way guards for Bridgeport mills and recoater blades for the printers'),cost:(!G.warehouse||G.mills>=maxMills())?0:LASERCOST,max:!G.warehouse||G.mills>=maxMills()},
+      {k:'print',name:'metal 3D printer',verb:'buy a printer',txt:!G.warehouse?'needs the warehouse':(G.mills>=maxMills()?'the floor is full':'takes a floor bay and slowly prints rocket nozzles, injector plates, impellers, coolant manifolds for Bridgeport mills and nozzle tips for the lasers'),cost:(!G.warehouse||G.mills>=maxMills())?0:PRINTCOST,max:!G.warehouse||G.mills>=maxMills()},
+      {k:'am',name:'hire a laser and printer tech',verb:'hire',txt:!G.warehouse?'needs the warehouse':(G.am>=6?'six techs, the crew is full':'cleans laser lenses, clears powder jams, and replaces burnt nozzle tips and damaged recoater blades from the spare shelf, you have '+G.am+' of 6'),cost:(!G.warehouse||G.am>=6)?0:specCost('am'),max:!G.warehouse||G.am>=6},
       {k:'mw',name:'hire a millwright',verb:'hire',txt:!G.warehouse?'needs the warehouse':(G.mw>=6?'six millwrights, the crew is full':'replaces stripped drive gears and worn ballscrew nuts, each repair uses a spare part, you have '+G.mw+' of 6'),cost:(!G.warehouse||G.mw>=6)?0:specCost('mw'),max:!G.warehouse||G.mw>=6},
       {k:'el',name:'hire an electrician',verb:'hire',txt:!G.warehouse?'needs the warehouse':(G.el>=6?'six electricians, the crew is full':'resets faulted spindle drives and tripped breakers, you have '+G.el+' of 6'),cost:(!G.warehouse||G.el>=6)?0:specCost('el'),max:!G.warehouse||G.el>=6},
       {k:'ct',name:'hire a controls tech',verb:'hire',txt:!G.warehouse?'needs the warehouse':(G.ct>=6?'six controls techs, the crew is full':'clears CNC probe alarms and replaces crashed tool holders from the spare shelf, you have '+G.ct+' of 6'),cost:(!G.warehouse||G.ct>=6)?0:specCost('ct'),max:!G.warehouse||G.ct>=6},
-      {k:'office',name:'office building',verb:'buy',txt:G.office?'open, it houses the sales managers and linguistics engineers and costs '+money(OFFICEUPKEEP)+' a minute to run':'an office for the people who run the business side, needed before you can hire sales managers or linguistics engineers, and it costs '+money(OFFICEUPKEEP)+' a minute to keep open',cost:G.office?0:OFFICECOST,max:G.office},
-      {k:'sales',name:'hire a sales manager',verb:'hire',txt:!G.office?'needs the office building':(G.sales>=6?'six sales managers, the office is full':'ships every order the moment its parts are in the bins, one order every few seconds each, so a busy shop may need more than one. Paid '+money(STAFFWAGE)+' a minute, you have '+G.sales+' of 6'),cost:(!G.office||G.sales>=6)?0:staffCost('sales'),max:!G.office||G.sales>=6},
-      {k:'ling',name:'hire a linguistics engineer',verb:'hire',txt:!G.office?'needs the office building':(G.ling>=6?'six linguistics engineers, the office is full':'takes the spoken orders, spells each word right so the floor can cut it, and sells it when the letters are in, a few seconds a word each. Paid '+money(STAFFWAGE)+' a minute, you have '+G.ling+' of 6'),cost:(!G.office||G.ling>=6)?0:staffCost('ling'),max:!G.office||G.ling>=6},
+      {k:'office',name:G.officeLv>=3?'office tower':OFFICES[G.officeLv+1].name,verb:G.officeLv?'move up':'buy',txt:G.officeLv>=3?'the tower is yours, '+seats()+' seats for the business side, '+money(OFFICES[3].upkeep)+' a minute to run':(G.officeLv?'trade the '+OFFICES[G.officeLv].name+' for the '+OFFICES[G.officeLv+1].name+', '+OFFICES[G.officeLv+1].seats+' seats instead of '+seats()+', '+money(OFFICES[G.officeLv+1].upkeep)+' a minute to run':'an office for the business side, '+OFFICES[1].seats+' seats for sales managers, linguistics engineers, finance analysts and designers, '+money(OFFICES[1].upkeep)+' a minute to keep open'),cost:G.officeLv>=3?0:OFFICES[G.officeLv+1].cost,max:G.officeLv>=3},
+      {k:'sales',name:'hire a sales manager',verb:'hire',txt:staffTxt('sales','ships every order the moment its parts are in the bins, one order every few seconds each, so a busy shop may need more than one'),cost:staffOk()?staffCost('sales'):0,max:!staffOk()},
+      {k:'ling',name:'hire a linguistics engineer',verb:'hire',txt:staffTxt('ling','takes the spoken orders, spells each word right so the floor can cut it, and sells it when the letters are in, a few seconds a word each'),cost:staffOk()?staffCost('ling'):0,max:!staffOk()},
+      {k:'fin',name:'hire a finance analyst',verb:'hire',txt:staffTxt('fin','puts the cash to work and brings back a return every minute, but now and then a customer on credit goes bankrupt and the money is gone'),cost:staffOk()?staffCost('fin'):0,max:!staffOk()},
+      {k:'design',name:'hire a designer',verb:'hire',txt:staffTxt('design','dreams up designer textures like two tone, candy cane, gift wrap, jingle bells and halloween. Designer letters pay more but cut slow on pricey stock, so the margins are thin'),cost:staffOk()?staffCost('design'):0,max:!staffOk()},
       {k:'fore',name:'foreman',verb:'hire',txt:G.foreman?'on duty, operators go where they are needed without being told':'sends operators to stopped mills without you tapping',cost:G.foreman?0:3000,max:G.foreman},
       {k:'head',name:'high speed head',verb:'upgrade',txt:G.head>=3?'fully upgraded, the order program cuts at top speed':'makes the order program on your main mill cut faster, level '+G.head+' of three',cost:G.head>=3?0:HEADCOST[G.head],max:G.head>=3},
       {k:'dies',name:G.dies>=1?'emoji dies':'number dies',verb:'unlock',txt:G.dies>=2?'letters, numbers and emoji all unlocked':(G.dies===1?'cut emoji, the best paying parts there are, and take emoji orders':'cut the numbers zero through nine and take house number orders'),cost:G.dies>=2?0:DIECOST[G.dies],max:G.dies>=2},
@@ -2910,7 +3160,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       {k:'soft',name:'better software',verb:'upgrade',txt:G.soft>=2?'nesting software, fastest programs and the most parts per stock load':'faster toolpaths and more parts out of every stock load, level '+G.soft+' of two',cost:G.soft>=2?0:SOFTCOST[G.soft],max:G.soft>=2}
     ];
     var cl=document.getElementById('costLine');
-    var costTxt='running costs '+money(costPerMin())+' a minute, wages '+money(wagesPerMin())+' for '+G.ops+(G.ops===1?' operator':' operators')+(G.warehouse?' and '+(G.mw+G.el+G.ct)+' specialists':'')+(G.office?', the office '+money(officePerMin()):'')+(G.mills>0?'':' (unpaid until you own a floor mill)')+', power '+money(floorPower()+(s.rpm>0&&!G.broke?myPower():0))+' for the machines running now, and '+money(G.paidStock)+' spent on blanks, bars and sheet so far';
+    var costTxt='running costs '+money(costPerMin())+' a minute, wages '+money(wagesPerMin())+' for '+G.ops+(G.ops===1?' operator':' operators')+(G.warehouse?' and '+(G.mw+G.el+G.ct+G.am)+' specialists':'')+(G.office?', the office '+money(officePerMin()):'')+(G.mills>0?'':' (unpaid until you own a floor mill)')+', power '+money(floorPower()+(s.rpm>0&&!G.broke?myPower():0))+' for the machines running now, and '+money(G.paidStock)+' spent on blanks, bars and sheet so far';
     if(cl.textContent!==costTxt) cl.textContent=costTxt;
     cl.className='status'+(G.broke?' warn':'');
     // rebuild the buttons only when something you can buy changes, never just because cash ticked
@@ -2927,6 +3177,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var fl=document.getElementById('finList'); fl.innerHTML='';
     FIN.forEach(function(f){
       var own=G.owned.indexOf(f.id)>=0;
+      if(f.design&&!own) return;
       var d=document.createElement('div'); d.className='fcard'+(own?'':' locked');
       var c=document.createElement('canvas'); c.width=180; c.height=60;
       var x=c.getContext('2d'), im=x.createImageData(180,60);
@@ -2956,10 +3207,11 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var c=0;
     if(k==='mill'){ if(G.mills>=maxMills()) return; c=millCost(); if(G.cash<c) return; G.cash-=c; G.mills++; facSync(); toast('floor mill '+G.mills+' is bolted down'); }
     if(k==='warehouse'){ if(G.warehouse) return; c=WAREHOUSECOST; if(G.cash<c) return; G.cash-=c; G.warehouse=true; fac.tsig=''; facSync(); binsDirty=true; toast('the whole shop moved into the warehouse, three times the floor'); }
-    if(k==='mw'||k==='el'||k==='ct'){ if(!G.warehouse||G[k]>=6) return; c=specCost(k); if(G.cash<c) return; G.cash-=c; G[k]++; facSync(); toast(TECHS[k].name+' '+G[k]+' clocked in'); }
+    if(k==='laser'||k==='print'){ if(!G.warehouse||G.mills>=maxMills()) return; c=k==='laser'?LASERCOST:PRINTCOST; if(G.cash<c) return; G.cash-=c; G.floor.length=G.mills; G.floor.push({ch:k==='laser'?'X:gusset':'P:nozzle',fin:'alu',auto:true,kind:k}); G.mills++; facSync(); binsDirty=true; toast((k==='laser'?'a laser cutter':'a metal 3D printer')+' is on the floor'); }
+    if(k==='mw'||k==='el'||k==='ct'||k==='am'){ if(!G.warehouse||G[k]>=6) return; c=specCost(k); if(G.cash<c) return; G.cash-=c; G[k]++; facSync(); toast(TECHS[k].name+' '+G[k]+' clocked in'); }
     if(k==='op'){ if(G.ops>=opMax()) return; c=opCost(); if(G.cash<c) return; G.cash-=c; G.ops++; facSync(); toast('operator '+G.ops+' clocked in'); }
-    if(k==='office'){ if(G.office) return; c=OFFICECOST; if(G.cash<c) return; G.cash-=c; G.office=true; ordersDirty=true; toast('the office building is open'); }
-    if(k==='sales'||k==='ling'){ if(!G.office||G[k]>=6) return; c=staffCost(k); if(G.cash<c) return; G.cash-=c; G[k]++; toast((k==='sales'?'sales manager ':'linguistics engineer ')+G[k]+' started in the office'); }
+    if(k==='office'){ if(G.officeLv>=3) return; c=OFFICES[G.officeLv+1].cost; if(G.cash<c) return; G.cash-=c; G.officeLv++; G.office=true; ordersDirty=true; toast('the '+OFFICES[G.officeLv].name+' is open, '+seats()+' seats'); }
+    if(STAFF[k]){ if(!staffOk()) return; c=staffCost(k); if(G.cash<c) return; G.cash-=c; G[k]++; toast(STAFF[k]+' '+G[k]+' started in the office'); }
     if(k==='fore'){ if(G.foreman) return; c=3000; if(G.cash<c) return; G.cash-=c; G.foreman=true; toast('the foreman is on the floor'); }
     if(k==='head'){ if(G.head>=3) return; c=HEADCOST[G.head]; if(G.cash<c) return; G.cash-=c; G.head++; toast('high speed head, level '+G.head); }
     if(k==='chip'){ if(G.chipConv) return; c=CHIPCOST; if(G.cash<c) return; G.cash-=c; G.chipConv=true; toast('chip conveyors are running, no more chip stops'); }
@@ -2977,7 +3229,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   }
   function buyFin(id){
     var f=fin(id);
-    if(G.owned.indexOf(id)>=0||G.cash<f.cost) return;
+    if(f.design||G.owned.indexOf(id)>=0||G.cash<f.cost) return;
     G.cash-=f.cost; G.owned.push(id);
     G.owned.sort(function(a,b){ return FIN.indexOf(fin(a))-FIN.indexOf(fin(b)); });
     toast(f.name+' unlocked, customers will start asking for it');
@@ -3232,7 +3484,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   }
   var STOCKSHELF=20;
   // parts open up as the lathe proves itself: every turned part made counts toward the next one
-  var LUNLOCK={standoff:0,stud:0,bushing:10,pin:20,knob:35,flange:50,signpost:75,lazysusan:100};
+  var LUNLOCK={standoff:0,stud:0,bushing:10,pin:20,knob:35,flange:50,signpost:75,lazysusan:100,leadscrew:60};
   function lUnlocked(id){ return (G.turned||0)>=LUNLOCK[id]; }
   function unlockedParts(){ return Object.keys(LPARTS).filter(lUnlocked); }
   function lProgStart(){
@@ -3540,6 +3792,23 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   }
   var BICONURL={};
   function bIconURL(id,f){ var k=id+'|'+f; if(!BICONURL[k]) BICONURL[k]=bIcon(id,f).toDataURL(); return BICONURL[k]; }
+  var XICONURL={};
+  function xIcon(tok,f){
+    var info=partInfo(tok), c=document.createElement('canvas'); c.width=B.nx; c.height=B.ny;
+    var x=c.getContext('2d'), pts=info.pts, mnx=1e9,mxx=-1e9,mny=1e9,mxy=-1e9;
+    pts.forEach(function(p){ mnx=Math.min(mnx,p[0]); mxx=Math.max(mxx,p[0]); mny=Math.min(mny,p[1]); mxy=Math.max(mxy,p[1]); });
+    var sc=Math.min((B.nx-16)/Math.max(1,mxx-mnx),(B.ny-16)/Math.max(1,mxy-mny)), ox=B.nx/2-(mnx+mxx)/2*sc, oy=B.ny/2-(mny+mxy)/2*sc;
+    var im=x.createImageData(B.nx,B.ny);
+    for(var v=0;v<B.ny;v++) for(var u=0;u<B.nx;u++) finPx(im.data,(v*B.nx+u)*4,f,u,v,1,255);
+    var tc=document.createElement('canvas'); tc.width=B.nx; tc.height=B.ny; tc.getContext('2d').putImageData(im,0,0);
+    x.beginPath(); pts.forEach(function(p,i){ var X=ox+p[0]*sc, Y=oy+p[1]*sc; if(i) x.lineTo(X,Y); else x.moveTo(X,Y); }); x.closePath();
+    (info.holes||[]).forEach(function(h){ x.moveTo(ox+h[0]*sc+h[2]*sc,oy+h[1]*sc); x.arc(ox+h[0]*sc,oy+h[1]*sc,h[2]*sc,0,Math.PI*2,true); });
+    x.save(); x.clip('evenodd'); x.drawImage(tc,0,0); x.restore();
+    x.lineWidth=2; x.strokeStyle='rgba(30,28,26,.8)'; x.stroke();
+    return c;
+  }
+  function xIconURL(tok,f){ var k=tok+'|'+f; if(!XICONURL[k]) XICONURL[k]=xIcon(tok,f).toDataURL(); return XICONURL[k]; }
+  function partIconURL(tok,f){ return isTurned(tok)?lIconURL(tok.slice(2),f):(isFormed(tok)?bIconURL(tok.slice(2),f):xIconURL(tok,f)); }
 
   var BUNLOCK={angle:0,bracket:0,uchannel:8,hat:15,boxframe:25,chip:35,taco:50,donut:70,mufflerman:100};
   function bUnlocked(id){ return (G.formed||0)>=BUNLOCK[id]; }
@@ -3903,7 +4172,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     G=freshSave(); resetting=true; location.reload();
   });
   var resetting=false;
-  ['howSheet','resetSheet','emptySheet','doneSheet','spellSheet'].forEach(function(id){
+  ['howSheet','resetSheet','emptySheet','doneSheet','spellSheet','outsideSheet'].forEach(function(id){
     document.getElementById(id).addEventListener('click',function(e){ if(e.target===this) sheet(id,false); });
   });
   document.addEventListener('visibilitychange',function(){ if(!resetting) writeSave(); });

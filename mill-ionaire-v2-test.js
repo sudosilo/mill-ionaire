@@ -406,7 +406,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     while (t < 400) { await page.clock.runFor(10000); t += 10; await page.evaluate(() => window.dispatchEvent(new Event('pagehide'))); g = await save(page); if ((g.inv['L:flange|alu'] || 0) >= 2 && (g.inv['L:standoff|alu'] || 0) >= 3) break; }
     ok((g.inv['L:flange|alu'] || 0) >= 2 && (g.inv['L:standoff|alu'] || 0) >= 3, 'the lathe program turns the flanges and standoffs the orders need', JSON.stringify(g.inv) + ' after ' + t + ' game seconds');
     await tab(page, 'orders'); await page.clock.runFor(300);
-    ok(await page.$$eval('#lbins .bin', n => n.length) === 8, 'turned parts get their own bins');
+    ok(await page.$$eval('#lbins .bin', n => n.length) === 9, 'turned parts get their own bins');
     const ship = page.locator('#orderList .ocard[data-id="1"] .ship');
     await ship.click(); await page.clock.runFor(300);
     g = await save(page);
@@ -715,8 +715,63 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     for (let i = 0; i < 30 && (await save(page)).orders.some(o => o.id === 502); i++) await page.clock.runFor(500);
     g = await save(page);
     ok(!g.orders.some(o => o.id === 502) && g.inv['C|alu'] === 2, 'the linguistics engineer spells the spoken order right and sells it');
-    ok(/office: 1 sales manager/.test(await txt(page, '#officeBox')), 'the orders tab shows the office line', await txt(page, '#officeBox'));
+    ok(/1 sales manager/.test(await txt(page, '#officeBox')), 'the orders tab shows the office line', await txt(page, '#officeBox'));
     ok(errors.length === 0, 'no script errors in the office', errors.join(' | '));
+    await ctx.close();
+  }
+
+  // ---- the late game: laser, printer, spares at a markup, Bridgeport mills, office tiers, finance, design, the outside view ----
+  {
+    const floor = []; for (let i = 0; i < 2; i++) floor.push({ ch: 'A', fin: 'alu', auto: false, stopped: true, kind: 'cnc' });
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 5000000, mills: 2, ops: 2, warehouse: true, floor, orders: [] });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await tab(page, 'shop'); await page.clock.runFor(300);
+    for (const k of ['laser', 'print', 'am']) { await page.click('#upgList .upg[data-k="' + k + '"] button'); await page.clock.runFor(200); }
+    let g = await save(page);
+    ok(g.floor.some(c => c.kind === 'laser') && g.floor.some(c => c.kind === 'print') && g.am === 1, 'a laser cutter, a metal printer and their tech can be bought in the warehouse');
+    // the laser cuts the plates a laser order needs
+    await page.evaluate(() => { const G = millTest.G(); G.orders = [{ id: 801, word: '', fin: 'alu', who: 'a fab shop', kind: 'lasered', parts: ['X:gusset', 'X:gusset'], proc: '', color: '' }]; const f = millTest.fac(); f.m.forEach(m => { m.stopped = m.mk !== 'laser'; m.need = ''; m.auto = true; m.idle = false; }); G.foreman = true; });
+    for (let i = 0; i < 60 && ((await save(page)).inv['X:gusset|alu'] || 0) < 2; i++) await page.clock.runFor(1000);
+    g = await save(page);
+    ok((g.inv['X:gusset|alu'] || 0) >= 2, 'the laser cuts the gusset plates the order needs', JSON.stringify(g.inv));
+    // a printer with no spare blade on the shelf gets one from the dealer at a markup
+    await page.evaluate(() => { const f = millTest.fac(); f.m.forEach(q => { q.stopped = q.mk !== 'print'; }); const m = f.m.find(q => q.mk === 'print'); m.need = 'recoat'; m.partIn = false; millTest.G().spares.blade = 0; });
+    await page.clock.runFor(1500);
+    g = await save(page);
+    ok(g.paidSpares === 6000, 'an empty spare shelf means buying the part from the dealer at a markup', String(g.paidSpares));
+    // a whole Bridgeport mill ships from parts off every machine
+    await page.evaluate(() => { const G = millTest.G(); G.orders = [{ id: 802, word: '', fin: 'alu', who: 'a machine shop', kind: 'bridgeport', parts: ['L:leadscrew', 'L:leadscrew', 'C:saddle', 'C:knee', 'C:head', 'X:guard', 'X:guard', 'P:manifold'], proc: '', color: '' }];
+      Object.assign(G.inv, { 'L:leadscrew|alu': 2, 'C:saddle|alu': 1, 'C:knee|alu': 1, 'C:head|alu': 1, 'X:guard|alu': 2, 'P:manifold|alu': 1 }); });
+    await tab(page, 'orders'); await page.clock.runFor(500);
+    ok(/Bridgeport mill/.test(await txt(page, '#orderList .ocard[data-id="802"]')), 'a Bridgeport mill order shows on the orders tab');
+    const c0 = (await save(page)).cash;
+    await page.click('#orderList .ocard[data-id="802"] .ship'); await page.clock.runFor(300);
+    g = await save(page);
+    ok(g.bports === 1 && g.cash - c0 > 20000, 'selling a Bridgeport mill pays the most of anything', String(g.cash - c0));
+    // the office moves up for more seats, and seats limit the staff
+    await tab(page, 'shop'); await page.clock.runFor(200);
+    await page.click('#upgList .upg[data-k="office"] button'); await page.clock.runFor(200);
+    for (let i = 0; i < 4; i++) { await page.click('#upgList .upg[data-k="design"] button'); await page.clock.runFor(200); }
+    ok(await page.isDisabled('#upgList .upg[data-k="fin"] button'), 'a full office has no seat for another hire');
+    await page.click('#upgList .upg[data-k="office"] button'); await page.clock.runFor(200);
+    await page.click('#upgList .upg[data-k="fin"] button'); await page.clock.runFor(200);
+    g = await save(page);
+    ok(g.officeLv === 2 && g.design === 4 && g.fin === 1, 'the office unit has more seats', JSON.stringify([g.officeLv, g.design, g.fin]));
+    await page.click('#upgList .upg[data-k="office"] button'); await page.clock.runFor(200);
+    ok((await save(page)).officeLv === 3, 'the office tower is the last move up');
+    // designers turn out a texture, finance moves money every minute
+    const e0 = await page.evaluate(() => millTest.G().earned);
+    await page.clock.runFor(61000);
+    g = await save(page);
+    ok(g.owned.indexOf('twotone') >= 0, 'the design team finishes the two tone texture');
+    ok(g.earned !== e0 || (g.finLost || 0) > 0, 'the finance analyst makes or loses money within a minute');
+    // the outside view
+    await tab(page, 'floor'); await page.clock.runFor(200);
+    await page.click('#facOutside'); await page.clock.runFor(1000);
+    ok(await page.isVisible('#outsideSheet.open #outsideCv'), 'the outside view shows the buildings from the street');
+    if (SHOTS) await (await page.$('#outsideSheet .sheetbox')).screenshot({ path: SHOTS + '/outside.png' });
+    await page.click('#outsideClose');
+    ok(errors.length === 0, 'no script errors in the late game', errors.join(' | '));
     await ctx.close();
   }
 
