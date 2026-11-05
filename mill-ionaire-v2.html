@@ -2453,14 +2453,34 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   // spoken orders: the customer says the word out loud and you spell it, so leave out words that sound like other words
   var SPOKENWHO='a caller on the phone', SPEAK=typeof window.speechSynthesis!=='undefined'&&typeof window.SpeechSynthesisUtterance==='function';
   var SOUNDALIKE=['SUN','STEEL','MAIL','SALE','ROAD','HAY','GATE','TEAM','BAND','COOP','MESA','CAFE','PRIDE','SIGN','BLUE','ROUTE','DOCK','NUT'];
+  // the caller's voice plays even with the shop sound muted, since the word is the whole order
+  var sayVoice=null, sayTimer=null;
+  function pickVoice(){
+    try{
+      var vs=window.speechSynthesis.getVoices()||[];
+      sayVoice=vs.filter(function(v){ return /^en[-_]US/i.test(v.lang); })[0]||vs.filter(function(v){ return /^en/i.test(v.lang); })[0]||vs[0]||null;
+    }catch(e){ sayVoice=null; }
+  }
+  if(SPEAK){ pickVoice(); try{ window.speechSynthesis.addEventListener('voiceschanged',pickVoice); }catch(e){} }
   function sayWord(o){
     if(!SPEAK){ toast('this browser cannot speak, pass this order',true); return; }
     try{
-      window.speechSynthesis.cancel();
+      var ss=window.speechSynthesis;
+      if(!sayVoice) pickVoice();
+      if(ss.speaking||ss.pending) ss.cancel();
+      if(ss.paused) ss.resume();
       var u=new SpeechSynthesisUtterance(o.word.toLowerCase());
-      u.rate=0.8; u.lang='en-US'; u.volume=G.sound===false?0:Math.max(0.3,G.vol);
-      window.speechSynthesis.speak(u);
-    }catch(e){}
+      u.rate=0.8; u.volume=1;
+      if(sayVoice){ u.voice=sayVoice; u.lang=sayVoice.lang; }
+      var started=false;
+      u.onstart=function(){ started=true; };
+      clearTimeout(sayTimer);
+      // some phones drop a word spoken right after a cancel, so it goes out on the next tick
+      setTimeout(function(){ ss.speak(u); },60);
+      sayTimer=setTimeout(function(){
+        if(!started&&!ss.speaking) toast('the phone did not speak, check that a text to speech voice is installed in the phone settings',true);
+      },2500);
+    }catch(e){ toast('the phone could not speak that word',true); }
   }
   var PCOLORS=['red','blue','black','white','orange','teal','yellow','green'];
   // finishing processes a shipped order can need, each run by its own station

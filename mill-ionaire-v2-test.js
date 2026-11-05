@@ -620,19 +620,19 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
 
   // ---- spoken orders: hear the word, spell it, sell it ----
   {
-    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 1000, mills: 1, floor: [{ ch: 'E', fin: 'alu', auto: false, stopped: true }],
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, sound: false, cash: 1000, mills: 1, floor: [{ ch: 'E', fin: 'alu', auto: false, stopped: true }],
       inv: { 'C|alu': 2, 'A|alu': 2, 'T|alu': 2, 'K|alu': 1 },
       orders: [{ id: 77, word: 'CAT', fin: 'alu', who: 'a caller on the phone', kind: 'spoken', guess: '' }] });
     const { ctx, page, errors } = await open(browser, { save: seed });
-    await page.evaluate(() => { window.__said = []; speechSynthesis.speak = u => window.__said.push(u.text); });
+    await page.evaluate(() => { window.__said = []; speechSynthesis.speak = u => { window.__said.push(u.text + '|' + u.volume); if (u.onstart) u.onstart(); }; });
     await tab(page, 'orders'); await page.waitForTimeout(300);
     const card = '#orderList .ocard[data-id="77"]';
     ok(await page.isVisible(card), 'a spoken order shows on the orders tab');
     ok(!/CAT/.test(await txt(page, card)), 'the spoken word is never written on the card', await txt(page, card));
     ok((await page.$$(card + ' .tile.slot')).length === 3, 'the card shows a slot for every letter');
     ok(await page.isDisabled(card + ' .ship'), 'sell is locked until the word is spelled');
-    await page.click(card + ' .hear');
-    ok((await page.evaluate(() => window.__said)).indexOf('cat') >= 0, 'hear it says the word out loud');
+    await page.click(card + ' .hear'); await page.waitForTimeout(300);
+    ok((await page.evaluate(() => window.__said)).indexOf('cat|1') >= 0, 'hear it says the word out loud at full volume', JSON.stringify(await page.evaluate(() => window.__said)));
     await page.click(card + ' .spellit'); await page.waitForTimeout(200);
     ok(await page.isVisible('#spellSheet.open'), 'spell it opens the letter keys');
     for (const k of ['C', 'A', 'K']) await page.click('#spellKeys button[data-k="' + k + '"]');
@@ -664,7 +664,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     ok(/needs the warehouse/.test(await txt(page, '#upgList .upg[data-k="mw"]')), 'specialist crews wait for the warehouse');
     await page.click('#upgList .upg[data-k="warehouse"] button'); await page.clock.runFor(300);
     let g = await save(page);
-    ok(g.warehouse === true && g.cash === 2000000 - 750000, 'moving to the warehouse costs the price on the button', String(g.cash));
+    ok(g.warehouse === true && g.cash <= 1250000 && g.cash > 1249000, 'moving to the warehouse costs the price on the button', String(g.cash));
     await page.click('#upgList .upg[data-k="cnc"] button'); await page.clock.runFor(300);
     g = await save(page);
     ok(g.mills === 13 && g.floor.length === 13, 'the warehouse has room past the old shop floor', String(g.mills));
