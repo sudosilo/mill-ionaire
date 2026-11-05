@@ -565,7 +565,8 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     ok((g.inv['L:standoff|alu'] || 0) >= 2 || g.orders.every(o => o.id !== 1), 'floor CNCs turn the parts the orders need with no lathe', JSON.stringify(g.inv));
     ok(/CNC/.test(await page.evaluate(() => document.getElementById('factory').toDataURL().length > 0 ? 'CNC' : '')), 'the floor draws the CNC bays');
     await tab(page, 'mill'); await page.click('#progBtn2'); await page.clock.runFor(2000);
-    ok(/five axis program/.test(await txt(page, '#status')) || /covered/.test(await txt(page, '#status')), 'your own mill runs the five axis program', await txt(page, '#status'));
+    for (let i = 0; i < 20 && !/five axis program|covered/.test(await txt(page, '#status')); i++) await page.clock.runFor(250);
+    ok(/five axis program|covered/.test(await txt(page, '#status')), 'your own mill runs the five axis program', await txt(page, '#status'));
     ok(errors.length === 0, 'no script errors with five axis CNCs', errors.join(' | '));
     if (SHOTS) { await tab(page, 'floor'); await page.clock.runFor(500); await (await page.$('#factory')).screenshot({ path: SHOTS + '/cnc.png' }); }
     await ctx.close();
@@ -651,6 +652,46 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     g = await save(page);
     ok(g.cash > c1 && !g.orders.some(o => o.id === 77) && g.inv['C|alu'] === 1, 'the right spelling sells the order and uses the letters', c1 + ' ' + g.cash);
     ok(errors.length === 0, 'no script errors on spoken orders', errors.join(' | '));
+    await ctx.close();
+  }
+
+  // ---- the warehouse: three times the floor, specialist crews, spare parts and flatbed trucks ----
+  {
+    const floor = []; for (let i = 0; i < 12; i++) floor.push({ ch: 'A', fin: 'alu', auto: false, stopped: true, kind: 'cnc' });
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 2000000, mills: 12, ops: 2, homeCnc: true, floor, orders: [] });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await tab(page, 'shop'); await page.clock.runFor(300);
+    ok(/needs the warehouse/.test(await txt(page, '#upgList .upg[data-k="mw"]')), 'specialist crews wait for the warehouse');
+    await page.click('#upgList .upg[data-k="warehouse"] button'); await page.clock.runFor(300);
+    let g = await save(page);
+    ok(g.warehouse === true && g.cash === 2000000 - 750000, 'moving to the warehouse costs the price on the button', String(g.cash));
+    await page.click('#upgList .upg[data-k="cnc"] button'); await page.clock.runFor(300);
+    g = await save(page);
+    ok(g.mills === 13 && g.floor.length === 13, 'the warehouse has room past the old shop floor', String(g.mills));
+    for (const k of ['mw', 'el', 'ct']) { await page.click('#upgList .upg[data-k="' + k + '"] button'); await page.clock.runFor(200); }
+    g = await save(page);
+    ok(g.mw === 1 && g.el === 1 && g.ct === 1, 'a millwright, an electrician and a controls tech can be hired');
+    await tab(page, 'floor'); await page.clock.runFor(300);
+    ok(/in the warehouse/.test(await txt(page, '#facOrder')) && /, 25 open bays/.test(await txt(page, '#facOrder')), 'the floor shows the warehouse bays', await txt(page, '#facOrder'));
+    // a CNC on auto makes the spare a broken machine is waiting on, and the millwright uses it
+    await page.evaluate(() => { const f = millTest.fac(); f.m[0].stopped = false; f.m[0].need = 'gear'; f.m[1].stopped = false; f.m[1].auto = true; f.m[1].need = ''; f.m[1].prog = 0; f.m[1].stock = 9; f.m[1].wear = 0; });
+    await page.click('#factory', { position: { x: 120, y: 15 } }).catch(() => {});
+    await page.clock.runFor(300);
+    ok((await page.evaluate(() => millTest.fac().m[1].ch)) === 'S:gear', 'a CNC on auto makes the spare gear the broken machine is waiting on');
+    await page.evaluate(() => { const G = millTest.G(); G.foreman = true; });
+    for (let i = 0; i < 40 && (await page.evaluate(() => millTest.fac().m[0].need)) === 'gear'; i++) await page.clock.runFor(1000);
+    g = await save(page);
+    ok((await page.evaluate(() => millTest.fac().m[0].need)) !== 'gear', 'the millwright replaces the gear once the spare is made');
+    // a flatbed truck of one word ships the whole load at once
+    await page.evaluate(() => { const G = millTest.G(); G.orders = [{ id: 901, word: 'TACO', fin: 'alu', who: 'a sign shop', kind: 'truck', copies: 10, proc: '', color: '' }]; ['T', 'A', 'C', 'O'].forEach(c => { G.inv[c + '|alu'] = 12; }); });
+    await tab(page, 'orders'); await page.clock.runFor(500);
+    ok(await page.isVisible('#orderList .ocard[data-id="901"] .truckcv'), 'a truck order shows the flatbed with the word on it');
+    const c0 = (await save(page)).cash;
+    await page.click('#orderList .ocard[data-id="901"] .ship'); await page.clock.runFor(200);
+    g = await save(page);
+    ok(g.cash > c0 && g.inv['T|alu'] === 2 && !g.orders.some(o => o.id === 901), 'shipping the truck sells the whole load', c0 + ' ' + g.cash);
+    ok(errors.length === 0, 'no script errors in the warehouse', errors.join(' | '));
+    if (SHOTS) { await tab(page, 'floor'); await page.clock.runFor(500); await (await page.$('#factory')).screenshot({ path: SHOTS + '/warehouse.png' }); }
     await ctx.close();
   }
 
