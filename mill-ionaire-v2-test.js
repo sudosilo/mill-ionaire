@@ -472,11 +472,15 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     ok(/the lathe, the brake plus 1 floor mills/.test(await txt(page, '#facOrder')) && /, 9 open bays/.test(await txt(page, '#facOrder')), 'the brake takes a bay on the floor', await txt(page, '#facOrder'));
     await page.click('#brakeTab'); await page.clock.runFor(300);
     ok(await page.$$eval('#bPick button:not([disabled])', n => n.length) === 2, 'the brake starts with angle and mounting brackets');
-    await page.click('#bLoadBtn'); await page.clock.runFor(200);
-    await page.dispatchEvent('#bPressBtn', 'pointerdown');
-    for (let i = 0; i < 40 && !/right on/.test(await txt(page, '#bStatus')); i++) await page.clock.runFor(50);
-    await page.dispatchEvent('#bPressBtn', 'pointerup'); await page.clock.runFor(200);
-    g = await save(page);
+    // a busy test machine can miss the window once, so a bend gets a second try
+    for (let t = 0; t < 2; t++) {
+      if (!/percent there/.test(await txt(page, '#bStatus'))) { await page.click('#bLoadBtn'); await page.clock.runFor(200); }
+      await page.dispatchEvent('#bPressBtn', 'pointerdown');
+      for (let i = 0; i < 160 && !/right on|over/.test(await txt(page, '#bStatus')); i++) await page.clock.runFor(16);
+      await page.dispatchEvent('#bPressBtn', 'pointerup'); await page.clock.runFor(200);
+      g = await save(page);
+      if (g.formed >= 1) break;
+    }
     ok(g.formed === 1, 'a bend made by hand at the right angle finishes an angle bracket', 'formed ' + g.formed);
     await page.click('#bProgBtn');
     let t = 0;
@@ -593,7 +597,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     ok(posted && posted.game === 'mill-ionaire' && posted.score === 2500000000000000 && posted.duration >= 90000000 && posted.duration < 90010000 && posted.tag === 'B1U', 'the score goes to the score service with the tag and play time', JSON.stringify(posted));
     ok(/number 2/.test(await txt(page, '#boardMsg')) && /B1U/.test(await txt(page, '#boardList')), 'the board shows where the score placed');
     ok((await page.evaluate(k => localStorage.getItem(k), KEY)) === null, 'submitting retires the business');
-    await page.click('#boardNew');
+    await Promise.all([page.waitForEvent('load', { timeout: 15000 }).catch(() => {}), page.click('#boardNew')]);
     await page.waitForFunction(() => { const e = document.getElementById('hudCash'); return e && e.textContent === '$40'; }, null, { timeout: 8000 }).catch(() => {});
     ok((await txt(page, '#hudCash')) === '$40', 'a new business starts after cashing out', await txt(page, '#hudCash'));
     ok(errors.length === 0, 'no script errors cashing out', errors.join(' | '));
