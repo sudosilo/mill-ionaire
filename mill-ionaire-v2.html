@@ -132,6 +132,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 .tile.miss{opacity:.38;}
 .truckcv{width:100%;height:auto;display:block;margin-bottom:8px;background:#E4E9EE;border:2px solid var(--charcoal);}
 .truckgo{position:fixed;left:0;bottom:90px;width:100%;max-width:640px;height:auto;pointer-events:none;z-index:60;}
+.srow{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid var(--putty-dark);font-size:14px;}
+.srow b{font-family:"Courier New",monospace;color:var(--blue);text-align:right;}
+.shead{margin:12px 0 2px;font-weight:bold;font-size:14px;color:var(--blue);}
+#statsSheet .sheetbox{max-height:88vh;overflow-y:auto;}
 .officebox{height:72px;overflow:hidden;margin:0 0 10px;padding:4px 8px;font-size:13px;line-height:16px;border-left:4px solid var(--blue);background:#E4E9EE;}
 .tile.slot{background:#fff;border-style:dashed;border-color:var(--blue);}
 .ocard .row.spk{margin-bottom:6px;}
@@ -252,6 +256,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <h3>machine menu</h3>
     <div class="feed" style="margin-top:8px"><span>shop volume</span><input type="range" id="volRange" min="0" max="100" step="1" value="60" style="flex:1;height:34px;accent-color:#2E4A63;"></div>
     <button class="wide" id="doneBtn" style="background:var(--blue)">I'm done, submit my score</button>
+    <button class="wide" id="statsBtn">statistics</button>
     <button class="wide" id="boardBtn">high scores</button>
     <button class="wide" id="howBtn">how to play</button>
     <button class="wide" id="resetBtn">start the whole business over</button>
@@ -289,6 +294,17 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <p>This wipes your cash, finishes, floor mills, inventory and orders, and the market rate goes back to full price. It cannot be undone.</p>
     <button class="wide" id="resetYes" style="background:var(--rust)">yes, scrap the whole business</button>
     <button class="wide" id="resetNo">no, keep my business</button>
+  </div>
+</div>
+
+<div class="sheet" id="statsSheet">
+  <div class="sheetbox">
+    <h3>the books</h3>
+    <div id="statsBody"></div>
+    <canvas id="statsCv" width="640" height="240" style="width:100%;height:auto;display:block;border:2px solid var(--charcoal);background:#fff;margin:8px 0"></canvas>
+    <p class="spec">Blue is money coming in each minute, rust is money going out each minute.</p>
+    <div id="statsNotes"></div>
+    <button class="wide" id="statsClose">close</button>
   </div>
 </div>
 
@@ -338,7 +354,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <p>The stamping press, the powder coat booth and the LED wiring bench open orders that need a finishing step. Those orders go down the finishing line on the orders tab after you ship them, and the customer pays more when they come off.</p>
     <p>Spend your cash in the shop. New finishes pay more per letter but are harder metal, so they cut slower. Floor mills run on their own on the floor tab, and operators keep them going when a light turns amber.</p>
     <p>Once you own a floor mill, your operators draw wages every minute, and every running mill draws power. If the cash runs dry the power gets cut and the crew goes home until you ship an order. Chip conveyors, better coolant, better cutters and better software in the shop make every mill run harder for the same bills.</p>
-    <p>When you are done, open the menu and tap I'm done to cash out. Your score is every dollar the business ever earned, and it goes on the shared high score board under a tag of up to three letters, with a link to your own site if you want one. Submitting retires the business, and the next one starts fresh. High scores in the menu shows the board any time.</p>
+    <p>When you are done, open the menu and tap I'm done to cash out. Your score is every dollar the business ever earned, and it goes on the shared high score board under a tag of up to three letters, with a link to your own site if you want one. Submitting retires the business, and the next one starts fresh. High scores in the menu shows the board any time. Statistics in the menu opens the books: net worth, income and costs broken down by stock, spares, crew, office and power, orders shipped by kind, how busy the floor is, a chart of money in and out each minute, and notes on what to fix first.</p>
     <p>The market cools off the longer you run the shop, so every letter pays a little less as the hours go by. Early money is the easiest money you will ever make.</p>
     <h3>what it does</h3>
     <p>Mill-ionaire is a letter shop tycoon built around a simulated vertical knee mill, the kind of manual machine a Bridgeport is. You cut metal letters, fill customer word orders, buy new finishes and more mills, and grow one machine into a factory floor.</p>
@@ -869,7 +885,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var SAVEKEY='mill-ionaire-v2-save';
   function freshSave(){
     return {cash:40,played:0,owned:['alu'],curFin:'alu',inv:{},orders:[],mills:0,ops:1,foreman:false,
-            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[],lathe:false,stockPart:'standoff',turned:0,paidStock:0,brake:false,brakePart:'angle',formed:0,homeCnc:false,warehouse:false,mw:0,el:0,ct:0,spares:{gear:0,nut:0,holder:0},office:false,sales:0,ling:0,officeLv:0,fin:0,design:0,am:0,bports:0,paidSpares:0};
+            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[],lathe:false,stockPart:'standoff',turned:0,paidStock:0,brake:false,brakePart:'angle',formed:0,homeCnc:false,warehouse:false,mw:0,el:0,ct:0,spares:{gear:0,nut:0,holder:0},office:false,sales:0,ling:0,officeLv:0,fin:0,design:0,am:0,bports:0,paidSpares:0,paidOffice:0,invested:0,finGain:0,finLost:0,earnBy:{},shipBy:{},hist:[]};
   }
   var G=freshSave();
   // reads the save and throws away anything that is the wrong shape, so a damaged save never breaks the game
@@ -893,6 +909,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     G.sales=int(G.sales,0,16); G.ling=int(G.ling,0,16); G.fin=int(G.fin,0,16); G.design=int(G.design,0,16);
     ['design','fin','ling','sales'].forEach(function(k){ while(G.sales+G.ling+G.fin+G.design>seats()&&G[k]>0) G[k]--; });
     G.paidSpares=Math.max(0,Number(G.paidSpares)||0);
+    ['paidOffice','invested','finGain','finLost'].forEach(function(k){ G[k]=Math.max(0,Number(G[k])||0); });
+    function cleanMap(m){ var o={}; if(m&&typeof m==='object'&&!Array.isArray(m)) Object.keys(m).slice(0,40).forEach(function(k){ if(/^[a-z]{1,20}$/.test(k)) o[k]=Math.max(0,Number(m[k])||0); }); return o; }
+    G.earnBy=cleanMap(G.earnBy); G.shipBy=cleanMap(G.shipBy);
+    G.hist=Array.isArray(G.hist)?G.hist.filter(function(h){ return h&&typeof h==='object'; }).slice(-180).map(function(h){ var o={}; ['t','e','st','w','pw','of'].forEach(function(k){ o[k]=Math.max(0,Number(h[k])||0); }); return o; }):[];
     var sp={}; Object.keys(SPARES).forEach(function(k){ sp[k]=int((G.spares||{})[k],0,99); }); G.spares=sp; G.head=int(G.head,0,3); G.chipConv=G.chipConv===true; G.lube=int(G.lube,0,2); G.bits=int(G.bits,0,2); G.soft=int(G.soft,0,2); G.broke=G.broke===true; G.dies=int(G.dies,0,2); G.stamper=G.stamper===true; G.booth=G.booth===true; G.ledbench=G.ledbench===true; G.lathe=G.lathe===true; G.passCd=Math.max(0,Math.min(20,G.passCd));
     G.made=Math.max(0,G.made); G.turned=Math.max(0,Math.floor(Number(G.turned)||0)); G.formed=Math.max(0,Math.floor(Number(G.formed)||0)); G.brake=G.brake===true; G.homeCnc=G.homeCnc===true; if(!BPARTS[G.brakePart]) G.brakePart='angle'; G.paidStock=Math.max(0,Number(G.paidStock)||0); if(!LPARTS[G.stockPart]) G.stockPart='standoff'; G.shipped=Math.max(0,G.shipped); G.foreman=G.foreman===true; G.sound=G.sound!==false; G.vol=Math.max(0,Math.min(1,G.vol));
     var own=['alu'];
@@ -959,9 +979,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(Date.now()-warnedStock>8000){ warnedStock=Date.now(); toast('not enough cash to buy a '+fin(f).name+' '+(kind==='bar'?'bar':'blank'),true); }
     return false;
   }
-  function earn(v,why){
+  function earn(v,why,cat){
     v=Math.max(1,Math.round(v));
-    G.cash+=v; G.earned+=v; toast('+'+money(v)+' '+why); writeSave();
+    G.cash+=v; G.earned+=v; cat=cat||'orders'; G.earnBy[cat]=(G.earnBy[cat]||0)+v; toast('+'+money(v)+' '+why); writeSave();
   }
 
   var MASKC={};
@@ -1906,7 +1926,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(cut>=97&&dmg<=1.0){
       if(part.paid){ setStatus('this part was already paid for, bag it and load a fresh blank',false); holdMsg=160; return; }
       var first=done.indexOf(job)<0;
-      earn((first?150:45)*fin(part.fin).pay*market(),first?'for a first article that passed':'for a print job that passed');
+      earn((first?150:45)*fin(part.fin).pay*market(),first?'for a first article that passed':'for a print job that passed','bonus');
       part.paid=true;
       if(first) done.push(job);
       G.done=done.slice();
@@ -2185,7 +2205,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(fac.rush&&!fac.rush.over){
       fac.rush.clock=Math.max(0,fac.rush.clock-dt);
       var full=fac.rush.order.every(function(o){ return o.got>=o.need; });
-      if(full){ fac.rush.over=true; earn(fac.rush.bonus,'rush shift bonus'); fac.rush.msg='rush quota filled'; }
+      if(full){ fac.rush.over=true; earn(fac.rush.bonus,'rush shift bonus','bonus'); fac.rush.msg='rush quota filled'; }
       else if(fac.rush.clock<=0){ fac.rush.over=true; fac.rush.msg='the rush ran out of time, no bonus'; toast(fac.rush.msg,true); }
     }
     payBills(dt);
@@ -2757,6 +2777,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       } else {
         G.shipped=(G.shipped||0)+1;
         if(o.kind==='bridgeport'){ G.bports=(G.bports||0)+1; if(G.bports===1) setTimeout(function(){ toast('your first Bridgeport mill is out the door, now you are a real Mill-ionaire'); },2600); }
+        G.shipBy[o.kind]=(G.shipBy[o.kind]||0)+1;
         earn(orderValue(o),'for '+oname(o)+' to '+o.who); sndDing();
       }
       orderT=2.5; binsDirty=true; ordersDirty=true; buildBins();
@@ -2780,6 +2801,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       if(j.left<=0){
         G.line.splice(i,1); i--;
         G.shipped=(G.shipped||0)+1;
+        G.shipBy[j.order.kind]=(G.shipBy[j.order.kind]||0)+1;
         earn(j.order.pay,'for '+oname(j.order)+', '+(j.order.proc==='pc'?'powder coated '+j.order.color:PROCS[j.order.proc].name)); sndDing();
       }
     }
@@ -2813,7 +2835,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
           if(loss>0){ G.cash-=loss; G.finLost=(G.finLost||0)+loss; toast('a customer on credit went bankrupt, the finance team lost '+money(loss),true); }
         } else {
           var gain=Math.min(G.cash*0.012,25000)*G.fin;
-          if(gain>=1) earn(gain,'from the finance team');
+          if(gain>=1){ earn(gain,'from the finance team','finance'); G.finGain+=Math.round(gain); }
         }
       }
     }
@@ -2870,6 +2892,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function ordersTick(dt){
     lineTick(dt);
     officeTick(dt);
+    statsTick(dt);
     if(G.passCd>0) G.passCd=Math.max(0,G.passCd-dt);
     if(G.orders.length<maxOrders()){
       orderT-=dt;
@@ -2987,6 +3010,125 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       requestAnimationFrame(step);
     })(t0);
   }
+
+  // ---- the books: what the company is worth and where the money goes ----
+  // a business started before the books were kept gets its shop spending estimated once from what it owns
+  function backfillInvested(){
+    if(G.invested>=1||G.investedSet) return;
+    var v=0, mills=0;
+    G.owned.forEach(function(id){ v+=fin(id).cost||0; });
+    G.floor.forEach(function(c){ if(!c) return; if(c.kind==='cnc') v+=CNCCOST; else if(c.kind==='laser') v+=LASERCOST; else if(c.kind==='print') v+=PRINTCOST; else { v+=Math.round(250*Math.pow(1.7,mills)); mills++; } });
+    if(G.warehouse) v+=WAREHOUSECOST;
+    for(var l=1;l<=G.officeLv;l++) v+=OFFICES[l].cost;
+    if(G.homeCnc) v+=CNCCOST;
+    G.invested=v; G.investedSet=true;
+  }
+  var histT=0;
+  function statsTick(dt){
+    backfillInvested();
+    histT+=dt;
+    if(histT<60) return;
+    histT=0;
+    G.hist.push({t:Math.floor(G.played),e:G.earned,st:G.paidStock+(G.paidSpares||0),w:G.paidWages-(G.paidOffice||0),pw:G.paidPower,of:G.paidOffice||0});
+    if(G.hist.length>180) G.hist.shift();
+  }
+  function stockValue(){
+    var v=0;
+    Object.keys(G.inv).forEach(function(k){ var a=k.split('|'); v+=G.inv[k]*letterBase(a[0])*fin(a[1]).pay*market(); });
+    Object.keys(G.spares||{}).forEach(function(k){ v+=(G.spares[k]||0)*SPARES[k].buy*0.5; });
+    return v;
+  }
+  function perMinute(field,mins){
+    var h=G.hist; if(h.length<2) return 0;
+    var a=h[Math.max(0,h.length-1-mins)], b=h[h.length-1], span=Math.max(1,(b.t-a.t)/60);
+    return (b[field]-a[field])/span;
+  }
+  function renderStats(){
+    var body=document.getElementById('statsBody');
+    function row(a,b){ return '<div class="srow"><span>'+a+'</span><b>'+b+'</b></div>'; }
+    function head(a){ return '<div class="shead">'+a+'</div>'; }
+    var resale=G.invested*0.6, stock=stockValue(), worth=G.cash+resale+stock;
+    var crew=G.paidWages-(G.paidOffice||0);
+    var costs=G.paidStock+(G.paidSpares||0)+G.paidWages+G.paidPower+(G.finLost||0);
+    var kinds={word:'words',spell:'spelling bee',set:'matching sets',num:'house numbers',emoji:'emoji',turned:'turned parts',mounted:'mounted words',post:'post signs',formed:'formed parts',bigsign:'storefront signs',spoken:'spoken words',truck:'flatbed trucks',lasered:'laser cut parts',printed:'printed parts',aero:'rocket kits',bridgeport:'Bridgeport mills'};
+    var mk={mill:0,cnc:0,laser:0,print:0}; fac.m.forEach(function(m){ mk[m.mk||'mill']++; });
+    var busy=fac.m.filter(function(m){ return !m.idle&&!m.stopped&&!m.need; }).length, down=fac.m.filter(function(m){ return !!m.need; }).length, idle=fac.m.filter(function(m){ return m.idle&&!m.stopped; }).length;
+    var h='';
+    h+=head('what the company is worth');
+    h+=row('cash on hand',money(G.cash));
+    h+=row('machines, buildings and upgrades at resale',money(resale));
+    h+=row('parts in the bins and spares on the shelf',money(stock));
+    h+=row('net worth',money(worth));
+    h+=head('money in');
+    h+=row('lifetime sales and income',money(G.earned));
+    h+=row('from orders',money(G.earnBy.orders||0));
+    h+=row('from the finance team',money(G.finGain||0));
+    h+=row('lost to customers going bankrupt',money(G.finLost||0));
+    h+=row('bonuses and print jobs',money(G.earnBy.bonus||0));
+    h+=row('income in the last ten minutes, per minute',money(perMinute('e',10)));
+    h+=head('money out');
+    h+=row('raw stock: blanks, bars and sheet',money(G.paidStock));
+    h+=row('spare parts bought from the dealer',money(G.paidSpares||0));
+    h+=row('floor crew wages',money(crew));
+    h+=row('office rent and salaries',money(G.paidOffice||0));
+    h+=row('power',money(G.paidPower));
+    h+=row('spent on machines, buildings and upgrades',money(G.invested));
+    h+=row('running costs right now, per minute',money(costPerMin()));
+    h+=row('stock bought in the last ten minutes, per minute',money(perMinute('st',10)));
+    var margin=G.earned>0?Math.round(100*(G.earned-costs)/G.earned):0;
+    h+=row('operating margin, before what you spent in the shop',margin+' percent');
+    h+=head('orders shipped');
+    h+=row('all orders',(G.shipped||0)+'');
+    Object.keys(kinds).forEach(function(k){ if(G.shipBy[k]) h+=row(kinds[k],G.shipBy[k]+''); });
+    h+=head('the floor');
+    h+=row('knee mills, CNCs, lasers, printers',mk.mill+', '+mk.cnc+', '+mk.laser+', '+mk.print);
+    h+=row('cutting, waiting on a hand, idle',busy+', '+down+', '+idle);
+    h+=row('parts made',(G.made||0)+'');
+    h+=head('people');
+    h+=row('operators and specialists',G.ops+' and '+(G.mw+G.el+G.ct+(G.am||0)));
+    h+=row('office staff',G.officeLv?staffN()+' of '+seats()+' seats':'no office yet');
+    body.innerHTML=h;
+    // the notes say what to fix first
+    var notes=[];
+    var ready=G.orders.filter(function(o){ return o.kind!=='spoken'&&canShip(o); }).length;
+    if(down>Math.max(1,fac.m.length/4)) notes.push('A lot of machines are stopped and waiting on a hand. More operators or specialists, or a foreman, would get them cutting again.');
+    if(fac.m.some(function(m){ var nd=NEEDS[m.need]; return nd&&nd.part&&!m.partIn&&(G.spares[nd.part]||0)<1; })) notes.push('Machines are waiting on spare parts. A machine that makes them saves the dealer markup.');
+    if((G.paidSpares||0)>50000) notes.push('The dealer has been paid a lot for spare parts. Every kind of machine on the floor makes spares for the others for the price of the metal.');
+    if(idle>Math.max(1,fac.m.length/3)) notes.push('Many machines are idle with nothing to cut. More orders come in with more mills, and the sales managers clear the board faster.');
+    if(ready>=3) notes.push('Several orders are ready and waiting to ship. Ship them, or hire a sales manager to do it.');
+    if(G.paidOffice>G.earned*0.25&&G.officeLv) notes.push('The office is eating a big share of the income. Make sure every seat is earning its salary.');
+    if(costPerMin()>perMinute('e',10)&&G.hist.length>3) notes.push('The shop is spending more each minute than it is bringing in.');
+    if(market()<0.6) notes.push('The market has cooled off a lot. Higher paying finishes and bigger orders make up the difference.');
+    if(!notes.length) notes.push('Nothing stands out right now, the shop is running clean.');
+    document.getElementById('statsNotes').innerHTML=head('what to look at')+notes.map(function(n){ return '<p class="spec" style="margin:4px 0">'+n+'</p>'; }).join('');
+    drawStatsChart();
+  }
+  function drawStatsChart(){
+    var cv=document.getElementById('statsCv'), c=cv.getContext('2d'), W=640, H=240, hh=G.hist;
+    c.clearRect(0,0,W,H); c.fillStyle='#fff'; c.fillRect(0,0,W,H);
+    c.fillStyle='#2B2924'; c.font='14px Trebuchet MS';
+    if(hh.length<3){ c.fillText('the chart fills in after a few minutes on shift',20,H/2); return; }
+    var inc=[], out=[];
+    for(var i=1;i<hh.length;i++){
+      var dtm=Math.max(1,(hh[i].t-hh[i-1].t)/60);
+      inc.push((hh[i].e-hh[i-1].e)/dtm);
+      out.push(((hh[i].st+hh[i].w+hh[i].pw+hh[i].of)-(hh[i-1].st+hh[i-1].w+hh[i-1].pw+hh[i-1].of))/dtm);
+    }
+    var mx=Math.max(1,Math.max.apply(null,inc.concat(out)));
+    c.strokeStyle='#C9C3B2'; c.lineWidth=1;
+    for(var g=1;g<4;g++){ c.beginPath(); c.moveTo(40,20+g*(H-40)/4); c.lineTo(W-10,20+g*(H-40)/4); c.stroke(); }
+    function line(a,col){
+      c.strokeStyle=col; c.lineWidth=3; c.beginPath();
+      a.forEach(function(v,i){ var x=40+i*(W-50)/Math.max(1,a.length-1), y=H-20-(H-40)*v/mx; if(i) c.lineTo(x,y); else c.moveTo(x,y); });
+      c.stroke();
+    }
+    line(out,'#A84A2A'); line(inc,'#2E4A63');
+    c.fillStyle='#2B2924'; c.fillText(money(mx)+' a minute',44,16); c.fillText('the last '+(hh.length-1)+' minutes',W-170,H-4);
+  }
+  var statsOpen=false;
+  document.getElementById('statsBtn').addEventListener('click',function(){ sheet('menuSheet',false); statsOpen=true; renderStats(); sheet('statsSheet',true); });
+  document.getElementById('statsClose').addEventListener('click',function(){ statsOpen=false; sheet('statsSheet',false); });
+  setInterval(function(){ if(statsOpen&&document.getElementById('statsSheet').classList.contains('open')) renderStats(); else statsOpen=false; },2000);
 
   // ---- the outside view: the buildings from the street, with flatbeds hauling giant letters past ----
   var outside={on:false,t:0,trucks:[]};
@@ -3118,7 +3260,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var bill=wages+power;
     if(bill<=0) return;
     if(G.cash>=bill){
-      G.cash-=bill; G.paidWages+=wages; G.paidPower+=power;
+      G.cash-=bill; G.paidWages+=wages; G.paidPower+=power; G.paidOffice+=officePerMin()/60;
       if(G.broke){ G.broke=false; warnedBroke=false; toast('bills paid, the crew is back and the power is on'); }
     } else {
       G.cash=0;
@@ -3204,7 +3346,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     });
   }
   function buyUpg(k){
-    var c=0;
+    var c=0, before=G.cash;
     if(k==='mill'){ if(G.mills>=maxMills()) return; c=millCost(); if(G.cash<c) return; G.cash-=c; G.mills++; facSync(); toast('floor mill '+G.mills+' is bolted down'); }
     if(k==='warehouse'){ if(G.warehouse) return; c=WAREHOUSECOST; if(G.cash<c) return; G.cash-=c; G.warehouse=true; fac.tsig=''; facSync(); binsDirty=true; toast('the whole shop moved into the warehouse, three times the floor'); }
     if(k==='laser'||k==='print'){ if(!G.warehouse||G.mills>=maxMills()) return; c=k==='laser'?LASERCOST:PRINTCOST; if(G.cash<c) return; G.cash-=c; G.floor.length=G.mills; G.floor.push({ch:k==='laser'?'X:gusset':'P:nozzle',fin:'alu',auto:true,kind:k}); G.mills++; facSync(); binsDirty=true; toast((k==='laser'?'a laser cutter':'a metal 3D printer')+' is on the floor'); }
@@ -3225,12 +3367,13 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(k==='dies'){ if(G.dies>=2) return; c=DIECOST[G.dies]; if(G.cash<c) return; G.cash-=c; G.dies++; binsDirty=true; toast(G.dies===1?'number dies unlocked, house number orders are coming':'emoji dies unlocked, emoji orders pay big'); }
     if(k==='stamper'||k==='booth'||k==='ledbench'){ if(G[k]) return; c=STATIONCOST[k]; if(G.cash<c) return; G.cash-=c; G[k]=true; toast(k==='stamper'?'the stamping press is bolted down':(k==='booth'?'the powder coat booth is ready':'the LED bench is wired up')); }
     if(k==='soft'){ if(G.soft>=2) return; c=SOFTCOST[G.soft]; if(G.cash<c) return; G.cash-=c; G.soft++; toast(G.soft===1?'new CAM software installed':'nesting software installed'); }
+    if(G.cash<before) G.invested+=before-G.cash;
     shopSig=''; ordersDirty=true; writeSave(); renderShop();
   }
   function buyFin(id){
     var f=fin(id);
     if(f.design||G.owned.indexOf(id)>=0||G.cash<f.cost) return;
-    G.cash-=f.cost; G.owned.push(id);
+    G.cash-=f.cost; G.invested+=f.cost; G.owned.push(id);
     G.owned.sort(function(a,b){ return FIN.indexOf(fin(a))-FIN.indexOf(fin(b)); });
     toast(f.name+' unlocked, customers will start asking for it');
     setFin(id);
@@ -4172,7 +4315,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     G=freshSave(); resetting=true; location.reload();
   });
   var resetting=false;
-  ['howSheet','resetSheet','emptySheet','doneSheet','spellSheet','outsideSheet'].forEach(function(id){
+  ['howSheet','resetSheet','emptySheet','doneSheet','spellSheet','outsideSheet','statsSheet'].forEach(function(id){
     document.getElementById(id).addEventListener('click',function(e){ if(e.target===this) sheet(id,false); });
   });
   document.addEventListener('visibilitychange',function(){ if(!resetting) writeSave(); });

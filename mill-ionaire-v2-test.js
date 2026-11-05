@@ -107,7 +107,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.click('#howClose'); ok(!(await page.isVisible('#howSheet.open')), 'how to play closes');
     ok(await page.isVisible('#view-mill #demoBtn') && await page.isVisible('#view-mill #fixBtn'), 'alphabet run and millwright sit on the mill itself');
     await page.click('#fixBtn'); await page.waitForTimeout(80);
-    ok(await page.$$eval('#menuSheet button', n => n.map(b => b.id).join(',')) === 'doneBtn,boardBtn,howBtn,resetBtn,menuClose', 'the menu holds cash out, high scores, how to play, start over and close');
+    ok(await page.$$eval('#menuSheet button', n => n.map(b => b.id).join(',')) === 'doneBtn,statsBtn,boardBtn,howBtn,resetBtn,menuClose', 'the menu holds cash out, statistics, high scores, how to play, start over and close');
     await page.click('#burger'); await page.click('#resetBtn');
     ok(/scrap heap/.test(await txt(page, '#resetSheet')), 'start over asks for confirmation first');
     await page.click('#resetNo');
@@ -772,6 +772,23 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     if (SHOTS) await (await page.$('#outsideSheet .sheetbox')).screenshot({ path: SHOTS + '/outside.png' });
     await page.click('#outsideClose');
     ok(errors.length === 0, 'no script errors in the late game', errors.join(' | '));
+    await ctx.close();
+  }
+
+  // ---- the books in the menu ----
+  {
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 50000, mills: 2, ops: 2, floor: [{ ch: 'A', fin: 'alu', auto: true }, { ch: 'B', fin: 'alu', auto: true }] });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await page.clock.runFor(200000);
+    await page.click('#burger'); await page.click('#statsBtn'); await page.clock.runFor(300);
+    const body = await txt(page, '#statsBody');
+    ok(/net worth/.test(body) && /raw stock/.test(body) && /floor crew wages/.test(body) && /power/.test(body), 'the statistics show net worth and every kind of cost', body.slice(0, 200));
+    ok(/orders shipped/.test(body) && /knee mills, CNCs, lasers, printers/.test(body), 'the statistics count orders and machines');
+    ok(((await save(page)).hist || []).length >= 3, 'the shop keeps a minute by minute history for the chart');
+    ok((await txt(page, '#statsNotes')).length > 20, 'the statistics say what to look at');
+    if (SHOTS) await (await page.$('#statsSheet .sheetbox')).screenshot({ path: SHOTS + '/stats.png' });
+    await page.click('#statsClose');
+    ok(errors.length === 0, 'no script errors in the statistics', errors.join(' | '));
     await ctx.close();
   }
 
