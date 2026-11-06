@@ -136,6 +136,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 .srow b{font-family:"Courier New",monospace;color:var(--blue);text-align:right;}
 .shead{margin:12px 0 2px;font-weight:bold;font-size:14px;color:var(--blue);}
 #statsSheet .sheetbox{max-height:88vh;overflow-y:auto;}
+.modepick button{flex:1;min-height:44px;background:var(--putty-dark);color:var(--charcoal);border:2px solid var(--charcoal);font-weight:bold;}
+.modepick button.picked{background:var(--blue);color:#fff;}
 .officebox{height:72px;overflow:hidden;margin:0 0 10px;padding:4px 8px;font-size:13px;line-height:16px;border-left:4px solid var(--blue);background:#E4E9EE;}
 .tile.slot{background:#fff;border-style:dashed;border-color:var(--blue);}
 .ocard .row.spk{margin-bottom:6px;}
@@ -347,6 +349,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <p>The engine lathe in the shop costs half the price of your next mill. It turns round parts: sign standoffs, threaded studs, sign posts, bushings, flanges, lazy susan plates, knobs and fixture pins. Once you own it, customers order batches of turned parts, words mounted on standoffs and signs on posts. Run the lathe program on the lathe tab and it turns whatever the orders need, and when nothing is on order it makes the part you picked to stock. Standoffs and studs come first, and every turned part you make counts toward unlocking the next part on the catalog.</p>
     <p>The office building in the shop houses the business side, and it costs money every minute to keep open. Inside it you can hire sales managers, who ship every order the moment its parts are in the bins, and linguistics engineers, who take the spoken orders, spell each word right so the floor can cut it, and sell it when the letters are in. Each one handles one order every few seconds and draws a big salary, so a busy shop with a backlog may need more than one.</p>
     <p>In the warehouse the shop sells a laser cutter and a metal 3D printer, each taking a floor bay. The laser cuts gusset plates, enclosure panels, logo cutouts and way guards, and the printer slowly prints rocket nozzles, injector plates, impellers and coolant manifolds. They bring laser and printer orders and rocket engine kits that pay double, and a laser and printer tech to keep them running. Every kind of machine makes spare parts for the others: CNCs make drive gears, ballscrew nuts and tool holders, the laser cuts recoater blades for the printers, and the printer makes nozzle tips for the lasers. When the shelf is empty the dealer sells the part at a steep markup. With a CNC, a laser, a printer and a lathe or a CNC for leadscrews, customers start ordering whole Bridgeport mills, the best money in the game. The office moves up to an office unit and then an office tower for more seats, and besides sales and linguistics it seats finance analysts, who earn a return on the cash but sometimes lose a chunk to a customer going bankrupt, and designers, who invent holiday and two tone textures that pay well but cut slow on pricey stock. The outside view button on the floor tab shows the buildings from the street.</p>
+    <p>Every machine works the order queue, the button at the top of the floor tab, puts the whole shop on the orders in one tap: every floor machine, your own mill, the lathe program and the brake program. Tap a floor machine to pick between work the order queue and make one part, and the picked one shows blue with a check. The line under it says what the machine is doing and what it can make.</p>
     <p>The order program on your own mill stays on until you stop it, even across closing the game, and when every order is covered it cuts ahead in your newest finish so the bins are stocked for the next orders. Floor mills on auto do the same. A machine stopped and waiting for help never holds up a letter, another machine picks it up. When a breakdown needs a trade you have not hired, an operator covers it at a third of the speed. The ship every ready order button at the top of the orders tab ships everything that is ready in one tap.</p>
     <p>The warehouse in the shop is the next step past the CNCs. It has three times the floor space, and every machine and the whole crew move over. The floor is drawn smaller so it all fits, and the crew show up as dots colored by trade. Orders start coming by the flatbed truckload, one word spelled out over and over on the trailer, and shipping the truck pays for the whole load. Bigger machines break in new ways. Millwrights replace drive gears and ballscrew nuts, electricians reset drives and breakers, and controls techs clear CNC alarms and replace crashed tool holders. Gears, nuts and tool holders come off the spare shelf, and only a five axis CNC can make them, so CNCs on auto make spares whenever the shelf runs low or a machine is waiting on one.</p>
     <p>The press brake in the shop takes a floor bay and folds sheet into brackets, channel and sign box frames, and later giant chips, tacos, donuts and the muffler man. With the brake running, customers order big storefront signs that need letters, a box frame, brackets, standoffs from the lathe and sometimes a giant shape on top, and those pay the most of anything.</p>
@@ -374,6 +377,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 <div class="panel" id="facPanel">
   <div class="panel-label">factory floor</div>
   <div class="feed">
+    <button class="wide" id="facQueue" style="margin:0">every machine works the order queue</button>
     <button class="switch" id="facRun">pause the floor</button>
     <button class="switch" id="facRush" style="min-width:150px">start a rush shift</button>
     <button class="switch" id="facClose" style="min-width:90px">back to the mill</button>
@@ -887,7 +891,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var SAVEKEY='mill-ionaire-v2-save';
   function freshSave(){
     return {cash:40,played:0,owned:['alu'],curFin:'alu',inv:{},orders:[],mills:0,ops:1,foreman:false,
-            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[],lathe:false,stockPart:'standoff',turned:0,paidStock:0,brake:false,brakePart:'angle',formed:0,homeCnc:false,warehouse:false,mw:0,el:0,ct:0,spares:{gear:0,nut:0,holder:0},office:false,sales:0,ling:0,officeLv:0,fin:0,design:0,am:0,bports:0,paidSpares:0,paidOffice:0,invested:0,finGain:0,finLost:0,earnBy:{},shipBy:{},hist:[],progOn:false,investedSet:false};
+            head:0,floor:[],done:[],earned:0,shipped:0,made:0,passCd:0,seenHow:false,nextId:1,tray:[],guideDone:false,sawFloor:false,sound:true,vol:0.6,chipConv:false,lube:0,bits:0,soft:0,broke:false,paidWages:0,paidPower:0,dies:0,stamper:false,booth:false,ledbench:false,line:[],lathe:false,stockPart:'standoff',turned:0,paidStock:0,brake:false,brakePart:'angle',formed:0,homeCnc:false,warehouse:false,mw:0,el:0,ct:0,spares:{gear:0,nut:0,holder:0},office:false,sales:0,ling:0,officeLv:0,fin:0,design:0,am:0,bports:0,paidSpares:0,paidOffice:0,invested:0,finGain:0,finLost:0,earnBy:{},shipBy:{},hist:[],progOn:false,investedSet:false,lProgOn:false,bProgOn:false};
   }
   var G=freshSave();
   // reads the save and throws away anything that is the wrong shape, so a damaged save never breaks the game
@@ -952,7 +956,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     G.tray=G.tray.filter(function(t){ return t&&typeof t.ch==='string'&&(t.ch===''||ALLCH.indexOf(t.ch)>=0)&&FINBY[t.fin]; }).slice(-24);
   }
   if(navigator.webdriver) window.millTest={G:function(){ return G; },fac:function(){ return fac; },demo:function(){ return demo; },machine:function(){ return machine; }};
-  function writeSave(){ if(resetting) return; try{ if(typeof demo!=='undefined') G.progOn=!!(demo.on&&demo.mode==='orders'); }catch(e){} try{ localStorage.setItem(SAVEKEY,JSON.stringify(G)); }catch(e){} }
+  function writeSave(){ if(resetting) return; try{ if(typeof demo!=='undefined') G.progOn=!!(demo.on&&demo.mode==='orders'); if(typeof lathe!=='undefined') G.lProgOn=!!lathe.prog.on; if(typeof brake!=='undefined') G.bProgOn=!!brake.prog.on; }catch(e){} try{ localStorage.setItem(SAVEKEY,JSON.stringify(G)); }catch(e){} }
 
   // the market cools off the longer the shop has been running
   function market(){ var h=G.played/3600; return 0.2+0.8*Math.exp(-h/4); }
@@ -2131,6 +2135,16 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   var MACH={mill:{name:'mill',speed:1,power:1,stock:1},cnc:{name:'CNC',speed:CNCSPEED,power:CNCPOWER,stock:CNCSTOCK},
     laser:{name:'laser',speed:1.6,power:1.5,stock:1},print:{name:'printer',speed:0.5,power:1.2,stock:2}};
   function machName(m){ return MACH[m.mk||'mill'].name; }
+  var MAKES={mill:'letters, numbers and emoji',cnc:'letters, numbers, emoji, turned parts, castings and mill spares',laser:'laser cut parts and recoater blades',print:'printed parts and laser nozzle tips'};
+  // one line on what the machine is doing and what it can make, so an idle machine explains itself
+  function machNow(m){
+    var w=m.mk==='cnc'&&!G.warehouse?'letters, numbers, emoji and turned parts':MAKES[m.mk||'mill'];
+    if(m.stopped) return 'stopped. This '+machName(m)+' makes '+w+'.';
+    if(m.need) return needLine(m)+'.';
+    if(m.auto&&m.idle) return 'working the queue, nothing on order that a '+machName(m)+' can make right now. It makes '+w+'.';
+    if(m.auto) return 'working the queue, cutting '+(isPart(m.ch)?partInfo(m.ch).name:(isSpare(m.ch)?'a spare '+SPARES[m.ch.slice(2)].name:m.ch))+' in '+fin(m.fin).name+'.';
+    return 'making '+(isPart(m.ch)?partInfo(m.ch).plural:(isSpare(m.ch)?'spare '+SPARES[m.ch.slice(2)].plural:'the letter '+m.ch))+' in '+fin(m.fin).name+' over and over, pick the part with the arrows.';
+  }
   function machineWants(m){ return m.mk==='cnc'?cncWants:(m.mk==='laser'?isLaser:(m.mk==='print'?isPrinted:null)); }
   function stockKind(t,m){ return (isTurned(t)||m.mk==='print'||isCasting(t))?'bar':(m.mk==='laser'?'sheet':'blank'); }
   function stockMult(t,m){ return MACH[m.mk||'mill'].stock*(isCasting(t)?6:1); }
@@ -2506,7 +2520,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       else if(m.need) line=needLine(m);
       else if(m.idle) line='idle, nothing needed';
       drawBay(cells[i+L0],{sel:i===fac.sel,busy:!m.idle&&!m.stopped,ch:m.ch,fin:m.fin,prog:m.prog,sweep:m.sweep,need:!!m.need,
-        tag:(m.cnc?'CNC ':'')+(m.auto?'auto':'manual'),tagBlue:m.auto,line:line,wear:m.wear,cnc:m.cnc});
+        tag:(m.cnc?'CNC ':'')+(m.auto?'queue':'one part'),tagBlue:m.auto,line:line,wear:m.wear,cnc:m.cnc});
     }
     for(i=fac.m.length+L0;i<bays();i++) drawOpenBay(cells[i],i===fac.m.length+L0);
     for(i=0;i<fac.ops.length;i++){
@@ -2543,7 +2557,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var m=fac.m[fac.sel];
     box.style.display='block';
     box.innerHTML='<div class="feed"><span>'+machName(m)+' '+(fac.sel+2)+'</span>'+
-      '<button class="switch'+(m.auto?' on':'')+'" id="selAuto" style="'+(m.auto?'background:var(--blue)':'')+'">'+(m.auto?'auto, cutting for orders':'manual, tap for auto')+'</button></div>'+
+      '</div>'+
+      '<div class="feed modepick"><button id="selQueue" class="'+(m.auto?'picked':'')+'">'+(m.auto?'&#10003; ':'')+'work the order queue</button><button id="selOne" class="'+(m.auto?'':'picked')+'">'+(m.auto?'':'&#10003; ')+'make one part</button></div>'+
+      '<p class="spec" id="selNow">'+machNow(m)+'</p>'+
       '<div class="feed"><span>part '+tokShort(m.ch)+'</span><button id="selPrev">&#8592;</button><button id="selNext">&#8594;</button></div>'+
       '<div class="finrow" id="selFin"><span>finish</span></div>'+
       '<button class="wide" id="selStop" style="background:'+(m.stopped?'var(--blue)':'var(--rust)')+'">'+(m.stopped?'start this mill':'stop this mill')+'</button>'+
@@ -2558,7 +2574,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     function shift(n){ var cs=machineSet(m), at=Math.max(0,cs.indexOf(m.ch)); m.ch=cs[(at+n+cs.length)%cs.length]; m.auto=false; m.prog=0; m.idle=false; facStore(fac.sel); renderSel(); }
     box.querySelector('#selPrev').addEventListener('click',function(){ shift(-1); });
     box.querySelector('#selNext').addEventListener('click',function(){ shift(1); });
-    box.querySelector('#selAuto').addEventListener('click',function(){ m.auto=!m.auto; m.prog=0; facStore(fac.sel); renderSel(); });
+    box.querySelector('#selQueue').addEventListener('click',function(){ m.auto=true; m.stopped=false; m.prog=0; m.idle=false; facStore(fac.sel); renderSel(); toast(machName(m)+' '+(fac.sel+2)+' is working the order queue'); });
+    box.querySelector('#selOne').addEventListener('click',function(){ m.auto=false; m.prog=0; facStore(fac.sel); renderSel(); });
     box.querySelector('#selStop').addEventListener('click',function(){ m.stopped=!m.stopped; m.prog=0; facStore(fac.sel); renderSel(); toast('mill '+(fac.sel+2)+(m.stopped?' stopped':' running again')); });
     box.querySelector('#selDone').addEventListener('click',function(){ fac.sel=-1; renderSel(); });
   }
@@ -3112,6 +3129,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(ready>=3) notes.push('Several orders are ready and waiting to ship. Ship them, or hire a sales manager to do it.');
     if(G.paidOffice>G.earned*0.25&&G.officeLv) notes.push('The office is eating a big share of the income. Make sure every seat is earning its salary.');
     if(costPerMin()>perMinute('e',10)&&G.hist.length>3) notes.push('The shop is spending more each minute than it is bringing in.');
+    var wantF=G.orders.some(function(o){ return toks(o).some(isFormed); }), wantT=G.orders.some(function(o){ return toks(o).some(isTurned); });
+    if(wantF&&!(G.brake&&brake.prog.on)) notes.push(G.brake?'Orders need formed parts and the brake program is off. Turn it on, or tap every machine works the order queue on the floor tab.':'Orders need formed parts and only a press brake makes them. Pass those orders or buy a brake.');
+    if(wantT&&!(G.lathe&&lathe.prog.on)&&!fac.m.some(function(m){ return m.cnc&&m.auto&&!m.stopped; })&&!G.homeCnc) notes.push('Orders need turned parts and nothing that turns them is working the queue. Turn on the lathe program or put a CNC on the queue.');
+    if(fac.m.some(function(m){ return !m.auto||m.stopped; })) notes.push('Some floor machines are stopped or making one part over and over. Every machine works the order queue on the floor tab puts them all to work on the orders.');
     if(market()<0.6) notes.push('The market has cooled off a lot. Higher paying finishes and bigger orders make up the difference.');
     if(!notes.length) notes.push('Nothing stands out right now, the shop is running clean.');
     document.getElementById('statsNotes').innerHTML=head('what to look at')+notes.map(function(n){ return '<p class="spec" style="margin:4px 0">'+n+'</p>'; }).join('');
@@ -3143,6 +3164,27 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   document.getElementById('statsBtn').addEventListener('click',function(){ sheet('menuSheet',false); statsOpen=true; renderStats(); sheet('statsSheet',true); });
   document.getElementById('statsClose').addEventListener('click',function(){ statsOpen=false; sheet('statsSheet',false); });
   setInterval(function(){ if(statsOpen&&document.getElementById('statsSheet').classList.contains('open')) renderStats(); else statsOpen=false; },2000);
+
+  // ---- one tap puts the whole shop on the order queue: every floor machine, your own mill, the lathe and the brake ----
+  function allOnQueue(){
+    return fac.m.every(function(m){ return m.auto&&!m.stopped; })&&demo.on&&demo.mode==='orders'&&(!G.lathe||lathe.prog.on)&&(!G.brake||brake.prog.on);
+  }
+  function syncQueueBtn(){
+    var b=document.getElementById('facQueue'); if(!b) return;
+    var on=allOnQueue(), t=on?'\u2713 every machine is working the order queue':'every machine works the order queue';
+    if(b.textContent!==t) b.textContent=t;
+    b.style.background=on?'var(--blue)':''; b.style.color=on?'#fff':'';
+  }
+  document.getElementById('facQueue').addEventListener('click',function(){
+    fac.m.forEach(function(m,i){ m.auto=true; m.stopped=false; m.idle=false; m.prog=0; G.floor[i]&&(G.floor[i].auto=true,G.floor[i].stopped=false); });
+    if(!fac.running){ fac.running=true; }
+    if(!(demo.on&&demo.mode==='orders')&&!(machine.xDead||machine.yDead)) runDemo('orders');
+    if(G.lathe&&!lathe.prog.on) lRun(true);
+    if(G.brake&&!brake.prog.on){ brake.prog.on=true; brake.prog.wait=0; brake.pressing=false; syncBrakeBtns(); }
+    renderSel(); writeSave(); syncQueueBtn();
+    toast('every machine in the shop is working the order queue');
+  });
+  setInterval(function(){ syncQueueBtn(); var sn=document.getElementById('selNow'); if(sn&&fac.sel>=0&&fac.m[fac.sel]){ var t=machNow(fac.m[fac.sel]); if(sn.textContent!==t) sn.textContent=t; } },1000);
 
   // ---- the outside view: the buildings from the street, with flatbeds hauling giant letters past ----
   var outside={on:false,t:0,trucks:[]};
@@ -4420,7 +4462,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 
   ['x','y','z','a'].forEach(function(a){setAxis(a,0);});
   loadSave();
-  var resumeProg=G.progOn===true;
+  var resumeProg=G.progOn===true, resumeL=G.lProgOn===true, resumeB=G.bProgOn===true;
   tray=G.tray.map(function(t){ return {ch:t.ch,fin:t.fin,c:letterThumb(t.ch,t.fin)}; });
   done=(G.done||[]).slice();
   while(G.orders.length<maxOrders()) G.orders.push(newOrder());
@@ -4431,6 +4473,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   requestAnimationFrame(frame);
   // the order program picks back up where it was when the game was closed
   if(resumeProg&&!(machine.xDead||machine.yDead)) setTimeout(function(){ if(!demo.on) runDemo('orders'); },400);
+  setTimeout(function(){ if(resumeL&&G.lathe&&!lathe.prog.on) lRun(true); if(resumeB&&G.brake&&!brake.prog.on){ brake.prog.on=true; brake.prog.wait=0; syncBrakeBtns(); } },500);
 })();
 </script>
 <!-- =====================================================================

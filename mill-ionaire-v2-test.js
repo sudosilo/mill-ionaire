@@ -231,7 +231,12 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     const fb = await (await page.$('#factory')).boundingBox();
     for (let k = 0; k < 6 && !(await page.isVisible('#facSel')); k++) { await page.mouse.click(fb.x + fb.width * 0.5, fb.y + fb.height * 0.06); await page.clock.runFor(200); if (!(await page.isVisible('#facSel'))) await page.clock.runFor(6000); }
     ok(await page.isVisible('#facSel'), 'tapping a floor mill opens its settings');
-    await page.click('#selNext'); await page.click('#selAuto'); await page.click('#selDone');
+    await page.click('#selNext');
+    ok(/picked/.test(await page.getAttribute('#selOne', 'class')), 'picking a part puts the mill on make one part, and the button shows it');
+    await page.click('#selQueue'); await page.clock.runFor(200);
+    ok(/picked/.test(await page.getAttribute('#selQueue', 'class')) && /\u2713/.test(await txt(page, '#selQueue')), 'work the order queue shows as picked');
+    ok(/queue/.test(await txt(page, '#selNow')), 'the settings say what the machine is doing');
+    await page.click('#selDone');
     ok(errors.length === 0, 'no script errors in the shop and on the floor', errors.join(' | '));
     if (SHOTS) await page.screenshot({ path: SHOTS + '/floor.png' });
     await ctx.close();
@@ -814,6 +819,23 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await page.reload(); await page.clock.runFor(1500).catch(() => {}); await page.waitForTimeout(1200);
     ok(await page.evaluate(() => millTest.demo().on && millTest.demo().mode === 'orders'), 'the order program starts back up after the game reopens');
     ok(errors.length === 0, 'no script errors keeping the floor working', errors.join(' | '));
+    await ctx.close();
+  }
+
+  // ---- one tap puts the whole shop on the order queue ----
+  {
+    const floor = [{ ch: 'A', fin: 'alu', auto: false, stopped: true }, { ch: 'B', fin: 'alu', auto: false, stopped: false, kind: 'cnc' }];
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 200000, mills: 2, ops: 2, lathe: true, brake: true, floor });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await tab(page, 'floor'); await page.clock.runFor(300);
+    await page.click('#facQueue'); await page.clock.runFor(1500);
+    let g = await save(page);
+    ok(g.floor.every(c => c.auto && !c.stopped) && g.progOn && g.lProgOn && g.bProgOn, 'every machine works the order queue turns on every floor machine, your mill, the lathe and the brake', JSON.stringify([g.floor, g.progOn, g.lProgOn, g.bProgOn]));
+    ok(/\u2713/.test(await txt(page, '#facQueue')), 'the floor button shows the whole shop is on the queue');
+    await page.reload(); await page.clock.runFor(1500).catch(() => {}); await page.waitForTimeout(1200);
+    g = await save(page);
+    ok(g.lProgOn && g.bProgOn, 'the lathe and brake programs come back on after the game reopens');
+    ok(errors.length === 0, 'no script errors with the whole shop on the queue', errors.join(' | '));
     await ctx.close();
   }
 
