@@ -792,6 +792,31 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await ctx.close();
   }
 
+  // ---- the floor keeps working: broken machines do not hold letters, operators cover missing trades, the program resumes ----
+  {
+    const floor = []; for (let i = 0; i < 3; i++) floor.push({ ch: 'A', fin: 'alu', auto: true, kind: 'cnc' });
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 2000000, mills: 3, ops: 2, foreman: true, warehouse: true, floor,
+      orders: [{ id: 701, word: 'ZZ', fin: 'alu', who: 'a sign shop', kind: 'word' }] });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    await page.clock.runFor(500);
+    await page.evaluate(() => { const f = millTest.fac(); f.m[0].ch = 'Z'; f.m[0].fin = 'alu'; f.m[0].prog = 0.5; f.m[0].need = 'gear'; f.m[0].partIn = false; millTest.G().spares.gear = 0; millTest.G().cash = 1000; });
+    for (let i = 0; i < 40 && ((await save(page)).inv['Z|alu'] || 0) < 2; i++) await page.clock.runFor(1000);
+    ok(((await save(page)).inv['Z|alu'] || 0) >= 2, 'a broken machine does not hold up its letter, the others cut it');
+    await page.evaluate(() => { millTest.G().cash = 2000000; const f = millTest.fac(); f.m[1].need = 'breaker'; });
+    for (let i = 0; i < 30 && (await page.evaluate(() => millTest.fac().m[1].need)) === 'breaker'; i++) await page.clock.runFor(1000);
+    ok((await page.evaluate(() => millTest.fac().m[1].need)) !== 'breaker', 'an operator covers a breakdown when no electrician is hired');
+    await tab(page, 'orders'); await page.clock.runFor(500);
+    ok(!(await page.isDisabled('#shipAllBtn')), 'the ship every ready order button lights up', await txt(page, '#shipAllBtn'));
+    await page.click('#shipAllBtn'); await page.clock.runFor(300);
+    ok(!(await save(page)).orders.some(o => o.id === 701), 'ship every ready order ships the finished orders');
+    await tab(page, 'mill'); await page.click('#progBtn2'); await page.clock.runFor(500);
+    ok((await save(page)).progOn === true, 'the order program being on is saved');
+    await page.reload(); await page.clock.runFor(1500).catch(() => {}); await page.waitForTimeout(1200);
+    ok(await page.evaluate(() => millTest.demo().on && millTest.demo().mode === 'orders'), 'the order program starts back up after the game reopens');
+    ok(errors.length === 0, 'no script errors keeping the floor working', errors.join(' | '));
+    await ctx.close();
+  }
+
   // ---- saving survives a reload ----
   {
     const { ctx, page, errors } = await open(browser, { save: JSON.stringify({ cash: 4321, seenHow: true, owned: ['alu', 'brass'], curFin: 'brass', mills: 2 }) });
