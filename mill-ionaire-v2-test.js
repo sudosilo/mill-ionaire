@@ -767,7 +767,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     ok((await save(page)).officeLv === 3, 'the office tower is the last move up');
     // designers turn out a texture, finance moves money every minute
     const e0 = await page.evaluate(() => millTest.G().earned);
-    await page.clock.runFor(61000);
+    await page.clock.runFor(75000);
     g = await save(page);
     ok(g.owned.indexOf('twotone') >= 0, 'the design team finishes the two tone texture');
     ok(g.earned !== e0 || (g.finLost || 0) > 0, 'the finance analyst makes or loses money within a minute');

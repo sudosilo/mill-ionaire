@@ -2160,7 +2160,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function machNow(m){
     var w=m.mk==='cnc'&&!G.warehouse?'letters, numbers, emoji and turned parts':MAKES[m.mk||'mill'];
     if(m.stopped) return 'stopped. This '+machName(m)+' makes '+w+'.';
-    if(m.need) return needLine(m)+'.';
+    if(m.need) return needLine(m)+(m.auto?', then back to working the queue.':', then back to making one part.');
     if(m.auto&&m.idle) return 'working the queue, nothing on order that a '+machName(m)+' can make right now. It makes '+w+'.';
     if(m.auto) return 'working the queue, cutting '+(isPart(m.ch)?partInfo(m.ch).name:(isSpare(m.ch)?'a spare '+SPARES[m.ch.slice(2)].name:m.ch))+' in '+fin(m.fin).name+'.';
     return 'making '+(isPart(m.ch)?partInfo(m.ch).plural:(isSpare(m.ch)?'spare '+SPARES[m.ch.slice(2)].plural:'the letter '+m.ch))+' in '+fin(m.fin).name+' over and over, pick the part with the arrows.';
