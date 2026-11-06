@@ -1607,7 +1607,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 
   function checkShankCrash(){
     if(!part.placed||s.rpm<=0) return;
-    if(demo.on&&demo.phase==='cut') return;   // the program uses an extended holder that clears the work
+    if(demo.on) return;   // the program runs an extended holder and its own safe moves, so it never buries the shank
     if(shankHit(s)<=0.5) return;
     sndThunk();
     machine.hp=Math.max(0,machine.hp-6);
@@ -4472,8 +4472,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   if(!G.seenHow) sheet('howSheet',true);
   requestAnimationFrame(frame);
   // the order program picks back up where it was when the game was closed
-  if(resumeProg&&!(machine.xDead||machine.yDead)) setTimeout(function(){ if(!demo.on) runDemo('orders'); },400);
-  setTimeout(function(){ if(resumeL&&G.lathe&&!lathe.prog.on) lRun(true); if(resumeB&&G.brake&&!brake.prog.on){ brake.prog.on=true; brake.prog.wait=0; syncBrakeBtns(); } },500);
+  if(resumeProg&&!(machine.xDead||machine.yDead)&&!demo.on) runDemo('orders');
+  if(resumeL&&G.lathe&&!lathe.prog.on) lRun(true);
+  if(resumeB&&G.brake&&!brake.prog.on){ brake.prog.on=true; brake.prog.wait=0; syncBrakeBtns(); }
+  writeSave();
 })();
 </script>
 <!-- =====================================================================
