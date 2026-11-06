@@ -349,6 +349,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     <p>The engine lathe in the shop costs half the price of your next mill. It turns round parts: sign standoffs, threaded studs, sign posts, bushings, flanges, lazy susan plates, knobs and fixture pins. Once you own it, customers order batches of turned parts, words mounted on standoffs and signs on posts. Run the lathe program on the lathe tab and it turns whatever the orders need, and when nothing is on order it makes the part you picked to stock. Standoffs and studs come first, and every turned part you make counts toward unlocking the next part on the catalog.</p>
     <p>The office building in the shop houses the business side, and it costs money every minute to keep open. Inside it you can hire sales managers, who ship every order the moment its parts are in the bins, and linguistics engineers, who take the spoken orders, spell each word right so the floor can cut it, and sell it when the letters are in. Each one handles one order every few seconds and draws a big salary, so a busy shop with a backlog may need more than one.</p>
     <p>In the warehouse the shop sells a laser cutter and a metal 3D printer, each taking a floor bay. The laser cuts gusset plates, enclosure panels, logo cutouts and way guards, and the printer slowly prints rocket nozzles, injector plates, impellers and coolant manifolds. They bring laser and printer orders and rocket engine kits that pay double, and a laser and printer tech to keep them running. Every kind of machine makes spare parts for the others: CNCs make drive gears, ballscrew nuts and tool holders, the laser cuts recoater blades for the printers, and the printer makes nozzle tips for the lasers. When the shelf is empty the dealer sells the part at a steep markup. With a CNC, a laser, a printer and a lathe or a CNC for leadscrews, customers start ordering whole Bridgeport mills, the best money in the game. The office moves up to an office unit and then an office tower for more seats, and besides sales and linguistics it seats finance analysts, who earn a return on the cash but sometimes lose a chunk to a customer going bankrupt, and designers, who invent holiday and two tone textures that pay well but cut slow on pricey stock. The outside view button on the floor tab shows the buildings from the street.</p>
+    <p>When the game reopens, the power has dropped and come back like it does in a real shop. Every floor machine that was running trips its emergency stop, and the crew walks over and resets each one with a boot cycle. Your own mill, the lathe and the brake run a boot cycle and then their programs pick back up on their own. Any machine that sits still for a while gets looked at by whoever is free, and the answer shows in a bubble over their head on the floor tab, like this one ain't got no gas in it, nothing on order it can make, or the shelf is out of the spare it needs. The crew also says what they are fixing while they work.</p>
     <p>Every machine works the order queue, the button at the top of the floor tab, puts the whole shop on the orders in one tap: every floor machine, your own mill, the lathe program and the brake program. Tap a floor machine to pick between work the order queue and make one part, and the picked one shows blue with a check. The line under it says what the machine is doing and what it can make.</p>
     <p>The order program on your own mill stays on until you stop it, even across closing the game, and when every order is covered it cuts ahead in your newest finish so the bins are stocked for the next orders. Floor mills on auto do the same. A machine stopped and waiting for help never holds up a letter, another machine picks it up. When a breakdown needs a trade you have not hired, an operator covers it at a third of the speed. The ship every ready order button at the top of the orders tab ships everything that is ready in one tap.</p>
     <p>The warehouse in the shop is the next step past the CNCs. It has three times the floor space, and every machine and the whole crew move over. The floor is drawn smaller so it all fits, and the crew show up as dots colored by trade. Orders start coming by the flatbed truckload, one word spelled out over and over on the trailer, and shipping the truck pays for the whole load. Bigger machines break in new ways. Millwrights replace drive gears and ballscrew nuts, electricians reset drives and breakers, and controls techs clear CNC alarms and replace crashed tool holders. Gears, nuts and tool holders come off the spare shelf, and only a five axis CNC can make them, so CNCs on auto make spares whenever the shelf runs low or a machine is waiting on one.</p>
@@ -741,8 +742,27 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     drive:{who:'el',secs:5,txt:'a faulted spindle drive reset'},breaker:{who:'el',secs:3,txt:'a tripped breaker reset'},
     alarm:{who:'ct',secs:4,txt:'a probe alarm cleared',on:'cnc'},crash:{who:'ct',secs:6,part:'holder',txt:'a crashed tool holder replaced',on:'cnc'},
     lens:{who:'am',secs:4,txt:'a dirty laser lens cleaned',on:'laser'},tipburn:{who:'am',secs:6,part:'tip',txt:'a burnt nozzle tip replaced',on:'laser'},
-    recoat:{who:'am',secs:7,part:'blade',txt:'a damaged recoater blade replaced',on:'print'},powder:{who:'am',secs:4,txt:'a powder jam cleared',on:'print'}};
-  var BREAKRATE={gear:0.0006,nut:0.0004,drive:0.0005,breaker:0.0006,alarm:0.0009,crash:0.00045,lens:0.0009,tipburn:0.0006,recoat:0.0006,powder:0.0008};
+    recoat:{who:'am',secs:7,part:'blade',txt:'a damaged recoater blade replaced',on:'print'},powder:{who:'am',secs:4,txt:'a powder jam cleared',on:'print'},
+    gas:{who:'op',secs:4,txt:'a fresh tank of assist gas',on:'laser'},
+    estop:{who:'op',secs:3,any:true,txt:'its emergency stop reset and a boot cycle after the power dropped'}};
+  // what the crew says over a machine while they work on it, or after they look at one that is not running
+  var SAYS={chips:'shoveling chips out of this one',tool:'this cutter is dull as a butter knife',stock:'loading more stock',
+    gear:'stripped a drive gear',nut:'ballscrew nut is shot',drive:'spindle drive faulted out',breaker:'tripped a breaker again',
+    alarm:'probe alarm, rehoming it',crash:'crashed a tool holder',lens:'lens is filthy',tipburn:'burnt the nozzle tip',
+    recoat:'recoater blade is chewed up',powder:'powder is jammed up',gas:'this one ain\'t got no gas in it',
+    estop:'power dropped, resetting the e-stop and booting it'};
+  function whyDown(m){
+    var nd=NEEDS[m.need];
+    if(nd&&nd.part&&!m.partIn&&(G.spares[nd.part]||0)<1) return 'needs a '+SPARES[nd.part].name+' and the shelf is empty';
+    if(nd&&!crewOf(nd.who)&&!nd.any) return SAYS[m.need]+', we need a '+TECHS[nd.who].name;
+    if(nd) return SAYS[m.need];
+    if(m.stopped) return 'somebody switched this one off';
+    if(!m.auto&&invGet(m.ch,m.fin)>=CAP) return 'bin is full, it\'s set to one part';
+    if(m.idle&&G.cash<50) return 'ain\'t got money for stock';
+    if(m.idle) return 'nothing on order a '+machName(m)+' can make';
+    return 'running fine';
+  }
+  var BREAKRATE={gas:0.0008,gear:0.0006,nut:0.0004,drive:0.0005,breaker:0.0006,alarm:0.0009,crash:0.00045,lens:0.0009,tipburn:0.0006,recoat:0.0006,powder:0.0008};
   function isFormed(t){ return typeof t==='string'&&t.indexOf('B:')===0; }
   // laser cut plate, metal printed parts and big CNC castings, drawn as flat shapes with their holes
   function ring(n,r,r2){ var a=[]; for(var i=0;i<n;i++){ var t=2*Math.PI*i/n, rr=(r2&&i%2)?r2:r; a.push([rr*Math.cos(t),rr*Math.sin(t)]); } return a; }
@@ -2273,16 +2293,37 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       }
     }
     if(G.foreman) for(i=0;i<fac.m.length;i++) if(fac.m[i].need) facDispatch(i);
+    // the crew resets tripped emergency stops on their own, foreman or not
+    for(i=0;i<fac.m.length;i++) if(fac.m[i].need==='estop') facDispatch(i);
+    // a machine that sits still for a while gets looked at, so the crew can say why
+    for(i=0;i<fac.m.length;i++){
+      var dm=fac.m[i], still=dm.stopped||dm.idle||(dm.need&&!fac.ops.some(function(q){ return q.busy===i; }));
+      dm.downT=still?(dm.downT||0)+dt:0;
+      if(dm.downT>8&&G.played-(dm.lookT||-999)>90&&!fac.ops.some(function(q){ return q.busy===i; })){
+        var best=-1, bd=1e9, cc=facCells()[i];
+        fac.ops.forEach(function(q,k){ if(q.busy<0&&!(q.hold>0)){ var dd=Math.hypot(q.x-cc.x,q.y-cc.y); if(dd<bd){ bd=dd; best=k; } } });
+        if(best>=0){ var q=fac.ops[best]; q.busy=i; q.inspect=true; q.work=2; q.tx=cc.x+cc.w/2; q.ty=cc.y+cc.h-(G.warehouse?10:26); dm.lookT=G.played; }
+      }
+    }
     for(i=0;i<fac.ops.length;i++){
       var p=fac.ops[i];
+      if(p.sayT>0) p.sayT-=dt;
+      if(p.busy<0&&p.hold>0){ p.hold-=dt; if(p.hold<=0){ p.tx=homeX(i); p.ty=OPY(); } continue; }
       if(p.busy<0) p.ty=OPY();
       var dx=p.tx-p.x, dy=p.ty-p.y, d=Math.hypot(dx,dy);
       var spd=G.warehouse?320:120, stp=Math.min(d,spd*dt);
       if(d>2){ p.x+=dx/d*stp; p.y+=dy/d*stp; }
       else if(p.busy>=0){
+        var mm=fac.m[p.busy];
+        if(p.inspect){
+          // a look at a machine that is not running, then the answer hangs over their head for a while
+          p.work-=dt;
+          if(p.work<=0){ p.say=whyDown(mm); p.sayT=7; p.inspect=false; p.busy=-1; p.hold=6.5; p.tx=p.x; p.ty=p.y; }
+          continue;
+        }
+        if(!p.say||p.sayT<=0){ p.say=SAYS[mm.need]||''; p.sayT=p.work+1; }
         p.work-=dt;
         if(p.work<=0){
-          var mm=fac.m[p.busy];
           if(mm.need==='tool') mm.wear=0;
           if(mm.need==='stock') mm.stock=(5+3*G.soft)*(G.warehouse?3:1);
           mm.need=''; mm.flash=0; mm.partIn=false;
@@ -2306,10 +2347,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
     for(var j=0;j<fac.ops.length;j++){
       var p=fac.ops[j];
-      if(p.busy<0&&(p.kind===nd.who||(!crewOf(nd.who)&&p.kind==='op'))){
+      if(p.busy<0&&!p.inspect&&(p.kind===nd.who||nd.any||(!crewOf(nd.who)&&p.kind==='op'))){
         if(nd.part&&!m.partIn){ G.spares[nd.part]--; m.partIn=true; }
         var c=facCells()[i];
-        p.busy=i; p.tx=c.x+c.w/2; p.ty=c.y+c.h-(G.warehouse?10:26);
+        p.busy=i; p.hold=0; p.say=''; p.tx=c.x+c.w/2; p.ty=c.y+c.h-(G.warehouse?10:26);
         p.work=nd.secs*(p.kind===nd.who?1:3);
         return '';
       }
@@ -2481,6 +2522,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       fx.fillStyle=TECHS[p.kind].color; fx.beginPath(); fx.arc(p.x,p.y,4*FS,0,Math.PI*2); fx.fill();
       if(p.busy>=0){ fx.strokeStyle='#A84A2A'; fx.lineWidth=2; fx.stroke(); }
     }
+    for(i=0;i<fac.ops.length;i++) drawSay(fac.ops[i],8*FS,FS);
     var y=OPY()+18*FS, x=10;
     fx.font=Math.round(12*FS)+'px Trebuchet MS';
     Object.keys(TECHS).forEach(function(k){
@@ -2532,9 +2574,21 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       fx.fillStyle='#2B2924'; fx.font='bold 13px Trebuchet MS';
       fx.fillText('op '+(i+1),p.x-14,p.y+22);
     }
+    var SFS=Math.max(1,Math.min(2.2,fcv.width/Math.max(1,fcv.clientWidth||fcv.width)));
+    for(i=0;i<fac.ops.length;i++) drawSay(fac.ops[i],32,SFS);
     if(G.foreman){ fx.fillStyle='#2E4A63'; fx.font='bold 13px Trebuchet MS'; fx.fillText('foreman on duty',fcv.width-130,OPY()+16); }
   }
 
+  function drawSay(p,yOff,FS){
+    if(!p.say||!(p.sayT>0)) return;
+    fx.save();
+    fx.font='bold '+Math.round(11*FS)+'px Trebuchet MS';
+    var w=fx.measureText(p.say).width+12*FS, h=17*FS, x=Math.max(2,Math.min(fcv.width-w-2,p.x-w/2)), y=Math.max(2,p.y-yOff-h);
+    fx.fillStyle='#fff'; fx.strokeStyle='#2E4A63'; fx.lineWidth=2;
+    fx.fillRect(x,y,w,h); fx.strokeRect(x,y,w,h);
+    fx.fillStyle='#2B2924'; fx.fillText(p.say,x+6*FS,y+12.5*FS);
+    fx.restore();
+  }
   function facBoard(){
     var el=document.getElementById('facOrder');
     if(!fac.m.length){ el.textContent='your mill is the only one on the floor, buy floor mills in the shop to fill the open bays'; el.className='status'; return; }
@@ -2592,8 +2646,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       if(G.brake&&b===brakeBay()){ setView('brake'); window.scrollTo(0,0); return; }
       var i=b-lead();
       if(i>=fac.m.length){ setView('shop'); return; }
+      // a tap sends help to a machine that needs it and opens its settings either way
       if(fac.m[i].need){ var why=facDispatch(i); if(why) toast(why,true); }
-      else { fac.sel=(fac.sel===i)?-1:i; renderSel(); }
+      fac.sel=(fac.sel===i)?-1:i; renderSel();
       return;
     }
   });
@@ -2924,6 +2979,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     lineTick(dt);
     officeTick(dt);
     statsTick(dt);
+    if(typeof bootTick==='function') bootTick(dt);
     if(G.passCd>0) G.passCd=Math.max(0,G.passCd-dt);
     if(G.orders.length<maxOrders()){
       orderT-=dt;
@@ -4462,7 +4518,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 
   ['x','y','z','a'].forEach(function(a){setAxis(a,0);});
   loadSave();
-  var resumeProg=G.progOn===true, resumeL=G.lProgOn===true, resumeB=G.bProgOn===true;
+  var resumeProg=G.progOn===true, resumeL=G.lProgOn===true, resumeB=G.bProgOn===true, bootT=0;
   tray=G.tray.map(function(t){ return {ch:t.ch,fin:t.fin,c:letterThumb(t.ch,t.fin)}; });
   done=(G.done||[]).slice();
   while(G.orders.length<maxOrders()) G.orders.push(newOrder());
@@ -4472,10 +4528,24 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   if(!G.seenHow) sheet('howSheet',true);
   requestAnimationFrame(frame);
   // the order program picks back up where it was when the game was closed
-  if(resumeProg&&!(machine.xDead||machine.yDead)&&!demo.on) runDemo('orders');
-  if(resumeL&&G.lathe&&!lathe.prog.on) lRun(true);
-  if(resumeB&&G.brake&&!brake.prog.on){ brake.prog.on=true; brake.prog.wait=0; syncBrakeBtns(); }
-  writeSave();
+  // the power dropped while the game was closed: every running floor machine trips its emergency stop and the crew
+  // resets each one, and your own mill, the lathe and the brake run a boot cycle before their programs pick back up
+  facSync();
+  fac.m.forEach(function(m){ if(!m.stopped&&!m.need) m.need='estop'; });
+  if(resumeProg||resumeL||resumeB){
+    bootT=4;
+    setStatus('the power came back on and the emergency stop tripped, resetting it and running the boot cycle');
+    holdMsg=260;
+  }
+  function bootTick(dt){
+    if(bootT<=0) return;
+    bootT-=dt;
+    if(bootT>0) return;
+    if(resumeProg&&!(machine.xDead||machine.yDead)&&!demo.on) runDemo('orders');
+    if(resumeL&&G.lathe&&!lathe.prog.on) lRun(true);
+    if(resumeB&&G.brake&&!brake.prog.on){ brake.prog.on=true; brake.prog.wait=0; syncBrakeBtns(); }
+    writeSave();
+  }
 })();
 </script>
 <!-- =====================================================================

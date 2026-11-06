@@ -843,6 +843,23 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await ctx.close();
   }
 
+  // ---- a power drop trips the emergency stops, and the crew says why a machine sits still ----
+  {
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 50000, mills: 2, ops: 2, foreman: false,
+      floor: [{ ch: 'A', fin: 'alu', auto: true }, { ch: 'B', fin: 'alu', auto: true, stopped: true }] });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    ok((await page.evaluate(() => millTest.fac().m[0].need)) === 'estop', 'a running floor machine comes back with its emergency stop tripped');
+    ok((await page.evaluate(() => millTest.fac().m[1].need)) === '', 'a machine that was switched off stays off with no emergency stop');
+    for (let i = 0; i < 20 && (await page.evaluate(() => millTest.fac().m[0].need)) === 'estop'; i++) await page.clock.runFor(500);
+    ok((await page.evaluate(() => millTest.fac().m[0].need)) !== 'estop', 'the crew resets the emergency stop without a foreman');
+    let said = '';
+    for (let i = 0; i < 40 && !said; i++) { await page.clock.runFor(500); said = await page.evaluate(() => millTest.fac().ops.map(p => p.sayT > 0 ? p.say : '').join('')); if (!/switched this one off/.test(said)) said = ''; }
+    ok(/switched this one off/.test(said), 'someone on the crew looks at the stopped machine and says why it is not running', said);
+    if (SHOTS) { await tab(page, 'floor'); await page.clock.runFor(300); await (await page.$('#factory')).screenshot({ path: SHOTS + '/crew-says.png' }); }
+    ok(errors.length === 0, 'no script errors with the emergency stops and the crew talking', errors.join(' | '));
+    await ctx.close();
+  }
+
   // ---- saving survives a reload ----
   {
     const { ctx, page, errors } = await open(browser, { save: JSON.stringify({ cash: 4321, seenHow: true, owned: ['alu', 'brass'], curFin: 'brass', mills: 2 }) });
