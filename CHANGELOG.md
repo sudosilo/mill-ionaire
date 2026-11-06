@@ -1,5 +1,11 @@
 Mill-ionaire changelog
 
+2026-11-06, v2026.11.06. Order, lathe, and brake programs now resume when the game is reopened without a crash.
+
+2026-11-05, v2026.11.05. Added a warehouse with three times the floor, flatbed truck orders, and specialist crews for new breakdowns. Added an office building with sales managers who ship ready orders and linguistics engineers who spell spoken orders. Added laser cutters and metal printers, spare parts, and a statistics page in the menu. The caller's voice now plays even when shop sound is muted. Machines keep working when others stop, and every machine has a work the order queue button.
+
+2026-11-04, v2026.11.04. Added spoken orders. A caller says the word, you spell it into its slots, and a wrong spelling docks half the price. Made the check for the hand bend steadier.
+
 2026-10-30, v2026.10.30. Added a cash out button that sends your score to the shared high score board. You can add an optional link beside your tag, and it shows under the tag on the board. High scores now have a place in the menu.
 
 2026-10-26, v2026.10.26. Redeployed the five axis CNC update.

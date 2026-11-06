@@ -62,6 +62,6 @@ Live at mill-ionaire.vercel.app
 
 Checked every morning by Control Troll, an automated test system that loads the app and clicks through its features.
 
-Latest change. 2026-10-30, v2026.10.30. Added a cash out button that sends your score to the shared high score board. You can add an optional link beside your tag, and it shows under the tag on the board. High scores now have a place in the menu.
+Latest change. 2026-11-06, v2026.11.06. Order, lathe, and brake programs now resume when the game is reopened without a crash.
 
 The full history is in CHANGELOG.md.
