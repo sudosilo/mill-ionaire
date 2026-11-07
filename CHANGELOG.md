@@ -1,6 +1,6 @@
 Mill-ionaire changelog
 
-2026-11-06, v2026.11.06. Order, lathe, and brake programs now resume when the game is reopened without a crash.
+2026-11-06, v2026.11.06-2. Order, lathe, and brake programs now resume when the game is reopened without a crash. After a power drop on reopen, floor machines trip their emergency stops for the crew to reset, and your mill boots before its program resumes. The crew looks at any machine that sits still and says why in a bubble, and says what they fix while they work. Lasers can now run out of assist gas. Checks for the finance minute and the machine settings line are steadier.
 
 2026-11-05, v2026.11.05. Added a warehouse with three times the floor, flatbed truck orders, and specialist crews for new breakdowns. Added an office building with sales managers who ship ready orders and linguistics engineers who spell spoken orders. Added laser cutters and metal printers, spare parts, and a statistics page in the menu. The caller's voice now plays even when shop sound is muted. Machines keep working when others stop, and every machine has a work the order queue button.
 

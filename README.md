@@ -64,6 +64,6 @@ Live at mill-ionaire.vercel.app
 
 Checked every morning by Control Troll, an automated test system that loads the app and clicks through its features.
 
-Latest change. 2026-11-06, v2026.11.06. Order, lathe, and brake programs now resume when the game is reopened without a crash.
+Latest change. 2026-11-06, v2026.11.06-2. Order, lathe, and brake programs now resume when the game is reopened without a crash. After a power drop on reopen, floor machines trip their emergency stops for the crew to reset, and your mill boots before its program resumes. The crew looks at any machine that sits still and says why in a bubble, and says what they fix while they work. Lasers can now run out of assist gas. Checks for the finance minute and the machine settings line are steadier.
 
 The full history is in CHANGELOG.md.
