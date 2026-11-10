@@ -860,6 +860,69 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     await ctx.close();
   }
 
+  // ---- filament printers: spool colors, spool swaps, spaghetti, printing ahead for the bins ----
+  {
+    const floor = [{ ch: 'A', fin: 'alu', auto: true }];
+    const orders = [{ id: 901, word: 'CAT', fin: 'filred', who: 'a sign shop', kind: 'word' }, { id: 902, word: 'OAK', fin: 'filblue', who: 'a sign shop', kind: 'word' }];
+    const seed = JSON.stringify({ seenHow: true, guideDone: true, cash: 20000, mills: 1, ops: 3, foreman: true, floor, orders });
+    const { ctx, page, errors } = await open(browser, { save: seed, clock: true });
+    let g = await save(page);
+    ok(g.orders.some(o => o.id === 901 && o.fin === 'filred'), 'an order in a filament color survives loading the save');
+    await tab(page, 'shop'); await page.clock.runFor(300);
+    ok(!(await page.$$eval('#finList .fcard h4', n => n.map(e => e.textContent).join('|'))).includes('filament'), 'filament colors are not sold as mill finishes');
+    const c0 = await page.evaluate(() => millTest.G().cash);
+    await page.click('#upgList .upg[data-k="fdm"] button');
+    const c0b = await page.evaluate(() => millTest.G().cash);
+    await page.clock.runFor(300);
+    g = await save(page);
+    ok(g.mills === 2 && g.floor[1].kind === 'fdm' && g.floor[1].spool === 'filwhite' && c0 - c0b >= 600 && c0 - c0b < 610, 'a filament printer is bought into a floor bay with a white spool', JSON.stringify(g.floor[1]));
+    await tab(page, 'floor');
+    let swapped = false;
+    for (let i = 0; i < 40 && !swapped; i++) { await page.clock.runFor(1000); swapped = await page.evaluate(() => { const m = millTest.fac().m.find(q => q.mk === 'fdm'); return m.spool !== 'filwhite'; }); }
+    ok(swapped, 'the printer gets its spool swapped to the color an order needs');
+    const mill = await page.evaluate(() => millTest.fac().m[0]);
+    ok(!/^fil/.test(mill.fin), 'a mill never takes a filament color', mill.fin);
+    for (let i = 0; i < 240; i++) {
+      await page.clock.runFor(1000);
+      const done = await page.evaluate(() => { const G = millTest.G(); const n = k => G.inv[k] || 0; return n('C|filred') && n('A|filred') && n('T|filred') && n('O|filblue') && n('A|filblue') && n('K|filblue'); });
+      if (done) break;
+    }
+    await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    g = await save(page);
+    const has = k => (g.inv[k] || 0) > 0;
+    ok(has('C|filred') && has('A|filred') && has('T|filred') && has('O|filblue') && has('A|filblue') && has('K|filblue'), 'the printer prints both orders in their spool colors', JSON.stringify(g.inv));
+    ok(Object.keys(g.inv).filter(k => /\|fil/.test(k)).every(k => /^[A-Z0-9]|^[^\x00-\x7f]/.test(k)), 'filament only ever goes into letters, numbers and emoji');
+    // spaghetti: a tangle wastes the part and the crew scrapes it off
+    await page.evaluate(() => { const m = millTest.fac().m.find(q => q.mk === 'fdm'); m.need = 'tangle'; m.prog = 0; });
+    let cleared = false;
+    for (let i = 0; i < 60 && !cleared; i++) { await page.clock.runFor(500); cleared = await page.evaluate(() => millTest.fac().m.find(q => q.mk === 'fdm').need !== 'tangle'); }
+    ok(cleared, 'the foreman sends someone to scrape a tangled print off the bed');
+    // printing ahead: tap a letter on the keypad and it fills the bins in the picked color
+    const fb = await (await page.$('#factory')).boundingBox();
+    for (let k = 0; k < 6 && !(await page.isVisible('#selKeys')); k++) { await page.mouse.click(fb.x + fb.width * 0.83, fb.y + fb.height * 0.06); await page.clock.runFor(300); }
+    ok(await page.isVisible('#selKeys'), 'tapping the printer opens its keypad and spool colors');
+    ok(/spool loaded/.test(await txt(page, '#selSpool')), 'the printer settings say which spool is loaded');
+    await page.click('#selFin button[title="yellow filament"]'); await page.clock.runFor(200);
+    await page.click('#selKeys button[title^="print Z"]'); await page.clock.runFor(200);
+    for (let i = 0; i < 60 && !((await page.evaluate(() => millTest.G().inv['Z|filyellow'] || 0)) > 0); i++) await page.clock.runFor(1000);
+    ok((await page.evaluate(() => millTest.G().inv['Z|filyellow'] || 0)) > 0, 'a letter picked on the keypad prints into the bins in the picked spool color');
+    // an order that comes in for parts already in the bins is ready to ship with no printing
+    await page.evaluate(() => { const G = millTest.G(); G.inv['Z|filyellow'] = Math.max(1, G.inv['Z|filyellow'] || 0); G.orders.push({ id: 9903, word: 'Z', fin: 'filyellow', who: 'a sign shop', kind: 'word', proc: '', color: '' }); });
+    await tab(page, 'orders'); await page.clock.runFor(500);
+    const c1 = await page.evaluate(() => millTest.G().cash);
+    await page.click('#orderList .ocard[data-id="9903"] .ship');
+    const c2 = await page.evaluate(() => millTest.G().cash);
+    await page.clock.runFor(300);
+    g = await save(page);
+    ok(g.orders.every(o => o.id !== 9903) && c2 > c1, 'an order filled from parts printed ahead ships and pays');
+    await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    g = await save(page);
+    ok(g.floor.some(c => c.kind === 'fdm' && c.spool === c.fin && /^fil/.test(c.spool)), 'the save keeps the printer and the spool it has loaded', JSON.stringify(g.floor));
+    if (SHOTS) { await tab(page, 'floor'); await page.clock.runFor(2500); await (await page.$('#factory')).screenshot({ path: SHOTS + '/fdm.png' }); }
+    ok(errors.length === 0, 'no script errors with filament printers', errors.join(' | '));
+    await ctx.close();
+  }
+
   // ---- saving survives a reload ----
   {
     const { ctx, page, errors } = await open(browser, { save: JSON.stringify({ cash: 4321, seenHow: true, owned: ['alu', 'brass'], curFin: 'brass', mills: 2 }) });
