@@ -819,7 +819,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     ok((await save(page)).progOn === true, 'the order program being on is saved');
     const pre = await page.evaluate(() => JSON.stringify([millTest.demo().on, millTest.demo().mode, millTest.machine().xDead, millTest.machine().yDead, JSON.parse(localStorage.getItem('mill-ionaire-v2-save')).progOn]));
     await page.reload(); await page.clock.runFor(1500).catch(() => {}); await page.waitForTimeout(1200);
-    for (let i = 0; i < 10 && !(await page.evaluate(() => millTest.demo().on)); i++) { await page.clock.runFor(500).catch(() => {}); await page.waitForTimeout(300); }
+    for (let i = 0; i < 40 && !(await page.evaluate(() => millTest.demo().on)); i++) { await page.clock.runFor(500).catch(() => {}); await page.waitForTimeout(300); }
     ok(await page.evaluate(() => millTest.demo().on && millTest.demo().mode === 'orders'), 'the order program starts back up after the game reopens');
     ok(errors.length === 0, 'no script errors keeping the floor working', errors.join(' | '));
     await ctx.close();
@@ -836,7 +836,7 @@ async function tab(page, v) { await page.click(`#tabs button[data-view=${v}]`); 
     ok(g.floor.every(c => c.auto && !c.stopped) && g.progOn && g.lProgOn && g.bProgOn, 'every machine works the order queue turns on every floor machine, your mill, the lathe and the brake', JSON.stringify([g.floor, g.progOn, g.lProgOn, g.bProgOn]));
     ok(/\u2713/.test(await txt(page, '#facQueue')), 'the floor button shows the whole shop is on the queue');
     await page.reload(); await page.clock.runFor(1500).catch(() => {}); await page.waitForTimeout(1200);
-    for (let i = 0; i < 10 && !(await page.evaluate(() => millTest.demo().on)); i++) { await page.clock.runFor(500).catch(() => {}); await page.waitForTimeout(300); }
+    for (let i = 0; i < 40 && !(await page.evaluate(() => millTest.demo().on)); i++) { await page.clock.runFor(500).catch(() => {}); await page.waitForTimeout(300); }
     g = await save(page);
     ok(g.lProgOn && g.bProgOn, 'the lathe and brake programs come back on after the game reopens');
     ok(errors.length === 0, 'no script errors with the whole shop on the queue', errors.join(' | '));

@@ -225,6 +225,33 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 .beacon-room{margin-top:40px !important;}
 .beacon.below::before{bottom:auto;top:calc(100% + 10px);}
 @media (prefers-reduced-motion:reduce){.beacon,.beacon::before{animation:none;}}
+
+/* ---- aesthetic pass: pressable buttons, a tighter gauge strip, crisper cards ---- */
+button{box-shadow:inset 0 -3px 0 rgba(0,0,0,.28);transition:transform .05s;}
+button:active{transform:translateY(2px);box-shadow:inset 0 -1px 0 rgba(0,0,0,.28);}
+button:disabled,button.inuse{box-shadow:none;}
+button:focus-visible{outline:3px solid var(--amber);outline-offset:2px;}
+.fkeys button,.sw,.krow button,.modepick button,.tabs button{box-shadow:inset 0 -3px 0 rgba(43,41,36,.16);}
+.tabs button.on{box-shadow:inset 0 -4px 0 var(--amber);}
+.hud{grid-template-columns:1.5fr 1fr 1fr 1fr;gap:6px;}
+.hud div{padding:5px 8px 6px;border-top-width:5px;}
+.hud .cash{border-top-color:var(--blue);}
+.hud i{font-size:11px;letter-spacing:.04em;white-space:nowrap;}
+@media (max-width:560px){.hud{grid-template-columns:1.5fr 1fr 1fr 1fr;}.hud b{font-size:15px;}.hud div{padding:4px 6px 5px;}}
+header{border-bottom-width:4px;}
+header h1{letter-spacing:-.01em;}
+.sheetbox{box-shadow:5px 5px 0 var(--charcoal);}
+.ocard{box-shadow:3px 3px 0 var(--putty-dark);border-left:6px solid var(--blue);}
+.fcard,.upg{box-shadow:3px 3px 0 var(--putty-dark);}
+.upg div b{font-size:15px;}
+.status{border-width:2px;}
+.dro-cell{box-shadow:inset 0 3px 0 rgba(43,41,36,.18);}
+.bin{box-shadow:inset 0 -3px 0 rgba(43,41,36,.12);}
+#machine,#latheCv,#brakeCv{border:2px solid var(--charcoal) !important;background:
+  linear-gradient(#E6E2D6 1px,transparent 1px) 0 0/100% 34px,linear-gradient(90deg,#E6E2D6 1px,transparent 1px) 0 0/34px 100%,var(--face);}
+#factory{border:2px solid var(--charcoal);}
+.uico{float:left;width:46px;height:46px;margin:0 8px 2px 0;background:#E4E9EE;border:2px solid var(--charcoal);}
+@media (prefers-reduced-motion:reduce){button{transition:none;}}
 </style>
 </head>
 <body>
@@ -238,10 +265,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 </header>
 
 <div class="hud">
-  <div class="cash"><i>CASH</i><b id="hudCash">$0</b></div>
-  <div><i>MARKET RATE</i><b id="hudMarket">100%</b></div>
-  <div><i>MILLS OWNED</i><b id="hudMills">0</b></div>
-  <div><i>TIME ON SHIFT</i><b id="hudTime">0:00</b></div>
+  <div class="cash"><i>cash</i><b id="hudCash">$0</b></div>
+  <div><i>market</i><b id="hudMarket">100%</b></div>
+  <div><i>mills</i><b id="hudMills">0</b></div>
+  <div><i>shift</i><b id="hudTime">0:00</b></div>
 </div>
 
 <nav class="tabs" id="tabs">
@@ -285,10 +312,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 <div class="sheet" id="boardSheet">
   <div class="sheetbox">
     <h3 id="boardTitle">high scores</h3>
-    <p class="spec" id="boardMsg"></p>
-    <div id="boardList"></div>
     <button class="wide" id="boardNew" style="display:none;background:var(--blue)">start a new business</button>
     <button class="wide" id="boardClose">close</button>
+    <p class="spec" id="boardMsg" style="min-height:3em"></p>
+    <div id="boardList"></div>
   </div>
 </div>
 
@@ -1202,7 +1229,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function drawShelf(){
     if(!demo.shelf.length) return;
     var w=54, h=36, x0=BIN.x+14, y0=BIN.y+38;
-    ctx.fillStyle='#65675F'; ctx.font='12px Trebuchet MS';
+    ctx.fillStyle='#65675F'; ctx.font='12px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     ctx.fillText('finished parts',BIN.x+14,BIN.y+32);
     for(var i=0;i<demo.shelf.length;i++){
       var sx=x0+i*(w+10);
@@ -1735,12 +1762,25 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     }
   }
 
+  // outlined castings for the big machine views
+  function mBox(g,x,y,w,h,f){ g.fillStyle=f; g.fillRect(x,y,w,h); g.strokeStyle='#2B2924'; g.lineWidth=2; g.strokeRect(x,y,w,h); }
+  function mHi(g,x,y,w,h,a){ g.fillStyle='rgba(255,255,255,'+(a||0.16)+')'; g.fillRect(x,y,w,h); }
+  function mBolt(g,x,y){ g.fillStyle='#2B2924'; g.beginPath(); g.arc(x,y,2.6,0,Math.PI*2); g.fill(); }
   function drawHead(){
     var T=TOOLS[tool];
     ctx.save();
     ctx.translate(PIVOT.x,PIVOT.y); ctx.rotate(s.a*Math.PI/180); ctx.translate(-PIVOT.x,-PIVOT.y);
-    ctx.fillStyle='#3E4C37'; ctx.fillRect(266,74,68,72);
-    ctx.fillStyle='#9A9C97'; ctx.fillRect(284,146,32,58);
+    // the motor on top with its cooling fins, the head casting, the quill feed lever and the quill
+    mBox(ctx,284,30,32,8,'#9A9C97');
+    mBox(ctx,276,38,48,36,'#65675F');
+    ctx.strokeStyle='rgba(43,41,36,.55)'; ctx.lineWidth=1.5; ctx.beginPath();
+    for(var fy=45;fy<72;fy+=6){ ctx.moveTo(278,fy); ctx.lineTo(322,fy); } ctx.stroke();
+    ctx.strokeStyle='#2B2924'; ctx.lineWidth=5; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(334,124); ctx.lineTo(358,106); ctx.stroke(); ctx.lineCap='butt';
+    ctx.fillStyle='#2E4A63'; ctx.beginPath(); ctx.arc(360,104,6.5,0,Math.PI*2); ctx.fill(); ctx.lineWidth=2; ctx.stroke();
+    mBox(ctx,266,74,68,72,'#3E4C37'); mHi(ctx,268,76,64,5,0.14);
+    ctx.fillStyle='#2E4A63'; ctx.fillRect(274,124,30,14); ctx.lineWidth=1.5; ctx.strokeRect(274,124,30,14);
+    mBolt(ctx,272,80); mBolt(ctx,328,80); mBolt(ctx,328,140);
+    mBox(ctx,284,146,32,58,'#9A9C97'); mHi(ctx,288,147,6,56,0.35);
     ctx.fillStyle='#2B2924'; ctx.fillRect(292,204,16,12);
     ctx.fillStyle=crashT>0?'#A84A2A':'#2B2924';
     toolPath(T); ctx.fill();
@@ -1784,8 +1824,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     ctx.save(); ctx.translate(x,y); ctx.rotate(rot*Math.PI/180);
     ctx.fillStyle=dead?'#9A8478':'#C9C3B2'; ctx.strokeStyle='#2B2924'; ctx.lineWidth=3;
     ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-r,0); ctx.lineTo(r,0); ctx.moveTo(0,-r); ctx.lineTo(0,r); ctx.stroke();
-    ctx.fillStyle='#2B2924'; ctx.beginPath(); ctx.arc(0,0,r*0.2,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#F0EDE4'; ctx.beginPath(); ctx.arc(0,0,r*0.72,0,Math.PI*2); ctx.fill(); ctx.lineWidth=1.5; ctx.stroke();
+    ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-r,0); ctx.lineTo(r,0); ctx.moveTo(0,-r); ctx.lineTo(0,r); ctx.stroke();
+    ctx.fillStyle='#2B2924'; ctx.beginPath(); ctx.arc(0,0,r*0.22,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#2E4A63'; ctx.beginPath(); ctx.arc(0,-r*0.86,r*0.16,0,Math.PI*2); ctx.fill();
     if(dead){ ctx.strokeStyle='#A84A2A'; ctx.lineWidth=4;
       ctx.beginPath(); ctx.moveTo(-r*0.7,-r*0.7); ctx.lineTo(r*0.7,r*0.7); ctx.stroke(); }
     ctx.restore();
@@ -1811,10 +1853,34 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     ctx.fillStyle=feed.on?'#A84A2A':'#65675F';
     ctx.fillRect(bx,by,34,26);
     ctx.strokeStyle='#2B2924'; ctx.lineWidth=2; ctx.strokeRect(bx,by,34,26);
-    ctx.fillStyle='#F0EDE4'; ctx.font='10px Trebuchet MS';
+    ctx.fillStyle='#F0EDE4'; ctx.font='10px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     ctx.fillText(feed.on?'FEED':'off',bx+6,by+17);
   }
 
+  // your own mill made over as a five axis CNC: the enclosure frame behind the work, and the control pendant
+  // on its arm with the letter on the screen and a stack light on top
+  function drawCncShell(){
+    ctx.fillStyle='rgba(46,74,99,.05)'; ctx.fillRect(30,22,540,416);
+    ctx.strokeStyle='#9A9C97'; ctx.lineWidth=3; ctx.strokeRect(30,22,540,416);
+    mBox(ctx,26,10,548,14,'#C6C8C2');
+    ctx.fillStyle='#2E4A63'; ctx.fillRect(27,24,546,5);
+    ctx.strokeStyle='rgba(255,255,255,.75)'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(470,150); ctx.lineTo(540,50); ctx.moveTo(495,165); ctx.lineTo(555,80); ctx.stroke();
+    mBox(ctx,570,74,28,7,'#65675F');
+    mBox(ctx,598,44,68,150,'#2E4A63');
+    var dead=machine.xDead||machine.yDead, run=demo.on&&!dead;
+    mBox(ctx,606,54,52,44,dead?'#E8B56A':'#DCE6EE');
+    ctx.fillStyle='#2B2924'; ctx.textAlign='center';
+    ctx.font='bold 30px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+    ctx.fillText(run&&demo.ch?tokShort(demo.ch).slice(0,2):'--',632,87);
+    ctx.textAlign='left';
+    ctx.lineWidth=1.5;
+    [['#57694B',614],['#B5760D',632],['#C6C8C2',650]].forEach(function(q){ ctx.fillStyle=q[0]; ctx.beginPath(); ctx.arc(q[1],116,6,0,Math.PI*2); ctx.fill(); ctx.stroke(); });
+    ctx.fillStyle='#B5760D'; ctx.beginPath(); ctx.arc(632,158,19,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#A84A2A'; ctx.beginPath(); ctx.arc(632,158,13,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#65675F'; ctx.fillRect(630,30,4,14);
+    var lit=dead?0:(run?2:1), cols=[['#E3C6BC','#A84A2A'],['#E9D9B4','#E0912B'],['#CFDAC4','#57694B']];
+    for(var k=0;k<3;k++) mBox(ctx,621,3+k*9,22,9,cols[k][lit===k?1:0]);
+  }
   function drawMachine(){
     ctx.clearRect(0,0,cv.width,cv.height);
     ctx.save();
@@ -1823,15 +1889,29 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       ctx.translate((Math.random()-0.5)*m*2,(Math.random()-0.5)*m*2);
       ctx.rotate((Math.random()-0.5)*0.008*m);
     }
-    ctx.fillStyle='#65675F'; ctx.fillRect(40,438,400,34);
-    ctx.fillStyle='#57694B'; ctx.fillRect(70,40,80,400);
-    ctx.fillStyle='#3E4C37'; ctx.fillRect(70,40,16,400);
-    ctx.fillStyle='#57694B'; ctx.fillRect(150,62,158,36);
+    ctx.lineJoin='round';
+    if(G.homeCnc) drawCncShell();
+    // base casting on its feet, the column with its dark back edge, the ram across the top
+    mBox(ctx,40,438,400,34,'#65675F'); mHi(ctx,42,440,396,5,0.14);
+    mBox(ctx,70,40,80,400,'#57694B');
+    ctx.fillStyle='#3E4C37'; ctx.fillRect(71,41,15,398);
+    mHi(ctx,92,44,6,392,0.13);
+    ctx.fillStyle='#2E4A63'; ctx.fillRect(100,150,40,26); ctx.strokeStyle='#2B2924'; ctx.lineWidth=1.5; ctx.strokeRect(100,150,40,26);
+    mBolt(ctx,105,155); mBolt(ctx,135,155); mBolt(ctx,105,171); mBolt(ctx,135,171);
+    mBox(ctx,150,98,56,10,'#3E4C37');
+    mBox(ctx,150,62,158,36,'#57694B'); mHi(ctx,152,64,154,5,0.16);
+    mBolt(ctx,160,80); mBolt(ctx,196,80);
 
     var ks=kneeShift(), tx=s.x*XS, i;
-    ctx.fillStyle='#9A9C97'; ctx.fillRect(95,270+ks,100,110);
-    ctx.fillStyle='#65675F'; ctx.fillRect(95,270+ks,100,12);
-    ctx.fillStyle='#65675F'; ctx.fillRect(90,272+ks,240,20);
+    // the knee rides its elevating screw; it slides down behind the base as the knee drops
+    var kTop=270+ks, kh=Math.max(34,Math.min(110,438-kTop));
+    if(kTop+kh<436){
+      mBox(ctx,133,kTop+kh,24,438-(kTop+kh),'#C6C8C2');
+      ctx.strokeStyle='rgba(43,41,36,.6)'; ctx.lineWidth=1.5; ctx.beginPath();
+      for(var sy=kTop+kh+5;sy<436;sy+=6){ ctx.moveTo(133,sy); ctx.lineTo(157,sy+3); } ctx.stroke();
+    }
+    mBox(ctx,95,kTop,100,kh,'#9A9C97'); mHi(ctx,97,kTop+14,5,kh-16,0.3);
+    mBox(ctx,90,272+ks,240,20,'#65675F'); mHi(ctx,92,274+ks,236,4,0.14);
 
     var tTop=TABLE_TOP+ks;
     ctx.fillStyle='#DDD8CB'; ctx.beginPath();
@@ -1839,7 +1919,10 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     for(i=0;i<TLEN;i++) ctx.lineTo(TABLE_LEFT+tx+i,tTop+table.dmg[i]);
     ctx.lineTo(TABLE_RIGHT+tx,tTop+TT); ctx.lineTo(TABLE_LEFT+tx,tTop+TT);
     ctx.closePath(); ctx.fill();
-    ctx.strokeStyle='#2B2924'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.strokeStyle='#2B2924'; ctx.lineWidth=2; ctx.stroke();
+    mHi(ctx,TABLE_LEFT+tx+2,tTop+TT-9,TLEN-4,3,0.5);
+    ctx.fillStyle='#65675F'; ctx.fillRect(TABLE_LEFT+tx-7,tTop+3,7,TT-3); ctx.fillRect(TABLE_RIGHT+tx,tTop+3,7,TT-3);
+    ctx.strokeRect(TABLE_LEFT+tx-7,tTop+3,7,TT-3); ctx.strokeRect(TABLE_RIGHT+tx,tTop+3,7,TT-3);
 
     ctx.strokeStyle=machine.xDead?'#A84A2A':'#65675F';
     ctx.lineWidth=machine.xDead?3:2; ctx.setLineDash([5,5]);
@@ -1856,13 +1939,14 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     drawPartSection(behind);
 
     ctx.fillStyle='#D3CEC0'; ctx.fillRect(BIN.x,BIN.y,BIN.w,BIN.h);
-    ctx.strokeStyle='#65675F'; ctx.lineWidth=2; ctx.strokeRect(BIN.x,BIN.y,BIN.w,BIN.h);
-    ctx.fillStyle='#65675F'; ctx.font='13px Trebuchet MS';
+    ctx.strokeStyle='#2B2924'; ctx.lineWidth=2; ctx.strokeRect(BIN.x,BIN.y,BIN.w,BIN.h);
+    ctx.fillStyle='#B5760D'; ctx.fillRect(BIN.x+1,BIN.y+1,BIN.w-2,4);
+    ctx.fillStyle='#65675F'; ctx.font='13px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     if(!part.placed){
       ctx.fillText('stock bin, '+fin(G.curFin).name+', drag a blank up onto the table',BIN.x+12,BIN.y+20);
       blanks.forEach(function(b){
         drawBlank(b.kind,b.cx,b.cy,b.w,b.h);
-        ctx.fillStyle='#65675F'; ctx.font='12px Trebuchet MS';
+        ctx.fillStyle='#65675F'; ctx.font='12px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
         ctx.fillText(b.label,b.cx-30,b.cy+40);
       });
     } else ctx.fillText('bin empty, one part clamped on the table',BIN.x+12,BIN.y+20);
@@ -1891,7 +1975,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     tctx.clearRect(0,0,tv.width,tv.height);
     tctx.fillStyle='#9E9987'; tctx.fillRect(0,0,tv.width,tv.height);
     if(!part.placed){
-      tctx.fillStyle='#65675F'; tctx.font='15px Trebuchet MS';
+      tctx.fillStyle='#65675F'; tctx.font='15px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
       tctx.fillText('no stock on the table yet',132,tv.height/2); return;
     }
     if(topC.width!==part.nx||topC.height!==part.ny){ topC.width=part.nx; topC.height=part.ny; topDirty=true; }
@@ -1925,9 +2009,9 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     pctx.clearRect(0,0,pv.width,pv.height);
     pctx.fillStyle='#E7EDF2'; pctx.fillRect(0,0,pv.width,pv.height);
     pctx.strokeStyle='#2E4A63'; pctx.lineWidth=2; pctx.strokeRect(8,8,pv.width-16,pv.height-16);
-    pctx.fillStyle='#2E4A63'; pctx.font='bold 14px Trebuchet MS';
+    pctx.fillStyle='#2E4A63'; pctx.font='bold 14px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     pctx.fillText('job '+(job+1)+', '+JOBS[job].name,18,30);
-    pctx.font='11px Trebuchet MS';
+    pctx.font='11px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     pctx.fillText('plan view',18,52);
     pctx.fillText('section through the middle',18,180);
 
@@ -1953,7 +2037,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     pctx.strokeStyle='#2E4A63'; pctx.lineWidth=1.5;
     pctx.strokeRect(qx,qy,T.nx*sc2,T.nz*sc2);
 
-    pctx.font='11px Trebuchet MS'; pctx.fillStyle='#2E4A63';
+    pctx.font='11px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif'; pctx.fillStyle='#2E4A63';
     pctx.fillText('stock '+B.nx+' by '+B.ny+' by '+B.nz+', '+JOBS[job].kind+' bar',18,pv.height-18);
   }
 
@@ -2265,7 +2349,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 
   // the floor has thirteen bays: your mill first, then room for twelve floor mills
   function bays(){ return G.warehouse?39:13; }
-  function bayH(){ return G.warehouse?92:175; }
+  function bayH(){ return G.warehouse?96:236; }
   // bays taken before the floor mills: your mill always, then the lathe once you own it
   function lead(){ return 1+(G.lathe?1:0)+(G.brake?1:0); }
   function maxMills(){ return bays()-1-(G.lathe?1:0)-(G.brake?1:0); }
@@ -2411,54 +2495,249 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     return 'needs '+nd.txt;
   }
 
+  // ---- machine art: every machine is drawn as a shop manual illustration in a hundred unit box, flat color with one
+  // dark outline, a highlight on the castings and a soft shadow on the floor, then scaled to fit its bay ----
+  var AC={GR:'#57694B',GD:'#3E4C37',ST:'#9A9C97',SD:'#65675F',SL:'#C6C8C2',CH:'#2B2924',BL:'#2E4A63',BLL:'#B4C4D1',GLASS:'#D5E0E8',RU:'#A84A2A',AM:'#B5760D'};
+  function artR(g,x,y,w,h,f){ g.fillStyle=f; g.fillRect(x,y,w,h); g.strokeRect(x,y,w,h); }
+  function artP(g,pts,f){ g.beginPath(); for(var i=0;i<pts.length;i++){ if(i) g.lineTo(pts[i][0],pts[i][1]); else g.moveTo(pts[i][0],pts[i][1]); } g.closePath(); g.fillStyle=f; g.fill(); g.stroke(); }
+  function artC(g,x,y,r,f){ g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fillStyle=f; g.fill(); g.stroke(); }
+  function artHi(g,x,y,w,h){ g.fillStyle='rgba(255,255,255,.2)'; g.fillRect(x,y,w,h); }
+  function artWheel(g,x,y,r,rot){
+    artC(g,x,y,r,AC.SL);
+    g.save(); g.translate(x,y); g.rotate(rot||0);
+    g.beginPath(); g.moveTo(-r,0); g.lineTo(r,0); g.moveTo(0,-r); g.lineTo(0,r); g.stroke();
+    g.restore();
+    g.fillStyle=AC.CH; g.beginPath(); g.arc(x,y,r*0.28,0,Math.PI*2); g.fill();
+  }
+  function artShadow(g,x0,x1){ g.fillStyle='rgba(43,41,36,.14)'; g.beginPath(); g.ellipse((x0+x1)/2,100,(x1-x0)/2,3.2,0,0,Math.PI*2); g.fill(); }
+  function artChips(g,x,y){ g.fillStyle='#8C6A2F'; for(var k=0;k<4;k++) g.fillRect(x-5+Math.random()*10,y-3+Math.random()*4,1.3,1.3); }
+  function artFrame(g,x,y,w,h,draw){
+    var s=Math.max(0.05,Math.min(w/100,h/100));
+    g.save(); g.translate(x+(w-100*s)/2,y+h-100*s); g.scale(s,s);
+    g.lineJoin='round'; g.lineWidth=Math.min(2.6,1.3/s); g.strokeStyle=AC.CH;
+    draw(g,s); g.restore();
+  }
+  // a knee mill from the side: column, ram, head and motor, the knee on its screw, and the table traversing under the spindle
+  function artMill(g,o){
+    var sw=Math.max(0,Math.min(1,o.sweep===undefined?0.5:o.sweep)), tx=20+sw*14;
+    artShadow(g,2,96);
+    artP(g,[[6,100],[76,100],[76,94],[72,90],[10,90],[6,94]],AC.SD);
+    artR(g,46,78,6,12,AC.ST);
+    g.beginPath(); for(var ty=80;ty<90;ty+=2.5){ g.moveTo(46,ty); g.lineTo(52,ty+1.2); } g.stroke();
+    artP(g,[[12,90],[14,22],[34,22],[36,90]],AC.GR); artHi(g,17,24,3,64);
+    g.fillStyle=AC.GD; g.fillRect(14.5,22.6,4,66.8);
+    artP(g,[[34,58],[68,58],[68,66],[52,80],[34,80]],AC.GR); artHi(g,35,59.5,32,1.6);
+    artR(g,36,53,32,5,AC.SD);
+    artWheel(g,70.5,64,3.4,sw*6);
+    artR(g,tx,47,64,6,AC.SL);
+    g.beginPath(); g.moveTo(tx,50); g.lineTo(tx+64,50); g.stroke();
+    artWheel(g,tx+66.5,50,3.6,sw*14);
+    if(o.busy){ artR(g,tx+24,41.5,16,5.5,o.fill||AC.SL); }
+    artR(g,8,12,56,10,AC.GR); artHi(g,9,13,54,1.6);
+    artR(g,53,0.8,12,9.2,AC.SD);
+    g.beginPath(); for(var my=3;my<9;my+=2){ g.moveTo(53,my); g.lineTo(65,my); } g.stroke();
+    artR(g,50,10,18,25,AC.GD); artHi(g,51,11,16,1.6);
+    g.fillStyle=AC.BL; g.fillRect(53,17,12,5);
+    artR(g,55.5,35,7,4.5,AC.ST);
+    g.fillStyle=AC.CH; g.fillRect(58,39.5,2,o.busy?3.5:2.5);
+    if(o.busy) artChips(g,59,42);
+  }
+  // an enclosed five axis CNC from the front: the cabinet, the window with the spindle working behind it,
+  // the control pendant in shop blue and a stack light that shows what the machine is doing
+  function artCnc(g,o){
+    var sw=Math.max(0,Math.min(1,o.sweep===undefined?0.5:o.sweep)), sx=27+sw*16;
+    artShadow(g,2,98);
+    artR(g,6,16,88,84,AC.SL);
+    artR(g,6,88,88,12,AC.SD);
+    artR(g,6,12,88,6,AC.BL);
+    artR(g,14,26,52,46,AC.GLASS);
+    g.save(); g.beginPath(); g.rect(14,26,52,46); g.clip();
+    g.fillStyle=AC.GR; g.fillRect(34,26,14,10);
+    artR(g,sx,26,10,17,AC.SD);
+    g.fillStyle=AC.CH; g.fillRect(sx+4,43,2,o.busy?9:5);
+    artR(g,20,60,40,4,AC.ST);
+    g.fillStyle=AC.SD; g.fillRect(36,64,8,8);
+    if(o.busy){ artR(g,32,54.5,16,5.5,o.fill||AC.SL); artChips(g,sx+5,54); }
+    g.strokeStyle='rgba(255,255,255,.7)'; g.beginPath(); g.moveTo(18,44); g.lineTo(30,28); g.moveTo(22,48); g.lineTo(38,28); g.stroke();
+    g.restore();
+    g.strokeStyle=AC.CH; g.strokeRect(14,26,52,46);
+    artR(g,67.6,40,2.4,18,AC.SD);
+    artR(g,73,26,17,36,AC.BL);
+    g.fillStyle=o.need?'#E8B56A':AC.BLL; g.fillRect(75.5,29,12,10);
+    g.fillStyle=AC.GR; g.beginPath(); g.arc(77.5,45,1.6,0,Math.PI*2); g.fill();
+    g.fillStyle=AC.AM; g.beginPath(); g.arc(81.5,45,1.6,0,Math.PI*2); g.fill();
+    g.fillStyle=AC.SL; g.beginPath(); g.arc(85.5,45,1.6,0,Math.PI*2); g.fill();
+    artC(g,81.5,54,3,AC.RU);
+    g.fillStyle=AC.SD; g.fillRect(81,5,1.6,7);
+    var lit=o.need?0:(o.busy?2:1), cols=[['#E3C6BC',AC.RU],['#E9D9B4','#E0912B'],['#CFDAC4',AC.GR]];
+    for(var k=0;k<3;k++) artR(g,79,0.8+k*3.2,5.6,3.2,cols[k][lit===k?1:0]);
+  }
+  // an engine lathe from the front: headstock and chuck, the bar on the spindle axis, the carriage on the ways and the tailstock
+  function artLathe(g,o){
+    var sw=Math.max(0,Math.min(1,o.sweep||0)), cx=40+sw*24;
+    artShadow(g,2,98);
+    artR(g,8,78,20,22,AC.SD); artR(g,72,78,20,22,AC.SD);
+    artR(g,4,74,92,4,AC.ST);
+    artR(g,6,64,88,10,AC.GR); artHi(g,6.6,65,86.8,1.5);
+    artR(g,6,28,24,36,AC.GR); artHi(g,8,30,2.4,32);
+    artR(g,11,32,13,11,AC.GD);
+    artC(g,14,50,2,AC.SL); artC(g,21,50,2,AC.SL);
+    g.fillStyle=AC.BL; g.fillRect(11,56,13,4);
+    artR(g,30,39,6,18,AC.ST);
+    g.fillStyle=AC.CH; g.fillRect(34,40,3,3.4); g.fillRect(34,52.6,3,3.4);
+    artP(g,[[78,64],[78,46],[84,42],[92,42],[92,64]],AC.GR);
+    artR(g,o.loaded?72:74,46.4,o.loaded?6:4,3.2,AC.ST);
+    artWheel(g,95,48,3,0);
+    if(o.loaded){
+      artR(g,36,45,37,6,o.fill||AC.SL);
+      if(o.spin){ g.save(); g.strokeStyle='rgba(43,41,36,.4)'; var ph=(Date.now()/40)%5; g.beginPath(); for(var k=37;k<72;k+=5){ g.moveTo(k+ph,45); g.lineTo(k+ph-2,51); } g.stroke(); g.restore(); }
+    }
+    artR(g,cx,58,14,6,AC.SD);
+    artR(g,cx+1,64,12,8.5,AC.ST);
+    artWheel(g,cx+7,68.5,2.6,sw*12);
+    artR(g,cx+4.5,52.5,5,5.5,AC.SD);
+    g.fillStyle=o.cut?AC.RU:AC.CH; g.fillRect(cx+6,50.6,2,2.4);
+    if(o.cut) artChips(g,cx+7,51);
+  }
+  // a press brake from the front: side frames, the ram on its cylinders, punch over die, and the sheet laid on the bed
+  function artBrake(g,o){
+    var ry=32+Math.max(0,Math.min(1,o.ram||0))*9;
+    artShadow(g,2,98);
+    artR(g,14,80,72,20,AC.GR);
+    artR(g,26,24,6,ry-22,AC.ST); artR(g,68,24,6,ry-22,AC.ST);
+    artR(g,19,ry,62,13,AC.SD); artHi(g,19.6,ry+0.8,60.8,1.5);
+    artP(g,[[21,ry+13],[79,ry+13],[77,ry+16.5],[23,ry+16.5]],AC.CH);
+    artR(g,19,68,62,12,AC.SD);
+    artR(g,23,65,54,3,AC.ST);
+    if(o.loaded) artR(g,12,62.4,76,2.4,o.fill||AC.SL);
+    artR(g,6,14,13,86,AC.GR); artHi(g,8,16,2.4,82);
+    artR(g,81,14,13,86,AC.GR); artHi(g,83,16,2.4,82);
+    artR(g,6,10,88,14,AC.GD); artHi(g,7,11,86,1.6);
+    artR(g,83.4,34,8.2,13,AC.BL);
+    g.fillStyle=AC.BLL; g.fillRect(84.8,35.6,5.4,4);
+    g.fillStyle=AC.RU; g.beginPath(); g.arc(87.5,43.6,1.6,0,Math.PI*2); g.fill();
+    artR(g,44,96.4,12,3.6,AC.SD);
+  }
+  // a flatbed laser from the front: the cabinet and slat bed, the gantry with its cutting head in shop blue, and the gas bottle
+  function artLaser(g,o){
+    var sw=Math.max(0,Math.min(1,o.sweep===undefined?0.5:o.sweep)), hx=13+sw*56;
+    artShadow(g,0,100);
+    artR(g,90.5,47,7,53,o.needKind==='gas'?'#E3C6BC':AC.ST); artR(g,92.5,43,3,4,AC.SD);
+    g.fillStyle=AC.BL; g.fillRect(90.5,58,7,4);
+    artR(g,4,62,84,38,AC.SL);
+    g.beginPath(); g.moveTo(32,62); g.lineTo(32,100); g.moveTo(58,62); g.lineTo(58,100); g.stroke();
+    artR(g,62,68,22,15,AC.BL);
+    g.fillStyle=o.need?'#E8B56A':AC.BLL; g.fillRect(64,70,11,8);
+    g.fillStyle=AC.RU; g.beginPath(); g.arc(79.5,74,2,0,Math.PI*2); g.fill();
+    artR(g,4,56,84,6,AC.SD);
+    g.fillStyle=AC.SL; for(var k=7;k<86;k+=4) g.fillRect(k,56.8,1.2,2.4);
+    if(o.busy) artR(g,10,52.8,72,3.2,o.fill||AC.SL);
+    artR(g,6,30,5,26,AC.ST); artR(g,81,30,5,26,AC.ST);
+    artR(g,5,27,82,7,AC.ST); artHi(g,5.6,27.8,80.8,1.5);
+    artR(g,hx,23,10,17,AC.BL);
+    artP(g,[[hx+3,40],[hx+7,40],[hx+5,46.5]],AC.SD);
+    if(o.busy){
+      g.save(); g.strokeStyle='#D8432F'; g.lineWidth*=1.2; g.beginPath(); g.moveTo(hx+5,46.5); g.lineTo(hx+5,53); g.stroke(); g.restore();
+      g.fillStyle='#E0912B'; for(var q=0;q<5;q++) g.fillRect(hx+1+Math.random()*8,49+Math.random()*4,1.3,1.3);
+    }
+  }
+  // a metal printer from the front: the sealed cabinet, the powder hopper on top, and the part growing on the build plate
+  // behind the chamber window with the laser spot working across it
+  function artPrint(g,o){
+    var sw=Math.max(0,Math.min(1,o.sweep===undefined?0.5:o.sweep)), ph=o.busy?Math.max(1.5,Math.min(1,o.prog||0)*24):0;
+    artShadow(g,8,92);
+    artP(g,[[40,6],[60,6],[57,0.8],[43,0.8]],AC.ST);
+    artR(g,14,10,72,90,'#E4E9EE');
+    artR(g,14,86,72,14,AC.SL);
+    artR(g,14,6,72,8,AC.BL);
+    artR(g,22,24,40,44,'#3D5063');
+    g.fillStyle=AC.ST; g.fillRect(26,62,32,3);
+    if(ph){
+      g.fillStyle=o.fill||AC.SL; g.fillRect(34,62-ph,16,ph); g.strokeRect(34,62-ph,16,ph);
+      g.fillStyle='rgba(224,145,43,.35)'; g.beginPath(); g.arc(35+sw*14,62-ph,3.4,0,Math.PI*2); g.fill();
+      g.fillStyle='#FFD98A'; g.beginPath(); g.arc(35+sw*14,62-ph,1.3,0,Math.PI*2); g.fill();
+    }
+    g.save(); g.strokeStyle='rgba(255,255,255,.35)'; g.beginPath(); g.moveTo(25,40); g.lineTo(34,27); g.moveTo(28,44); g.lineTo(41,27); g.stroke(); g.restore();
+    artR(g,63.6,38,2.4,16,AC.SD);
+    artR(g,68.5,24,13,17,AC.BL);
+    g.fillStyle=o.need?'#E8B56A':AC.BLL; g.fillRect(70.5,26,9,7);
+    g.fillStyle=AC.RU; g.beginPath(); g.arc(75,37,1.6,0,Math.PI*2); g.fill();
+    g.beginPath(); for(var v=50;v<64;v+=3){ g.moveTo(69,v); g.lineTo(81,v); } g.stroke();
+  }
+  function artFor(o){ return o.mk==='laser'?artLaser:(o.mk==='print'?artPrint:(o.cnc||o.mk==='cnc'?artCnc:artMill)); }
+  // someone on the crew: coveralls in the color of their trade, a white hard hat, and a wrench in hand while they work
+  function artOp(g,x,y,sc,col,busy){
+    g.save(); g.translate(x,y); g.scale(sc,sc); g.lineJoin='round'; g.lineWidth=1.4; g.strokeStyle=AC.CH;
+    g.fillStyle='rgba(43,41,36,.14)'; g.beginPath(); g.ellipse(0,0,9,2.4,0,0,Math.PI*2); g.fill();
+    g.fillStyle=AC.CH; g.fillRect(-5,-9,4,9); g.fillRect(1,-9,4,9);
+    artP(g,[[-7,-9],[-7,-21],[-4.5,-24],[4.5,-24],[7,-21],[7,-9]],col);
+    artC(g,0,-28.5,4.6,'#E9DFCB');
+    g.beginPath(); g.arc(0,-29.5,5.2,Math.PI,0); g.lineTo(6.6,-29.5); g.lineTo(-6.6,-29.5); g.closePath(); g.fillStyle='#F7F4EC'; g.fill(); g.stroke();
+    if(busy){ g.save(); g.lineWidth=2.4; g.strokeStyle=AC.SD; g.beginPath(); g.moveTo(7,-17); g.lineTo(13,-25); g.stroke(); g.restore(); artC(g,13.6,-26,2,AC.SL); }
+    g.restore();
+  }
+  // a small picture for each thing the shop sells, so a machine never gets mistaken for a person
+  var SHOPICO={};
+  function shopIcon(k){
+    if(SHOPICO[k]!==undefined) return SHOPICO[k];
+    var mach={mill:artMill,head:artMill,lathe:artLathe,brake:artBrake,cnc:artCnc,homecnc:artCnc,lathecnc:artCnc,laser:artLaser,print:artPrint};
+    var crew={op:TECHS.op.color,mw:TECHS.mw.color,el:TECHS.el.color,ct:TECHS.ct.color,am:TECHS.am.color,fore:'#2B2924',sales:'#9A9C97',ling:'#9A9C97',fin:'#9A9C97',design:'#9A9C97'};
+    var c=document.createElement('canvas'); c.width=112; c.height=112; var g=c.getContext('2d');
+    if(mach[k]) artFrame(g,6,6,100,100,function(q){ mach[k](q,{busy:true,sweep:0.5,prog:0.6,fill:'#2E4A63',loaded:true}); });
+    else if(crew[k]) artOp(g,56,100,2.6,crew[k],k==='op'||k==='mw'||k==='el'||k==='ct'||k==='am');
+    else if(k==='warehouse'||k==='office'){
+      g.lineJoin='round'; g.lineWidth=3; g.strokeStyle='#2B2924';
+      if(k==='warehouse'){
+        g.fillStyle='#C2BDAE'; g.fillRect(8,44,96,56); g.strokeRect(8,44,96,56);
+        g.fillStyle='#2E4A63'; g.fillRect(4,34,104,12); g.strokeRect(4,34,104,12);
+        g.fillStyle='#6A675E'; [18,48,78].forEach(function(x){ g.fillRect(x,66,22,34); g.strokeRect(x,66,22,34); });
+      } else {
+        g.fillStyle='#D2CCBB'; g.fillRect(26,14,60,86); g.strokeRect(26,14,60,86);
+        g.fillStyle='#2E4A63'; g.fillRect(22,8,68,8); g.strokeRect(22,8,68,8);
+        g.lineWidth=1.5; for(var y=24;y<80;y+=16) for(var x=34;x<76;x+=16){ g.fillStyle=((x+y)%3)?'#E4E9EE':'#F2D58A'; g.fillRect(x,y,10,10); g.strokeRect(x,y,10,10); }
+      }
+    } else { SHOPICO[k]=''; return ''; }
+    SHOPICO[k]=c.toDataURL(); return SHOPICO[k];
+  }
+  // the painted floor of a bay: a lighter slab with safety corners, blue for your own machines
+  function artBayFloor(g,c,o){
+    var inset=o.mini?2:3;
+    g.fillStyle=o.mine?'#E4E9EE':'#DDD9CD'; g.fillRect(c.x+inset,c.y+inset,c.w-inset*2,c.h-inset*2);
+    g.strokeStyle=o.mine?'#2E4A63':'#B9B3A2'; g.lineWidth=o.mine?2.5:1; g.strokeRect(c.x+inset,c.y+inset,c.w-inset*2,c.h-inset*2);
+    if(o.sel){ g.strokeStyle='#2E4A63'; g.lineWidth=4; g.strokeRect(c.x+inset+3,c.y+inset+3,c.w-inset*2-6,c.h-inset*2-6); }
+    if(!o.mine&&(!o.mini||o.need)){
+      var L=Math.min(14,c.w*0.12); g.strokeStyle=o.need?'#A84A2A':'#B5760D'; g.lineWidth=2.5; g.beginPath();
+      [[c.x+inset,c.y+inset,1,1],[c.x+c.w-inset,c.y+inset,-1,1],[c.x+inset,c.y+c.h-inset,1,-1],[c.x+c.w-inset,c.y+c.h-inset,-1,-1]].forEach(function(q){
+        g.moveTo(q[0]+q[2]*L,q[1]); g.lineTo(q[0],q[1]); g.lineTo(q[0],q[1]+q[3]*L); });
+      g.stroke();
+    }
+  }
+  // the lamp in the corner of a bay: green while it cuts, grey while it waits, flashing when it needs a hand
+  function artLamp(g,x,y,r,o){
+    var col=o.need?((Math.floor(Date.now()/300)%2)?'#A84A2A':'#E0912B'):(o.busy?'#57694B':'#B4B5AF');
+    if(o.need){ g.fillStyle='rgba(224,145,43,.28)'; g.beginPath(); g.arc(x,y,r*1.7,0,Math.PI*2); g.fill(); }
+    g.fillStyle=col; g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
+    g.strokeStyle='#2B2924'; g.lineWidth=1.5; g.stroke();
+    g.fillStyle='rgba(255,255,255,.45)'; g.beginPath(); g.arc(x-r*0.3,y-r*0.3,r*0.28,0,Math.PI*2); g.fill();
+  }
+
   function drawBay(c,o){
     var FS=Math.max(1,Math.min(2.2,0.9*fcv.width/Math.max(1,fcv.clientWidth||fcv.width)));
-    if(o.mine){ fx.fillStyle='#E4E9EE'; fx.fillRect(c.x,c.y,c.w,c.h); }
-    fx.strokeStyle='#9A9C97'; fx.lineWidth=1; fx.strokeRect(c.x,c.y,c.w,c.h);
-    if(o.mine){ fx.strokeStyle='#2E4A63'; fx.lineWidth=3; fx.strokeRect(c.x+2,c.y+2,c.w-4,c.h-4); }
-    if(o.sel){ fx.strokeStyle='#2E4A63'; fx.lineWidth=4; fx.strokeRect(c.x+3,c.y+3,c.w-6,c.h-6); }
-    var HH=Math.min(c.h*0.45,40*FS), mh=(c.h-HH-30)/0.52;
-    var mc={h:mh,y:c.y+HH-0.12*mh};
-    var bx=c.x+c.w*0.16, bw=c.w*0.68, by=mc.y+mc.h*0.28, bh=mc.h*0.44;
+    artBayFloor(fx,c,o);
+    var HH=Math.min(c.h*0.45,40*FS);
+    o.fill=finCSS(o.fin);
+    if(o.mk==='fdm') drawFdmBody(c,o,HH,FS);
+    else artFrame(fx,c.x+12,c.y+HH+4,c.w-24,c.h-HH-36,function(g){ artFor(o)(g,o); });
+    artLamp(fx,c.x+c.w-12-7*FS,c.y+8+7*FS,7*FS,o);
 
-    if(o.mk==='fdm') drawFdmBody(c,o,HH,FS); else {
-    fx.fillStyle='#57694B'; fx.fillRect(bx,by-mc.h*0.16,bw*0.18,bh+mc.h*0.16);
-    fx.fillStyle='#3E4C37'; fx.fillRect(bx,by-mc.h*0.16,bw*0.18,mc.h*0.10);
-    fx.fillStyle='#57694B'; fx.fillRect(bx,by-mc.h*0.16,bw*0.8,mc.h*0.07);
-
-    var sx=bx+bw*0.2+o.sweep*(bw*0.55);
-    fx.fillStyle='#3E4C37'; fx.fillRect(sx-8,by-mc.h*0.10,16,mc.h*0.10);
-    fx.fillStyle='#2B2924'; fx.fillRect(sx-2.5,by,5,mc.h*0.11);
-
-    fx.fillStyle='#DDD8CB'; fx.fillRect(bx+bw*0.16,by+mc.h*0.13,bw*0.78,mc.h*0.05);
-    if(o.busy){
-      fx.fillStyle=finCSS(o.fin);
-      fx.fillRect(bx+bw*0.30,by+mc.h*0.075,bw*0.42*(1-o.prog*0.55),mc.h*0.055);
-      fx.strokeStyle='#2B2924'; fx.lineWidth=1;
-      fx.strokeRect(bx+bw*0.30,by+mc.h*0.075,bw*0.42*(1-o.prog*0.55),mc.h*0.055);
-    }
-    fx.fillStyle='#65675F'; fx.fillRect(bx+bw*0.10,by+mc.h*0.18,bw*0.9,mc.h*0.06);
-    if(o.cnc){
-      var ey0=by-mc.h*0.2, ey=Math.max(ey0,c.y+HH+2), ex=bx-4, ew=bw+8, eh=mc.h*0.48-(ey-ey0);
-      fx.fillStyle='rgba(154,156,151,.55)'; fx.fillRect(ex,ey,ew,eh);
-      fx.fillStyle='rgba(46,74,99,.35)'; fx.fillRect(ex+ew*0.25,ey+eh*0.18,ew*0.55,eh*0.5);
-      fx.strokeStyle='#2B2924'; fx.lineWidth=2; fx.strokeRect(ex,ey,ew,eh); fx.strokeRect(ex+ew*0.25,ey+eh*0.18,ew*0.55,eh*0.5);
-      fx.fillStyle='#2E4A63'; fx.fillRect(ex+ew*0.86,ey+eh*0.2,ew*0.08,eh*0.3);
-    }
-    }
-
-    fx.fillStyle=o.need?( (Math.floor(Date.now()/300)%2)?'#A84A2A':'#E0912B' ):(o.busy?'#57694B':'#9A9C97');
-    fx.beginPath(); fx.arc(c.x+c.w-12-7*FS,c.y+8+7*FS,7*FS,0,Math.PI*2); fx.fill();
-    fx.strokeStyle='#2B2924'; fx.lineWidth=1.5; fx.stroke();
-
-    fx.fillStyle='#2B2924'; fx.font='bold '+Math.round(22*FS)+'px Trebuchet MS';
+    fx.fillStyle='#2B2924'; fx.font='bold '+Math.round(22*FS)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     fx.fillText(o.busy?tokShort(o.ch):'-',c.x+12,c.y+28*FS);
     var sq=16*FS;
     fx.fillStyle=finCSS(o.fin); fx.fillRect(c.x+18+20*FS,c.y+11*FS,sq,sq);
     fx.strokeStyle='#2B2924'; fx.lineWidth=1.5; fx.strokeRect(c.x+18+20*FS,c.y+11*FS,sq,sq);
-    fx.font='bold '+Math.round(12*FS)+'px Trebuchet MS'; fx.fillStyle=o.tagBlue?'#2E4A63':'#65675F';
+    fx.font='bold '+Math.round(12*FS)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif'; fx.fillStyle=o.tagBlue?'#2E4A63':'#65675F';
     fx.fillText(o.tag,c.x+24+36*FS,c.y+24*FS);
-    fx.fillStyle=o.need?'#A84A2A':'#65675F'; fx.font=Math.round(11*FS)+'px Trebuchet MS';
+    fx.fillStyle=o.need?'#A84A2A':'#65675F'; fx.font=Math.round(11*FS)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     fx.fillText(o.line,c.x+12,c.y+HH-4);
 
     fx.fillStyle='#C9C3B2'; fx.fillRect(c.x+12,c.y+c.h-24,c.w-70,6);
@@ -2488,7 +2767,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       fx.stroke();
     } else if(ch){
       fx.save();
-      fx.font='bold '+Math.round(gs)+'px Trebuchet MS'; fx.textAlign='center'; fx.textBaseline='alphabetic';
+      fx.font='bold '+Math.round(gs)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif'; fx.textAlign='center'; fx.textBaseline='alphabetic';
       fx.lineWidth=1.5; fx.strokeStyle='rgba(43,41,36,.35)'; fx.strokeText(ch,gx,gy);
       fillTop=gy-capH*Math.max(0,Math.min(1,o.prog));
       fx.beginPath(); fx.rect(x0,fillTop,w,gy-fillTop+3); fx.clip();
@@ -2518,30 +2797,13 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function drawLatheBay(c){
     var FS=Math.max(1,Math.min(2.2,0.9*fcv.width/Math.max(1,fcv.clientWidth||fcv.width)));
     var P=lathe.prog, on=lathe.rpm>0, busy=P.on&&P.part&&P.phase!=='wait';
-    fx.fillStyle='#E4E9EE'; fx.fillRect(c.x,c.y,c.w,c.h);
-    fx.strokeStyle='#9A9C97'; fx.lineWidth=1; fx.strokeRect(c.x,c.y,c.w,c.h);
-    fx.strokeStyle='#2E4A63'; fx.lineWidth=3; fx.strokeRect(c.x+2,c.y+2,c.w-4,c.h-4);
-    var HH=Math.min(c.h*0.45,40*FS), top=c.y+HH+6, bot=c.y+c.h-32;
-    var bx=c.x+c.w*0.1, bw=c.w*0.8, axis=top+(bot-top)*0.42;
-    fx.fillStyle='#57694B'; fx.fillRect(bx,bot-(bot-top)*0.28,bw,(bot-top)*0.18);
-    fx.fillStyle='#3E4C37'; fx.fillRect(bx,bot-(bot-top)*0.28,bw,3);
-    fx.fillStyle='#57694B'; fx.fillRect(bx,top,bw*0.2,bot-(bot-top)*0.28-top);
-    fx.fillStyle='#57694B'; fx.fillRect(bx+bw*0.84,axis-(bot-top)*0.12,bw*0.16,bot-(bot-top)*0.28-(axis-(bot-top)*0.12));
-    if(lathe.loaded){
-      var bh=(bot-top)*0.22, len=bw*0.62;
-      fx.fillStyle=finCSS(lathe.fin); fx.fillRect(bx+bw*0.21,axis-bh/2,len,bh);
-      if(on){ fx.strokeStyle='rgba(43,41,36,.35)'; fx.lineWidth=1; var ph=(lathe.spin%30)/30*8; for(var k=0;k<len;k+=8){ fx.beginPath(); fx.moveTo(bx+bw*0.21+k+ph,axis-bh/2); fx.lineTo(bx+bw*0.21+k+ph-4,axis+bh/2); fx.stroke(); } }
-      fx.strokeStyle='#2B2924'; fx.lineWidth=1; fx.strokeRect(bx+bw*0.21,axis-bh/2,len,bh);
-    }
-    var tx=bx+bw*0.21+(Math.max(0,Math.min(LZ,lathe.z))/LZ)*bw*0.62;
-    fx.fillStyle='#65675F'; fx.fillRect(tx-10,axis+(bot-top)*0.14,20,(bot-top)*0.14);
-    fx.fillStyle=lathe.cutLevel>0.2?'#A84A2A':'#2B2924'; fx.fillRect(tx-2,axis+(bot-top)*0.06,4,(bot-top)*0.08);
-    fx.fillStyle=busy||on?'#57694B':'#9A9C97';
-    fx.beginPath(); fx.arc(c.x+c.w-12-7*FS,c.y+8+7*FS,7*FS,0,Math.PI*2); fx.fill();
-    fx.strokeStyle='#2B2924'; fx.lineWidth=1.5; fx.stroke();
-    fx.fillStyle='#2E4A63'; fx.font='bold '+Math.round(14*FS)+'px Trebuchet MS';
+    artBayFloor(fx,c,{mine:true});
+    var HH=Math.min(c.h*0.45,40*FS);
+    artFrame(fx,c.x+12,c.y+HH+4,c.w-24,c.h-HH-30,function(g){ artLathe(g,{loaded:lathe.loaded,fill:finCSS(lathe.fin),spin:on,sweep:Math.max(0,Math.min(LZ,lathe.z))/LZ,cut:lathe.cutLevel>0.2}); });
+    artLamp(fx,c.x+c.w-12-7*FS,c.y+8+7*FS,7*FS,{busy:busy||on});
+    fx.fillStyle='#2E4A63'; fx.font='bold '+Math.round(14*FS)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     fx.fillText('lathe',c.x+12,c.y+22*FS);
-    fx.fillStyle='#65675F'; fx.font=Math.round(11*FS)+'px Trebuchet MS';
+    fx.fillStyle='#65675F'; fx.font=Math.round(11*FS)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     var ln=busy?'turning a '+lpart(P.part).short:(P.on?'program waiting':(on?'turning by hand':'tap to run it'));
     fx.fillText(ln,c.x+12,c.y+HH-4);
   }
@@ -2549,14 +2811,14 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function drawOpenBay(c,first){
     var FS=Math.max(1,Math.min(2.2,0.9*fcv.width/Math.max(1,fcv.clientWidth||fcv.width)));
     fx.save();
-    fx.strokeStyle='#9A9C97'; fx.lineWidth=2; fx.setLineDash([8,6]);
+    fx.strokeStyle='#B5AF9E'; fx.lineWidth=2; fx.setLineDash([8,6]);
     fx.strokeRect(c.x+6,c.y+6,c.w-12,c.h-12);
     fx.restore();
     fx.textAlign='center';
-    fx.fillStyle='#65675F'; fx.font='bold '+Math.round(13*FS)+'px Trebuchet MS';
+    fx.fillStyle='#65675F'; fx.font='bold '+Math.round(13*FS)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     fx.fillText('open bay',c.x+c.w/2,c.y+c.h/2-4);
     if(first){
-      fx.fillStyle='#2E4A63'; fx.font=Math.round(11*FS)+'px Trebuchet MS';
+      fx.fillStyle='#2E4A63'; fx.font=Math.round(11*FS)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
       fx.fillText('next mill '+money(millCost()),c.x+c.w/2,c.y+c.h/2+14*FS);
     }
     fx.textAlign='left';
@@ -2564,67 +2826,51 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
 
   function drawMiniBay(c,o){
     var FS=Math.max(1,Math.min(2.2,0.9*fcv.width/Math.max(1,fcv.clientWidth||fcv.width)));
-    fx.fillStyle=o.mine||o.label?'#E4E9EE':'#DDD8CB'; fx.fillRect(c.x,c.y,c.w,c.h);
-    fx.strokeStyle='#9A9C97'; fx.lineWidth=1; fx.strokeRect(c.x,c.y,c.w,c.h);
-    if(o.mine||o.label){ fx.strokeStyle='#2E4A63'; fx.lineWidth=2; fx.strokeRect(c.x+1.5,c.y+1.5,c.w-3,c.h-3); }
-    if(o.sel){ fx.strokeStyle='#2E4A63'; fx.lineWidth=3; fx.strokeRect(c.x+3,c.y+3,c.w-6,c.h-6); }
-    var mx=c.x+c.w*0.2, mw=c.w*0.6, my=c.y+c.h*0.3, mh=c.h*0.46;
+    artBayFloor(fx,c,{mine:o.mine||!!o.label,sel:o.sel,need:o.need,mini:true});
+    var ax=c.x+6, ay=c.y+15*FS, aw=c.w-12, ah=c.h-15*FS-13;
+    fx.font='bold '+Math.round(11*FS)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     if(o.label){
-      fx.fillStyle='#57694B'; fx.fillRect(mx,my+mh*0.45,mw,mh*0.35);
-      fx.fillStyle='#2E4A63'; fx.font='bold '+Math.round(10*FS)+'px Trebuchet MS'; fx.fillText(o.label,c.x+5,c.y+13*FS);
+      artFrame(fx,ax,ay,aw,ah,function(g){ if(o.label==='lathe') artLathe(g,{loaded:lathe.loaded,fill:finCSS(lathe.fin),spin:lathe.rpm>0,sweep:Math.max(0,Math.min(LZ,lathe.z))/LZ,cut:lathe.cutLevel>0.2}); else artBrake(g,{loaded:brake.loaded,fill:finCSS(brake.fin),ram:brake.ram}); });
+      fx.fillStyle='#2E4A63'; fx.fillText(o.label,c.x+7,c.y+14*FS);
       return;
     }
-    if(o.mk==='laser'){
-      fx.fillStyle='#65675F'; fx.fillRect(mx,my+mh*0.45,mw,mh*0.4);
-      fx.fillStyle='#9A9C97'; fx.fillRect(mx,my+mh*0.3,mw,mh*0.12);
-      fx.fillStyle='#2E4A63'; fx.fillRect(mx+mw*0.4,my+mh*0.1,mw*0.14,mh*0.25);
-      if(o.busy){ fx.fillStyle='#E04040'; fx.fillRect(mx+mw*0.46,my+mh*0.35,2,mh*0.12); }
-    } else if(o.mk==='fdm'){
+    o.fill=isSpare(o.ch)?'#B5760D':finCSS(o.fin);
+    if(o.mk==='fdm'){
+      var mx=c.x+c.w*0.2, mw=c.w*0.6, my=c.y+c.h*0.3, mh=c.h*0.46;
+      fx.lineWidth=1; fx.strokeStyle='#2B2924';
       fx.fillStyle='#65675F'; fx.fillRect(mx,my,3,mh); fx.fillRect(mx+mw-3,my,3,mh); fx.fillRect(mx,my,mw,3);
       fx.fillStyle='#C6A466'; fx.fillRect(mx+3,my+mh-4,mw-6,4);
       if(o.busy){ var ph=(mh-8)*Math.min(1,o.prog||0); fx.fillStyle=finCSS(o.fin); fx.fillRect(mx+mw*0.35,my+mh-4-ph,mw*0.3,ph); }
-      fx.fillStyle=finCSS(o.spool||o.fin); fx.beginPath(); fx.arc(mx+mw+5*FS,my+mh*0.3,4*FS,0,Math.PI*2); fx.fill();
+      fx.fillStyle=finCSS(o.spool||o.fin); fx.beginPath(); fx.arc(mx+mw+5*FS,my+mh*0.3,4*FS,0,Math.PI*2); fx.fill(); fx.stroke();
       fx.fillStyle='#2E4A63'; fx.fillRect(mx+mw*0.42,my+4,mw*0.16,4);
-    } else if(o.mk==='print'){
-      fx.fillStyle='#E4E9EE'; fx.fillRect(mx,my,mw,mh); fx.strokeStyle='#2E4A63'; fx.lineWidth=2; fx.strokeRect(mx,my,mw,mh);
-      fx.fillStyle=o.busy?'#E0912B':'#9A9C97'; fx.fillRect(mx+mw*0.2,my+mh*0.3,mw*0.6,mh*0.4);
-    } else if(o.cnc){
-      fx.fillStyle='#9A9C97'; fx.fillRect(mx,my,mw,mh);
-      fx.fillStyle='#2E4A63'; fx.fillRect(mx+mw*0.2,my+mh*0.2,mw*0.5,mh*0.45);
-      fx.strokeStyle='#2B2924'; fx.lineWidth=1; fx.strokeRect(mx,my,mw,mh);
-    } else {
-      fx.fillStyle='#57694B'; fx.fillRect(mx,my,mw*0.22,mh); fx.fillRect(mx,my,mw*0.8,mh*0.18);
-      fx.fillStyle='#65675F'; fx.fillRect(mx+mw*0.2,my+mh*0.62,mw*0.8,mh*0.14);
-    }
-    if(o.busy&&o.mk!=='fdm'){ fx.fillStyle=isSpare(o.ch)?'#B5760D':finCSS(o.fin); fx.fillRect(mx+mw*0.35,my+mh*0.5,mw*0.3,mh*0.1); }
-    fx.fillStyle=o.need?((Math.floor(Date.now()/300)%2)?'#A84A2A':'#E0912B'):(o.busy?'#57694B':'#9A9C97');
-    fx.beginPath(); fx.arc(c.x+c.w-8*FS,c.y+8*FS,4.5*FS,0,Math.PI*2); fx.fill();
-    fx.fillStyle='#2B2924'; fx.font='bold '+Math.round(11*FS)+'px Trebuchet MS';
-    fx.fillText(o.busy?tokShort(o.ch):'-',c.x+5,c.y+13*FS);
+    } else artFrame(fx,ax,ay,aw,ah,function(g){ o.sweep=o.busy?(Math.sin(Date.now()/500+c.x*0.7+c.y)+1)/2:0.5; artFor(o)(g,o); });
+    artLamp(fx,c.x+c.w-8*FS,c.y+8*FS,4.5*FS,o);
+    fx.fillStyle='#2B2924'; fx.font='bold '+Math.round(11*FS)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+    fx.fillText(o.busy?tokShort(o.ch):'-',c.x+7,c.y+14*FS);
     fx.fillStyle='#C9C3B2'; fx.fillRect(c.x+5,c.y+c.h-8,c.w-10,3);
     fx.fillStyle='#2E4A63'; fx.fillRect(c.x+5,c.y+c.h-8,(c.w-10)*Math.min(1,o.prog||0),3);
   }
   function facDrawMini(){
     var cells=bayCells(), i, FS=Math.max(1,Math.min(2.2,0.9*fcv.width/Math.max(1,fcv.clientWidth||fcv.width)));
     fx.clearRect(0,0,fcv.width,fcv.height);
-    fx.fillStyle='#D3CEC0'; fx.fillRect(0,0,fcv.width,fcv.height);
+    fx.fillStyle='#CFCABB'; fx.fillRect(0,0,fcv.width,fcv.height);
     var on=demo.on&&(demo.phase==='cut'||demo.phase==='eject');
     drawMiniBay(cells[0],{mine:true,busy:on,ch:demo.ch,fin:on?demo.fin:G.curFin,prog:0,need:machine.xDead||machine.yDead,cnc:G.homeCnc});
     if(G.lathe) drawMiniBay(cells[1],{label:'lathe'});
     if(G.brake) drawMiniBay(cells[brakeBay()],{label:'brake'});
     var L0=lead();
     for(i=0;i<fac.m.length;i++){ var m=fac.m[i]; drawMiniBay(cells[i+L0],{sel:i===fac.sel,busy:!m.idle&&!m.stopped&&!m.need,ch:m.ch,fin:m.fin,prog:m.prog,need:!!m.need,cnc:m.cnc,mk:m.mk,spool:m.spool}); }
-    for(i=fac.m.length+L0;i<bays();i++){ var c=cells[i]; fx.save(); fx.strokeStyle='#9A9C97'; fx.setLineDash([5,4]); fx.strokeRect(c.x+4,c.y+4,c.w-8,c.h-8); fx.restore(); }
+    for(i=fac.m.length+L0;i<bays();i++){ var c=cells[i]; fx.save(); fx.strokeStyle='#B5AF9E'; fx.lineWidth=1.5; fx.setLineDash([5,4]); fx.strokeRect(c.x+5,c.y+5,c.w-10,c.h-10); fx.restore(); }
     // the crew are dots, colored by trade
     for(i=0;i<fac.ops.length;i++){
       var p=fac.ops[i];
       if(p.busy<0&&Math.abs(p.tx-p.x)<3){ p.ty=OPY(); p.y=OPY(); }
       fx.fillStyle=TECHS[p.kind].color; fx.beginPath(); fx.arc(p.x,p.y,4*FS,0,Math.PI*2); fx.fill();
-      if(p.busy>=0){ fx.strokeStyle='#A84A2A'; fx.lineWidth=2; fx.stroke(); }
+      fx.strokeStyle=p.busy>=0?'#A84A2A':'#2B2924'; fx.lineWidth=p.busy>=0?2.5:1.2; fx.stroke();
     }
     for(i=0;i<fac.ops.length;i++) drawSay(fac.ops[i],8*FS,FS);
     var y=OPY()+18*FS, x=10;
-    fx.font=Math.round(12*FS)+'px Trebuchet MS';
+    fx.font=Math.round(12*FS)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     Object.keys(TECHS).forEach(function(k){
       var t=TECHS[k], txt=crewOf(k)+' '+(crewOf(k)===1?t.name:t.plural);
       fx.fillStyle=t.color; fx.beginPath(); fx.arc(x+4*FS,y-4*FS,4*FS,0,Math.PI*2); fx.fill();
@@ -2643,7 +2889,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     if(G.warehouse){ facDrawMini(); return; }
     var cells=bayCells(), i;
     fx.clearRect(0,0,fcv.width,fcv.height);
-    fx.fillStyle='#D3CEC0'; fx.fillRect(0,0,fcv.width,fcv.height);
+    fx.fillStyle='#CFCABB'; fx.fillRect(0,0,fcv.width,fcv.height);
     // your own mill, the one on the mill tab
     var on=demo.on&&(demo.phase==='cut'||demo.phase==='eject')&&part.placed;
     var pr=on?Math.min(1,((demo.pass-1)+(demo.stage==='finish'?0.5:0)+Math.max(0,Math.min(1,demo.j/part.ny))*0.5)/Math.ceil(B.nz/12)):0;
@@ -2662,27 +2908,25 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       else if(m.need) line=needLine(m);
       else if(m.idle) line='idle, nothing needed';
       drawBay(cells[i+L0],{sel:i===fac.sel,busy:!m.idle&&!m.stopped&&m.need!=='spool',ch:m.ch,fin:m.fin,prog:m.prog,sweep:m.sweep,need:!!m.need,
-        tag:(m.cnc?'CNC ':'')+(m.auto?'queue':'one part'),tagBlue:m.auto,line:line,wear:m.mk==='fdm'?undefined:m.wear,cnc:m.cnc,mk:m.mk,spool:m.spool,needKind:m.need});
+        tag:(m.auto?'queue':'one part'),tagBlue:m.auto,line:line,wear:m.mk==='fdm'?undefined:m.wear,cnc:m.cnc,mk:m.mk,spool:m.spool,needKind:m.need});
     }
     for(i=fac.m.length+L0;i<bays();i++) drawOpenBay(cells[i],i===fac.m.length+L0);
     for(i=0;i<fac.ops.length;i++){
       var p=fac.ops[i];
       if(p.busy<0&&Math.abs(p.tx-p.x)<3){ p.ty=OPY(); p.y=OPY(); }
-      fx.fillStyle=p.busy>=0?'#A84A2A':'#2E4A63';
-      fx.beginPath(); fx.arc(p.x,p.y-20,9,0,Math.PI*2); fx.fill();
-      fx.fillRect(p.x-8,p.y-11,16,20);
-      fx.fillStyle='#2B2924'; fx.font='bold 13px Trebuchet MS';
-      fx.fillText('op '+(i+1),p.x-14,p.y+22);
+      artOp(fx,p.x,p.y+8,1.25,TECHS[p.kind].color,p.busy>=0&&Math.hypot(p.tx-p.x,p.ty-p.y)<3);
+      fx.fillStyle='#2B2924'; fx.font='bold 13px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+      fx.textAlign='center'; fx.fillText('op '+(i+1),p.x,p.y+24); fx.textAlign='left';
     }
     var SFS=Math.max(1,Math.min(2.2,fcv.width/Math.max(1,fcv.clientWidth||fcv.width)));
     for(i=0;i<fac.ops.length;i++) drawSay(fac.ops[i],32,SFS);
-    if(G.foreman){ fx.fillStyle='#2E4A63'; fx.font='bold 13px Trebuchet MS'; fx.fillText('foreman on duty',fcv.width-130,OPY()+16); }
+    if(G.foreman){ fx.fillStyle='#2E4A63'; fx.font='bold 13px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif'; fx.fillText('foreman on duty',fcv.width-130,OPY()+16); }
   }
 
   function drawSay(p,yOff,FS){
     if(!p.say||!(p.sayT>0)) return;
     fx.save();
-    fx.font='bold '+Math.round(11*FS)+'px Trebuchet MS';
+    fx.font='bold '+Math.round(11*FS)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     var w=fx.measureText(p.say).width+12*FS, h=17*FS, x=Math.max(2,Math.min(fcv.width-w-2,p.x-w/2)), y=Math.max(2,p.y-yOff-h);
     fx.fillStyle='#fff'; fx.strokeStyle='#2E4A63'; fx.lineWidth=2;
     fx.fillRect(x,y,w,h); fx.strokeRect(x,y,w,h);
@@ -3188,11 +3432,11 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       c.fillStyle='#C9C3B2'; c.fillRect(tx+4,ty-6,tw,th); c.fillRect(tx+2,ty-3,tw,th);
       c.fillStyle=finCSS(o.fin); c.fillRect(tx,ty,tw,th);
       c.strokeStyle='#2B2924'; c.lineWidth=2; c.strokeRect(tx,ty,tw,th);
-      c.fillStyle='#fff'; c.font='bold '+Math.round(th*0.62)+'px Trebuchet MS'; c.textAlign='center';
+      c.fillStyle='#fff'; c.font='bold '+Math.round(th*0.62)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif'; c.textAlign='center';
       c.fillText(wl[i],tx+tw/2,ty+th*0.72); c.textAlign='left';
       c.globalAlpha=1;
     }
-    c.fillStyle='#2E4A63'; c.font='bold 22px Trebuchet MS'; c.fillText('x '+copies,bedX+4,30);
+    c.fillStyle='#2E4A63'; c.font='bold 22px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif'; c.fillText('x '+copies,bedX+4,30);
   }
   // shipping a truck sends it rolling off the screen; the picture floats over the page so no button moves
   function truckDrive(o){
@@ -3307,7 +3551,7 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function drawStatsChart(){
     var cv=document.getElementById('statsCv'), c=cv.getContext('2d'), W=640, H=240, hh=G.hist;
     c.clearRect(0,0,W,H); c.fillStyle='#fff'; c.fillRect(0,0,W,H);
-    c.fillStyle='#2B2924'; c.font='14px Trebuchet MS';
+    c.fillStyle='#2B2924'; c.font='14px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     if(hh.length<3){ c.fillText('the chart fills in after a few minutes on shift',20,H/2); return; }
     var inc=[], out=[];
     for(var i=1;i<hh.length;i++){
@@ -3361,30 +3605,47 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function drawOutside(dt){
     var cv=document.getElementById('outsideCv'), c=cv.getContext('2d'), W=640, H=300;
     outside.t+=dt;
-    c.fillStyle='#CFE0EE'; c.fillRect(0,0,W,H);
-    c.fillStyle='#F2D58A'; c.beginPath(); c.arc(560,50,24,0,Math.PI*2); c.fill();
+    c.lineJoin='round';
+    // desert morning: a pale sky, the sun, mesas on the horizon, the lot and the road
+    var sky=c.createLinearGradient(0,0,0,200); sky.addColorStop(0,'#BFD6E8'); sky.addColorStop(1,'#EDE6D2');
+    c.fillStyle=sky; c.fillRect(0,0,W,200);
+    c.fillStyle='rgba(242,213,138,.35)'; c.beginPath(); c.arc(566,48,38,0,Math.PI*2); c.fill();
+    c.fillStyle='#F2D58A'; c.beginPath(); c.arc(566,48,24,0,Math.PI*2); c.fill();
+    c.fillStyle='#C9B79A'; c.beginPath(); c.moveTo(0,200); c.lineTo(0,170); c.lineTo(60,168); c.lineTo(80,150); c.lineTo(170,150); c.lineTo(190,172); c.lineTo(330,174); c.lineTo(350,158); c.lineTo(430,158); c.lineTo(446,176); c.lineTo(560,178); c.lineTo(580,164); c.lineTo(640,164); c.lineTo(640,200); c.closePath(); c.fill();
     c.fillStyle='#D8C9A6'; c.fillRect(0,200,W,100);
-    c.fillStyle='#55534E'; c.fillRect(0,236,W,50);
-    c.fillStyle='#E8E2D2'; for(var x=0;x<W;x+=40) c.fillRect(x,280,20,3);
-    // the shop or the warehouse, wearing the name in blue
-    var bw=G.warehouse?330:170, bh=G.warehouse?120:90, bx=20, by=200-bh;
-    c.fillStyle='#B9B4A6'; c.fillRect(bx,by,bw,bh);
-    c.fillStyle='#8E897C'; for(var r=bx+10;r<bx+bw;r+=22) c.fillRect(r,by,3,bh);
-    c.fillStyle='#2E4A63'; c.fillRect(bx,by-10,bw,14);
-    c.fillStyle='#2E4A63'; c.fillRect(bx+bw*0.12,by+14,bw*0.76,26);
-    c.fillStyle='#fff'; c.font='bold '+(G.warehouse?22:15)+'px Trebuchet MS'; c.textAlign='center'; c.fillText('MILL-IONAIRE',bx+bw/2,by+33);
-    c.fillStyle='#6A675E'; for(var d=0;d<(G.warehouse?3:1);d++) c.fillRect(bx+20+d*90,by+bh-50,60,50);
-    c.fillStyle='#57534A'; for(d=0;d<(G.warehouse?3:1);d++) for(var l=0;l<5;l++) c.fillRect(bx+20+d*90,by+bh-50+l*10,60,2);
-    // smoke from the stack when the floor is running
-    c.fillStyle='#8E897C'; c.fillRect(bx+bw-30,by-40,12,30);
-    if(fac.running&&G.mills>0){ c.fillStyle='rgba(120,120,120,.35)'; for(var p=0;p<4;p++){ var q=(outside.t*0.6+p*0.25)%1; c.beginPath(); c.arc(bx+bw-24+q*30,by-46-q*50,6+q*10,0,Math.PI*2); c.fill(); } }
+    c.fillStyle='#CDBE9A'; for(var gx=10;gx<W;gx+=37) c.fillRect(gx,206+(gx*7)%22,9,2);
+    c.fillStyle='#55534E'; c.fillRect(0,236,W,52);
+    c.fillStyle='#3F3D39'; c.fillRect(0,236,W,3);
+    c.fillStyle='#E8E2D2'; for(var x=0;x<W;x+=40) c.fillRect(x,281,20,3);
+    c.strokeStyle='#2B2924'; c.lineWidth=2;
+    // the shop or the warehouse: corrugated walls, dock doors, a blue roof line and the name on the front
+    var bw=G.warehouse?330:170, bh=G.warehouse?120:90, bx=20, by=200-bh, nd=G.warehouse?3:1;
+    c.fillStyle='rgba(43,41,36,.12)'; c.fillRect(bx+8,200,bw,6);
+    c.fillStyle='#8E897C'; c.fillRect(bx+bw-32,by-44,14,36); c.strokeRect(bx+bw-32,by-44,14,36);
+    c.fillStyle='#65675F'; c.fillRect(bx+bw-35,by-48,20,6); c.strokeRect(bx+bw-35,by-48,20,6);
+    if(fac.running&&G.mills>0){ c.fillStyle='rgba(120,120,120,.3)'; for(var p=0;p<4;p++){ var q=(outside.t*0.6+p*0.25)%1; c.beginPath(); c.arc(bx+bw-25+q*30,by-52-q*50,6+q*10,0,Math.PI*2); c.fill(); } }
+    c.fillStyle='#C2BDAE'; c.fillRect(bx,by,bw,bh); c.strokeRect(bx,by,bw,bh);
+    c.fillStyle='rgba(43,41,36,.16)'; for(var r=bx+8;r<bx+bw-2;r+=11) c.fillRect(r,by+1,2,bh-2);
+    c.fillStyle='#2E4A63'; c.fillRect(bx-4,by-10,bw+8,14); c.strokeRect(bx-4,by-10,bw+8,14);
+    c.fillStyle='#2E4A63'; c.fillRect(bx+bw*0.12,by+14,bw*0.76,28); c.strokeRect(bx+bw*0.12,by+14,bw*0.76,28);
+    c.fillStyle='#fff'; c.font='bold '+(G.warehouse?22:15)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif'; c.textAlign='center'; c.fillText('MILL-IONAIRE',bx+bw/2,by+(G.warehouse?36:34));
+    for(var d=0;d<nd;d++){
+      var dx=bx+20+d*90, dy=by+bh-52;
+      c.fillStyle='#6A675E'; c.fillRect(dx,dy,60,52); c.strokeRect(dx,dy,60,52);
+      c.fillStyle='#4E4B44'; for(var l=1;l<6;l++) c.fillRect(dx+1,dy+l*9,58,2);
+      c.fillStyle='#B5760D'; c.fillRect(dx-3,dy+46,3,6); c.fillRect(dx+60,dy+46,3,6);
+    }
+    if(!G.warehouse){ c.fillStyle='#E4E9EE'; c.fillRect(bx+100,by+bh-46,44,24); c.strokeRect(bx+100,by+bh-46,44,24); c.beginPath(); c.moveTo(bx+122,by+bh-46); c.lineTo(bx+122,by+bh-22); c.stroke(); }
+    else { c.fillStyle='#6A675E'; c.fillRect(bx+bw-44,by+bh-40,22,40); c.strokeRect(bx+bw-44,by+bh-40,22,40); }
     // the office, growing with every move up
     if(G.officeLv){
       var ow=[0,90,110,90][G.officeLv], oh=[0,70,110,180][G.officeLv], ox=bx+bw+40, oy=200-oh;
-      c.fillStyle=G.officeLv===3?'#7F95A8':'#C9C3B2'; c.fillRect(ox,oy,ow,oh);
-      c.fillStyle='#E4E9EE';
-      for(var wy=oy+10;wy<200-16;wy+=18) for(var wx=ox+8;wx<ox+ow-12;wx+=18) c.fillRect(wx,wy,10,10);
-      c.fillStyle='#2E4A63'; c.font='bold 11px Trebuchet MS'; c.fillText(OFFICES[G.officeLv].name,ox+ow/2,oy-6);
+      c.fillStyle='rgba(43,41,36,.12)'; c.fillRect(ox+8,200,ow,6);
+      c.fillStyle=G.officeLv===3?'#8FA3B4':'#D2CCBB'; c.fillRect(ox,oy,ow,oh); c.strokeRect(ox,oy,ow,oh);
+      c.fillStyle='#2E4A63'; c.fillRect(ox-3,oy-6,ow+6,8); c.strokeRect(ox-3,oy-6,ow+6,8);
+      for(var wy=oy+12;wy<200-22;wy+=18) for(var wx=ox+9;wx<ox+ow-14;wx+=18){ c.fillStyle=((wx*3+wy*5)%7<2)?'#F2D58A':'#E4E9EE'; c.fillRect(wx,wy,11,10); c.lineWidth=1; c.strokeRect(wx,wy,11,10); }
+      c.lineWidth=2; c.fillStyle='#6A675E'; c.fillRect(ox+ow/2-8,200-18,16,18); c.strokeRect(ox+ow/2-8,200-18,16,18);
+      c.fillStyle='#2E4A63'; c.font='bold 11px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif'; c.fillText(OFFICES[G.officeLv].name,ox+ow/2,oy-12);
     }
     c.textAlign='left';
     // flatbeds roll by more often the bigger the shop is
@@ -3393,14 +3654,19 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     outside.trucks.forEach(function(t){
       t.x+=t.v*dt;
       var y=262, n=t.word.length, L=Math.max(150,n*26+12);
-      c.fillStyle='#65675F'; c.fillRect(t.x,y-16,L,9);
-      c.fillStyle='#2E4A63'; c.fillRect(t.x+L+4,y-44,48,37);
-      c.fillStyle='#E4E9EE'; c.fillRect(t.x+L+30,y-39,16,14);
-      c.fillStyle='#2B2924'; [t.x+22,t.x+L-24,t.x+L+36].forEach(function(wx){ c.beginPath(); c.arc(wx,y-4,8,0,Math.PI*2); c.fill(); });
+      c.strokeStyle='#2B2924'; c.lineWidth=2;
+      c.fillStyle='rgba(43,41,36,.2)'; c.fillRect(t.x+4,y+3,L+50,4);
+      c.fillStyle='#65675F'; c.fillRect(t.x,y-16,L,9); c.strokeRect(t.x,y-16,L,9);
+      c.fillStyle='#9A9C97'; c.fillRect(t.x+L+8,y-58,5,16);
+      c.fillStyle='#2E4A63'; c.fillRect(t.x+L+4,y-44,34,37); c.strokeRect(t.x+L+4,y-44,34,37);
+      c.fillRect(t.x+L+38,y-28,16,21); c.strokeRect(t.x+L+38,y-28,16,21);
+      c.fillStyle='#E4E9EE'; c.fillRect(t.x+L+20,y-39,15,13); c.strokeRect(t.x+L+20,y-39,15,13);
+      c.fillStyle='#F2D58A'; c.fillRect(t.x+L+51,y-20,3,5);
+      [t.x+22,t.x+40,t.x+L-24,t.x+L+36].forEach(function(wx){ c.fillStyle='#2B2924'; c.beginPath(); c.arc(wx,y-4,8,0,Math.PI*2); c.fill(); c.fillStyle='#9A9C97'; c.beginPath(); c.arc(wx,y-4,3,0,Math.PI*2); c.fill(); });
       for(var i=0;i<n;i++){
         c.fillStyle='#C9C3B2'; c.fillRect(t.x+6+i*26,y-46,24,30);
         c.strokeStyle='#2B2924'; c.lineWidth=1.5; c.strokeRect(t.x+6+i*26,y-46,24,30);
-        c.fillStyle='#2B2924'; c.font='bold 22px Trebuchet MS'; c.textAlign='center'; c.fillText(t.word[i],t.x+18+i*26,y-23); c.textAlign='left';
+        c.fillStyle='#2B2924'; c.font='bold 22px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif'; c.textAlign='center'; c.fillText(t.word[i],t.x+18+i*26,y-23); c.textAlign='left';
       }
     });
     outside.trucks=outside.trucks.filter(function(t){ return t.x<W+60; });
@@ -3540,7 +3806,8 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     var ul=document.getElementById('upgList'); ul.innerHTML='';
     U.forEach(function(u){
       var d=document.createElement('div'); d.className='upg'; d.dataset.k=u.k;
-      d.innerHTML='<div><b>'+u.name+'</b>'+u.txt+'</div><button'+((u.max||G.cash<u.cost)?' disabled':'')+'>'+(u.max?'owned':u.verb+'<br>'+money(u.cost))+'</button>';
+      var ico=shopIcon(u.k);
+      d.innerHTML='<div>'+(ico?'<img class="uico" alt="" src="'+ico+'">':'')+'<b>'+u.name+'</b>'+u.txt+'</div><button'+((u.max||G.cash<u.cost)?' disabled':'')+'>'+(u.max?'owned':u.verb+'<br>'+money(u.cost))+'</button>';
       d.querySelector('button').addEventListener('click',function(){ buyUpg(u.k); });
       ul.appendChild(d);
     });
@@ -3985,21 +4252,29 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function drawLathe(){
     var W=lcv.width, H=lcv.height;
     lx.clearRect(0,0,W,H);
-    lx.fillStyle='#F0EDE4'; lx.fillRect(0,0,W,H);
-    // bed and ways
-    lx.fillStyle='#57694B'; lx.fillRect(30,H-120,W-60,40);
-    lx.fillStyle='#3E4C37'; lx.fillRect(30,H-120,W-60,8);
-    lx.fillStyle='#65675F'; lx.fillRect(50,H-80,40,60); lx.fillRect(W-90,H-80,40,60);
-    // headstock and chuck
-    lx.fillStyle='#57694B'; lx.fillRect(30,LY-90,LX0-50,H-120-(LY-90));
-    lx.fillStyle='#3E4C37'; lx.fillRect(30,LY-90,LX0-50,14);
-    lx.fillStyle='#65675F'; lx.fillRect(LX0-24,LY-LR*LSC*0.62-14,24,LR*LSC*1.24+28);
+    lx.lineJoin='round';
+    // cabinet legs and the chip pan, then the bed and its ways
+    mBox(lx,50,H-80,60,60,'#65675F'); mBox(lx,W-110,H-80,60,60,'#65675F');
+    mBox(lx,22,H-84,W-44,8,'#9A9C97');
+    mBox(lx,30,H-120,W-60,36,'#57694B');
+    lx.fillStyle='#3E4C37'; lx.fillRect(31,H-119,W-62,7); mHi(lx,32,H-110,W-64,3,0.16);
+    // headstock with its gear cover, speed levers and a blue plate, and the chuck with its jaws turning
+    mBox(lx,30,LY-90,LX0-50,H-120-(LY-90),'#57694B');
+    lx.fillStyle='#3E4C37'; lx.fillRect(31,LY-89,LX0-52,13); mHi(lx,36,LY-72,5,H-120-(LY-90)-22,0.14);
+    mBox(lx,44,LY-66,LX0-84,46,'#3E4C37');
+    [0,1].forEach(function(k){ lx.fillStyle='#C6C8C2'; lx.beginPath(); lx.arc(60+k*34,LY+4,8,0,Math.PI*2); lx.fill(); lx.strokeStyle='#2B2924'; lx.lineWidth=2; lx.stroke();
+      lx.beginPath(); lx.moveTo(60+k*34,LY+4); lx.lineTo(60+k*34+(k?6:-6),LY-8); lx.lineWidth=3; lx.stroke(); });
+    lx.fillStyle='#2E4A63'; lx.fillRect(44,LY+24,LX0-84,16); lx.lineWidth=1.5; lx.strokeRect(44,LY+24,LX0-84,16);
+    mBox(lx,LX0-24,LY-LR*LSC*0.62-14,24,LR*LSC*1.24+28,'#9A9C97'); mHi(lx,LX0-22,LY-LR*LSC*0.62-12,4,LR*LSC*1.24+24,0.3);
     var jaw=(lathe.spin%120)/120;
     lx.fillStyle='#2B2924';
     [0,1].forEach(function(k){ var yy=LY+(k?1:-1)*(LR*LSC*0.55+4)*Math.cos((jaw+k*0.5)*Math.PI*2); lx.fillRect(LX0-30,yy-6,30,12); });
-    // tailstock
-    lx.fillStyle='#57694B'; lx.fillRect(W-120,LY-40,90,H-120-(LY-40));
-    lx.fillStyle='#9A9C97'; lx.fillRect(LX0+LZ*LSC,LY-8,W-120-(LX0+LZ*LSC),16);
+    // tailstock with its quill and handwheel
+    lx.fillStyle='#57694B'; lx.beginPath(); lx.moveTo(W-120,H-120); lx.lineTo(W-120,LY-22); lx.lineTo(W-100,LY-40); lx.lineTo(W-30,LY-40); lx.lineTo(W-30,H-120); lx.closePath(); lx.fill(); lx.strokeStyle='#2B2924'; lx.lineWidth=2; lx.stroke();
+    mHi(lx,W-96,LY-36,5,H-120-(LY-36)-4,0.14);
+    mBox(lx,LX0+LZ*LSC,LY-8,W-120-(LX0+LZ*LSC),16,'#C6C8C2');
+    lx.fillStyle='#C9C3B2'; lx.beginPath(); lx.arc(W-22,LY-10,15,0,Math.PI*2); lx.fill(); lx.lineWidth=3; lx.stroke();
+    lx.beginPath(); lx.moveTo(W-37,LY-10); lx.lineTo(W-7,LY-10); lx.moveTo(W-22,LY-25); lx.lineTo(W-22,LY+5); lx.stroke();
     // bar profile, mirrored about the spindle axis
     if(lathe.loaded){
       var im=lx.createImageData(Math.ceil(LZ*LSC),Math.ceil(2*LR*LSC)+2), d=im.data, iw=im.width, ih=im.height;
@@ -4020,20 +4295,24 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
         for(var tz=LZ-len*0.75;tz<LZ;tz+=3){ var xx=LX0+tz*LSC, rr=lathe.r[Math.round(tz)]*LSC; lx.beginPath(); lx.moveTo(xx,LY-rr); lx.lineTo(xx+3*LSC,LY+rr); lx.stroke(); }
       }
     } else {
-      lx.fillStyle='#65675F'; lx.font='15px Trebuchet MS';
-      lx.fillText('no bar in the chuck, load one below',LX0+40,LY+4);
+      lx.fillStyle='#65675F'; lx.font='15px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+      lx.fillText('no bar in the chuck, load one below',LX0+40,LY-14);
     }
     // carriage, cross slide and tool
     var tx=LX0+lathe.z*LSC, ty=LY+lathe.x*LSC;
-    lx.fillStyle='#65675F'; lx.fillRect(tx-40,H-150,80,30);
-    lx.fillStyle='#9A9C97'; lx.fillRect(tx-16,ty+10,32,H-150-(ty+10));
+    mBox(lx,tx-40,H-150,80,30,'#65675F'); mHi(lx,tx-38,H-148,76,4,0.14);
+    mBox(lx,tx-30,H-120,60,30,'#9A9C97');
+    lx.fillStyle='#C9C3B2'; lx.beginPath(); lx.arc(tx,H-104,11,0,Math.PI*2); lx.fill(); lx.lineWidth=2.5; lx.stroke();
+    lx.save(); lx.translate(tx,H-104); lx.rotate(lathe.z*0.5); lx.beginPath(); lx.moveTo(-11,0); lx.lineTo(11,0); lx.moveTo(0,-11); lx.lineTo(0,11); lx.stroke(); lx.restore();
+    mBox(lx,tx-16,ty+10,32,H-150-(ty+10),'#9A9C97');
     lx.fillStyle=lathe.cutLevel>0.2?'#A84A2A':'#2B2924';
     lx.beginPath(); lx.moveTo(tx,ty); lx.lineTo(tx-8,ty+14); lx.lineTo(tx+8,ty+14); lx.closePath(); lx.fill();
     // axis line
     lx.strokeStyle='rgba(46,74,99,.5)'; lx.setLineDash([6,6]); lx.beginPath(); lx.moveTo(LX0-30,LY); lx.lineTo(W-120,LY); lx.stroke(); lx.setLineDash([]);
     // finished parts shelf
-    lx.fillStyle='#D3CEC0'; lx.fillRect(20,H-70,W-40,58);
-    lx.fillStyle='#65675F'; lx.font='12px Trebuchet MS'; lx.fillText('finished turned parts',30,H-54);
+    lx.fillStyle='#D3CEC0'; lx.fillRect(20,H-70,W-40,58); lx.strokeStyle='#2B2924'; lx.lineWidth=2; lx.strokeRect(20,H-70,W-40,58);
+    lx.fillStyle='#B5760D'; lx.fillRect(21,H-69,W-42,4);
+    lx.fillStyle='#65675F'; lx.font='12px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif'; lx.fillText('finished turned parts',30,H-54);
     lathe.shelf.forEach(function(sp,i){ lx.drawImage(lIcon(sp.id,sp.fin),30+i*70,H-48,60,32); });
   }
 
@@ -4253,18 +4532,26 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   }
   function drawBrake(){
     var W=bcv.width, H=bcv.height, ctx=bx2;
-    ctx.clearRect(0,0,W,H); ctx.fillStyle='#F0EDE4'; ctx.fillRect(0,0,W,H);
-    // frame
-    ctx.fillStyle='#57694B'; ctx.fillRect(40,20,40,H-110); ctx.fillRect(W-80,20,40,H-110);
-    ctx.fillStyle='#3E4C37'; ctx.fillRect(40,20,W-80,30);
-    // ram and punch
+    ctx.clearRect(0,0,W,H);
+    ctx.lineJoin='round';
     var ry=60+brake.ram*40;
-    ctx.fillStyle='#65675F'; ctx.fillRect(110,ry,W-220,40);
+    // hydraulic cylinders behind the ram, then the ram with its punch
+    mBox(ctx,150,50,26,ry-40,'#C6C8C2'); mBox(ctx,W-176,50,26,ry-40,'#C6C8C2');
+    mBox(ctx,110,ry,W-220,40,'#65675F'); mHi(ctx,112,ry+2,W-224,5,0.14);
     ctx.fillStyle='#2B2924'; ctx.beginPath(); ctx.moveTo(W/2-14,ry+40); ctx.lineTo(W/2+14,ry+40); ctx.lineTo(W/2,ry+62); ctx.closePath(); ctx.fill();
-    // die
-    ctx.fillStyle='#65675F'; ctx.fillRect(110,H-150,W-220,40);
+    // bed with the vee die cut into it
+    mBox(ctx,110,H-150,W-220,40,'#65675F');
     ctx.fillStyle='#F0EDE4'; ctx.beginPath(); ctx.moveTo(W/2-22,H-150); ctx.lineTo(W/2+22,H-150); ctx.lineTo(W/2,H-128); ctx.closePath(); ctx.fill();
-    ctx.fillStyle='#57694B'; ctx.fillRect(40,H-110,W-80,26);
+    ctx.strokeStyle='#2B2924'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(W/2-22,H-150); ctx.lineTo(W/2,H-128); ctx.lineTo(W/2+22,H-150); ctx.stroke();
+    mBox(ctx,40,H-110,W-80,26,'#57694B');
+    // side frames, the crown across the top, and the control box in shop blue
+    mBox(ctx,40,20,40,H-110,'#57694B'); mHi(ctx,46,52,5,H-146,0.14);
+    mBox(ctx,W-80,20,40,H-110,'#57694B'); mHi(ctx,W-74,52,5,H-146,0.14);
+    mBox(ctx,40,20,W-80,30,'#3E4C37'); mHi(ctx,42,22,W-84,5,0.14);
+    mBolt(ctx,60,35); mBolt(ctx,W-60,35); mBolt(ctx,W/2,35);
+    mBox(ctx,W-74,90,28,40,'#2E4A63');
+    ctx.fillStyle='#DCE6EE'; ctx.fillRect(W-70,94,20,13);
+    ctx.fillStyle='#A84A2A'; ctx.beginPath(); ctx.arc(W-60,119,6,0,Math.PI*2); ctx.fill(); ctx.lineWidth=1.5; ctx.stroke();
     // the part, centered over the die
     if(brake.loaded){
       var pts=bShape(brake.part,brake.k,brake.ang);
@@ -4272,15 +4559,16 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
       pts.forEach(function(p){ mnx=Math.min(mnx,p[0]); mxx=Math.max(mxx,p[0]); mny=Math.min(mny,p[1]); mxy=Math.max(mxy,p[1]); });
       var sc=Math.min((W-260)/Math.max(1,mxx-mnx),(H-300)/Math.max(1,mxy-mny),4);
       bDraw(ctx,pts,W/2,(ry+62+H-150)/2,sc,finCSS(brake.fin),6);
-      ctx.fillStyle='#2E4A63'; ctx.font='bold 16px Trebuchet MS';
+      ctx.fillStyle='#2E4A63'; ctx.font='bold 16px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
       ctx.fillText(BPARTS[brake.part].name+', bend '+Math.min(brake.k+1,bBends(brake.part))+' of '+bBends(brake.part),120,H-160);
     } else {
-      ctx.fillStyle='#65675F'; ctx.font='15px Trebuchet MS'; ctx.fillText('no sheet in the brake',W/2-70,H/2);
+      ctx.fillStyle='#65675F'; ctx.font='15px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif'; ctx.fillText('no sheet in the brake',W/2-70,H/2);
     }
     if(brake.thump>0){ ctx.fillStyle='rgba(181,118,13,'+brake.thump+')'; ctx.fillRect(W/2-40,H-152,80,4); }
     // shelf
-    ctx.fillStyle='#D3CEC0'; ctx.fillRect(20,H-74,W-40,62);
-    ctx.fillStyle='#65675F'; ctx.font='12px Trebuchet MS'; ctx.fillText('finished formed parts',30,H-58);
+    ctx.fillStyle='#D3CEC0'; ctx.fillRect(20,H-74,W-40,62); ctx.strokeStyle='#2B2924'; ctx.lineWidth=2; ctx.strokeRect(20,H-74,W-40,62);
+    ctx.fillStyle='#B5760D'; ctx.fillRect(21,H-73,W-42,4);
+    ctx.fillStyle='#65675F'; ctx.font='12px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif'; ctx.fillText('finished formed parts',30,H-58);
     brake.shelf.forEach(function(sp,i){ ctx.drawImage(bIcon(sp.id,sp.fin),30+i*80,H-52,70,38); });
   }
   function bStatus(){
@@ -4338,21 +4626,12 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
   function drawBrakeBay(c){
     var FS=Math.max(1,Math.min(2.2,0.9*fcv.width/Math.max(1,fcv.clientWidth||fcv.width)));
     var busy=brake.loaded;
-    fx.fillStyle='#E4E9EE'; fx.fillRect(c.x,c.y,c.w,c.h);
-    fx.strokeStyle='#9A9C97'; fx.lineWidth=1; fx.strokeRect(c.x,c.y,c.w,c.h);
-    fx.strokeStyle='#2E4A63'; fx.lineWidth=3; fx.strokeRect(c.x+2,c.y+2,c.w-4,c.h-4);
-    var HH=Math.min(c.h*0.45,40*FS), top=c.y+HH+4, bot=c.y+c.h-30, bxx=c.x+c.w*0.12, bw=c.w*0.76;
-    fx.fillStyle='#57694B'; fx.fillRect(bxx,top,bw*0.12,bot-top); fx.fillRect(bxx+bw*0.88,top,bw*0.12,bot-top);
-    fx.fillStyle='#3E4C37'; fx.fillRect(bxx,top,bw,8);
-    var ry=top+10+brake.ram*(bot-top)*0.2;
-    fx.fillStyle='#65675F'; fx.fillRect(bxx+bw*0.15,ry,bw*0.7,(bot-top)*0.16);
-    fx.fillStyle='#65675F'; fx.fillRect(bxx+bw*0.15,bot-(bot-top)*0.28,bw*0.7,(bot-top)*0.14);
-    if(busy){ fx.fillStyle=finCSS(brake.fin); fx.fillRect(bxx+bw*0.1,bot-(bot-top)*0.33,bw*0.8,4); }
-    fx.fillStyle=busy?'#57694B':'#9A9C97';
-    fx.beginPath(); fx.arc(c.x+c.w-12-7*FS,c.y+8+7*FS,7*FS,0,Math.PI*2); fx.fill();
-    fx.strokeStyle='#2B2924'; fx.lineWidth=1.5; fx.stroke();
-    fx.fillStyle='#2E4A63'; fx.font='bold '+Math.round(14*FS)+'px Trebuchet MS'; fx.fillText('brake',c.x+12,c.y+22*FS);
-    fx.fillStyle='#65675F'; fx.font=Math.round(11*FS)+'px Trebuchet MS';
+    artBayFloor(fx,c,{mine:true});
+    var HH=Math.min(c.h*0.45,40*FS);
+    artFrame(fx,c.x+12,c.y+HH+4,c.w-24,c.h-HH-30,function(g){ artBrake(g,{loaded:brake.loaded,fill:finCSS(brake.fin),ram:brake.ram}); });
+    artLamp(fx,c.x+c.w-12-7*FS,c.y+8+7*FS,7*FS,{busy:busy});
+    fx.fillStyle='#2E4A63'; fx.font='bold '+Math.round(14*FS)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif'; fx.fillText('brake',c.x+12,c.y+22*FS);
+    fx.fillStyle='#65675F'; fx.font=Math.round(11*FS)+'px Trebuchet MS, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     fx.fillText(busy?'forming a '+BPARTS[brake.part].short:(brake.prog.on?'program waiting':'tap to run it'),c.x+12,c.y+HH-4);
   }
 
@@ -4387,7 +4666,12 @@ header h1 .br{color:var(--blue);font-size:inherit;color:var(--blue);}
     hudT=0;
   }
   document.querySelectorAll('#tabs button').forEach(function(b){
-    b.addEventListener('click',function(){ setView(b.dataset.view); });
+    b.addEventListener('click',function(){
+      var changed=view!==b.dataset.view;
+      setView(b.dataset.view);
+      // a new tab starts at its top, with the tab bar staying under your thumb where it was
+      if(changed){ try{ var top=document.querySelector('.hud').getBoundingClientRect().bottom+window.scrollY; if(window.scrollY>top) window.scrollTo(0,top); }catch(e){} }
+    });
   });
 
   function syncDemoBtns(){
