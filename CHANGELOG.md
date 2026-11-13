@@ -1,5 +1,7 @@
 Mill-ionaire changelog
 
+2026-11-11, v2026.11.11. Added an art pass. Every machine on the floor, in the warehouse, and in the shop now has shop manual style art, along with crew figures, painted bays, and a new street view. The mill, lathe, brake, and CNC are more detailed. Buttons feel pressable, the gauge row is tighter, and high score buttons hold still. Added a combined creator seal.
+
 2026-11-09, v2026.11.09. Added filament printers. A plastic 3D printer takes a floor bay and prints letters, numbers and emoji in white, black, red, blue or yellow filament, the color of whatever spool it has loaded. Owning one brings in orders in filament colors that only a printer can make. Thin parts like a 1 print fast and a fat 8 or an emoji takes longer, a printer works the colors already on its spool first, a different color means an operator swaps the spool, and now and then a print turns to spaghetti and gets scraped off the bed. Tapping a printer opens a keypad that prints any part ahead into the bins in the picked spool color, and orders take from the bins first.
 
 2026-11-06, v2026.11.06-2. Order, lathe, and brake programs now resume when the game is reopened without a crash. After a power drop on reopen, floor machines trip their emergency stops for the crew to reset, and your mill boots before its program resumes. The crew looks at any machine that sits still and says why in a bubble, and says what they fix while they work. Lasers can now run out of assist gas. Checks for the finance minute and the machine settings line are steadier.

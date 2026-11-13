@@ -68,6 +68,6 @@ Live at mill-ionaire.vercel.app
 
 Checked every morning by Control Troll, an automated test system that loads the app and clicks through its features.
 
-Latest change. 2026-11-09, v2026.11.09. Added filament printers. A plastic 3D printer takes a floor bay and prints letters, numbers and emoji in white, black, red, blue or yellow filament, the color of whatever spool it has loaded. Owning one brings in orders in filament colors that only a printer can make. Thin parts like a 1 print fast and a fat 8 or an emoji takes longer, a printer works the colors already on its spool first, a different color means an operator swaps the spool, and now and then a print turns to spaghetti and gets scraped off the bed. Tapping a printer opens a keypad that prints any part ahead into the bins in the picked spool color, and orders take from the bins first.
+Latest change. 2026-11-11, v2026.11.11. Added an art pass. Every machine on the floor, in the warehouse, and in the shop now has shop manual style art, along with crew figures, painted bays, and a new street view. The mill, lathe, brake, and CNC are more detailed. Buttons feel pressable, the gauge row is tighter, and high score buttons hold still. Added a combined creator seal.
 
 The full history is in CHANGELOG.md.
